@@ -187,19 +187,24 @@ implements ActionListener {
         else mostrarAviso("PODER: "+Poderes099.NOMES[poderes.selecionado]);
     }
     private void atualizarPoderes(double d){
+        if(poderes.ativo==0||poderes.pendente==0){java.util.List<double[]> alvos=new java.util.ArrayList<>();
+            for(Alien a:alien)if(a.isVisible())alvos.add(new double[]{a.getBounds().getCenterX(),a.getBounds().getCenterY()});
+            if(miniChefe!=null)alvos.add(new double[]{miniChefe.getBounds().getCenterX(),miniChefe.getBounds().getCenterY()});
+            if(chefe!=null)alvos.add(new double[]{chefe.getBounds().getCenterX(),chefe.getBounds().getCenterY()});
+            poderes.mirar(alvos,nave);}
         poderes.atualizar(d,nave);
         if(poderes.ativo<0)return;
         for(ProjetilInimigo t:tirosInimigos)if(t.isVisible()&&poderes.interceptar(t.getBounds()))t.setVisible(false);
         for(TiroChefe t:tirosChefes)if(t.isVisible()&&poderes.interceptar(t.getBounds()))t.setVisible(false);
         if(!poderes.pulso())return;
         Rectangle area=poderes.alcance();int dano=poderes.dano();
-        for(Alien a:alien)if(a.isVisible()&&area.intersects(a.getBounds())){
+        for(Alien a:alien)if(a.isVisible()&&poderes.atinge(a.getBounds())){
             if(poderes.ativo==0)a.congelarPor(1.8);
             if(poderes.ativo==5)a.incendiarPor(2);
             if(a.receberImpacto(0,dano))eliminarAlien(a,true);
         }
-        if(miniChefe!=null&&area.intersects(miniChefe.getBounds())&&miniChefe.receberDano(dano))derrotarMiniChefe();
-        if(chefe!=null&&area.intersects(chefe.getBounds())){
+        if(miniChefe!=null&&poderes.atinge(miniChefe.getBounds())&&miniChefe.receberDano(dano))derrotarMiniChefe();
+        if(chefe!=null&&poderes.atinge(chefe.getBounds())){
             // Ponto fraco: o poder certo causa dano dobrado, como numa tabela de fraquezas.
             boolean critico=FRAQUEZA[chefe.getFase()]==poderes.ativo;
             if(critico){dano*=2;tempoCritico=.6;}
