@@ -23,7 +23,7 @@ public final class CenaFinal {
     private static final BufferedImage PALCO_PB = cinza(PALCO);
     private static final Image SILHUETA = olhosAmarelos(Assets.imagem("megazord_relampago_16bits.png"));
     private static final Image REVELACAO = Assets.imagem("megazord_cabeca_099.png");
-    private static final BufferedImage FOTO_EQUIPE = nitida(Assets.imagem("flavio_wenger.jpg"), 300);
+    private static final BufferedImage FOTO_EQUIPE = escalar(pixelar(nitida(Assets.imagem("flavio_wenger.jpg"), 150), 12), 2);
     private static final BufferedImage CABECA_NO_ESCURO = cabecaNoEscuro(REVELACAO);
 
     /** id do sprite (Sprites16Bits, forma 2), nome, banda, contribuicao em duas linhas. */
@@ -305,7 +305,7 @@ public final class CenaFinal {
     }
 
     private void desenharFoto(Graphics2D g, int w, int h) {
-        // Chave de ouro: foto dos criadores, nitida, o lema e o agradecimento.
+        // Chave de ouro: foto dos criadores em pixel art nitido, o lema e o agradecimento.
         int fw = FOTO_EQUIPE.getWidth(), fh = FOTO_EQUIPE.getHeight();
         int fx = (w - fw) / 2, fy = 34;
         HudMetal.painel(g, fx - 14, fy - 14, fw + 28, fh + 28);
@@ -377,29 +377,40 @@ public final class CenaFinal {
         return atual;
     }
 
-    /** Reduz a foto para uma grade de pixels e poucos tons por canal, no visual 16 bits. */
-    static BufferedImage pixelar(Image foto, int largura, int tons) {
-        int altura = Math.max(1, Math.round(largura * foto.getHeight(null) / (float) foto.getWidth(null)));
-        BufferedImage p = new BufferedImage(largura, altura, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = p.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g.drawImage(foto, 0, 0, largura, altura, null);
-        g.dispose();
+    /** Pixel art nitido: realca contornos, clareia as sombras e reduz para poucos tons por canal. */
+    static BufferedImage pixelar(BufferedImage foto, int tons) {
+        int w = foto.getWidth(), h = foto.getHeight();
+        int[] o = foto.getRGB(0, 0, w, h, null, 0, w);
+        BufferedImage p = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         double passo = 255.0 / (tons - 1);
-        for (int y = 0; y < altura; y++) {
-            for (int x = 0; x < largura; x++) {
-                int rgb = p.getRGB(x, y), cor = 0;
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int cor = 0;
                 for (int desloc = 16; desloc >= 0; desloc -= 8) {
-                    int c = (rgb >> desloc) & 255;
-                    // Leve contraste antes de reduzir os tons, como em sprites de arcade.
-                    c = Math.max(0, Math.min(255, (int) ((c - 128) * 1.12 + 128)));
-                    cor = (cor << 8) | (int) (Math.round(c / passo) * passo);
+                    int c = canal(o, w, h, x, y, desloc), soma = 0;
+                    for (int[] d : new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) soma += canal(o, w, h, x + d[0], y + d[1], desloc);
+                    double v = c + (c - soma / 4.0) * .9;
+                    v = 255 * Math.pow(Math.max(0, Math.min(255, v)) / 255.0, .82);
+                    cor = (cor << 8) | (int) (Math.round(v / passo) * passo);
                 }
                 p.setRGB(x, y, cor);
             }
         }
         return p;
+    }
+
+    private static int canal(int[] o, int w, int h, int x, int y, int desloc) {
+        return o[Math.max(0, Math.min(h - 1, y)) * w + Math.max(0, Math.min(w - 1, x))] >> desloc & 255;
+    }
+
+    /** Amplia sem suavizar, mantendo cada pixel como um bloco. */
+    static BufferedImage escalar(BufferedImage img, int fator) {
+        BufferedImage o = new BufferedImage(img.getWidth() * fator, img.getHeight() * fator, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = o.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        g.drawImage(img, 0, 0, o.getWidth(), o.getHeight(), null);
+        g.dispose();
+        return o;
     }
 
     /** Cabeca apagada: silhueta escura com contorno discreto; apenas os olhos amarelos acesos. */
