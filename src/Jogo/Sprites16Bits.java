@@ -80,8 +80,10 @@ public final class Sprites16Bits {
         BufferedImage base = sprite;
         int margem = 0;
         // Escala constante: evita o efeito de lupa pulsante dos quadros anteriores.
-        double escala = Math.min((largura - 24.0) / base.getWidth(),
-                (altura - 35.0) / base.getHeight());
+        // Arte nova do ato II escala pela altura: o efeito do golpe pode passar da caixa para a esquerda.
+        boolean arteNova = forma == 2 && PosesChefes.temNovaArte(id);
+        double escala = arteNova ? (altura - 35.0) / base.getHeight()
+                : Math.min((largura - 24.0) / base.getWidth(), (altura - 35.0) / base.getHeight());
         int w = Math.max(1, (int)Math.round(sprite.getWidth() * escala));
         int h = Math.max(1, (int)Math.round(sprite.getHeight() * escala));
         int baseW = Math.max(1, (int)Math.round(base.getWidth() * escala));

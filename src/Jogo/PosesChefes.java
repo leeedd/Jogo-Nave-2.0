@@ -11,8 +11,13 @@ final class PosesChefes {
   if(id<1||id>7)return null;if(CONSULTADA[id])return NOVA[id];CONSULTADA[id]=true;
   java.net.URL u=PosesChefes.class.getResource("/ImagemIcon/chefe_"+id+"_ato2.png");if(u==null)return null;
   try{BufferedImage a=ImageIO.read(u);
-   // Quatro quadros do mesmo tamanho: repouso, preparo (recua), golpe (avanca) e respiracao.
-   NOVA[id]=new BufferedImage[]{pose(a,0,1,1),pose(a,.05,1,1),pose(a,-.07,1.03,1.03),pose(a,0,1,.985)};
+   if(a.getWidth()>=a.getHeight()*3){
+    // Prancha com 4 celulas iguais: repouso, preparo, golpe (com o efeito) e bate-cabeca.
+    int c=a.getWidth()/4;NOVA[id]=new BufferedImage[4];for(int q=0;q<4;q++)NOVA[id][q]=a.getSubimage(q*c,0,c,a.getHeight());
+   }else{
+    // Imagem unica: quatro quadros do mesmo tamanho gerados por inclinacao.
+    NOVA[id]=new BufferedImage[]{pose(a,0,1,1),pose(a,.05,1,1),pose(a,-.07,1.03,1.03),pose(a,0,1,.985)};
+   }
   }catch(java.io.IOException e){System.err.println("Arte do ato II ilegivel: "+id);}
   return NOVA[id];
  }
