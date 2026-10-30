@@ -203,6 +203,7 @@ implements ActionListener {
             // Ponto fraco: o poder certo causa dano dobrado, como numa tabela de fraquezas.
             boolean critico=FRAQUEZA[chefe.getFase()]==poderes.ativo;
             if(critico){dano*=2;tempoCritico=.6;}
+            chefe.reagir(poderes.ativo,critico);
             if(chefe.receberDano(dano))derrotarChefao();
         }
     }

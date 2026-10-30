@@ -16,7 +16,7 @@ public final class TesteIntegracao099 {
         inventario.registrarChave(8);
         Poderes099 poderes = new Poderes099();poderes.selecionar(0,inventario);
         ok(poderes.ativar(inventario,n),"poder desbloqueado pelo troféu");
-        ok(poderes.ativo==0,"poder ativado");
+        ok(poderes.pendente==0,"simbolo do chefe acende antes do disparo");poderes.atualizar(Poderes099.PREPARO+.01,n);ok(poderes.ativo==0,"poder ativado");
         poderes.atualizar(.04,n);ok(poderes.energia[0]<100,"energia gasta");
         BufferedImage b=new BufferedImage(960,600,BufferedImage.TYPE_INT_ARGB);
         Graphics2D g=b.createGraphics();

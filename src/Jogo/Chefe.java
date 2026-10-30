@@ -1,5 +1,6 @@
 package Jogo;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Rectangle;
@@ -46,6 +47,15 @@ public final class Chefe {
     private static final double TEMPO_SEGURAR = .16;
     private static final double TEMPO_RECOLHER = .37;
 
+    /** Reacao ao golpe: o ponto fraco paralisa o chefe por um instante; outros golpes so marcam o corpo. */
+    private double reacao, paralisia; private int tipoReacao = -1;
+    private BufferedImage camada;
+    void reagir(int poder, boolean critico) {
+        tipoReacao = poder; reacao = critico ? 1.5 : .3;
+        if (critico) paralisia = Math.max(paralisia, 1.5);
+    }
+    boolean paralisado() { return paralisia > 0; }
+
     public Chefe(int fase, Dificuldade dificuldade) {
         if (fase < 1 || fase > 8) throw new IllegalArgumentException("fase invalida");
         this.artista = fase <= 7 ? new ChefeMetal(fase, dificuldade) : null;
@@ -60,6 +70,9 @@ public final class Chefe {
     }
 
     public void atualizar(double dt, int naveX, int naveY, Dificuldade dificuldade, List<TiroChefe> tiros) {
+        reacao = Math.max(0, reacao - Math.max(0, dt));
+        // Paralisado: nao se move nem ataca, mas continua vulneravel aos tiros do jogador.
+        if (paralisia > 0) { paralisia = Math.max(0, paralisia - Math.max(0, dt)); return; }
         if (artista != null) {
             artista.atualizar(dt, naveX, naveY, dificuldade, tiros);
             return;
@@ -329,6 +342,41 @@ public final class Chefe {
     }
 
     public void desenhar(Graphics2D g) {
+        if (reacao <= 0 || tipoReacao < 0) { desenharCorpo(g); return; }
+        if (camada == null) camada = new BufferedImage(Config.LARGURA, Config.ALTURA, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D c = camada.createGraphics();
+        c.setComposite(java.awt.AlphaComposite.Clear); c.fillRect(0, 0, Config.LARGURA, Config.ALTURA);
+        c.setComposite(java.awt.AlphaComposite.SrcOver);
+        desenharCorpo(c);
+        // Tinge so a silhueta do chefe com a cor do golpe.
+        Color cor = Poderes099.CORES_SIMBOLO[tipoReacao];
+        float forca = (float) Math.min(.62, reacao * (paralisia > 0 ? .5 : 1.6));
+        c.setComposite(java.awt.AlphaComposite.SrcAtop.derive(forca));
+        c.setColor(cor); c.fillRect(0, 0, Config.LARGURA, Config.ALTURA);
+        c.dispose();
+        Graphics2D a = (Graphics2D) g.create();
+        int tremor = tipoReacao == 4 || tipoReacao == 7 ? (int) (Math.sin(reacao * 90) * 4) : 0;
+        a.drawImage(camada, tremor, 0, null);
+        if (paralisia > 0) efeitoParalisia(a, getBounds(), reacao);
+        a.dispose();
+    }
+
+    /** Detalhe de cada estado: cristais de gelo, chamas, faiscas, cristais verdes ou estrelas de atordoamento. */
+    private void efeitoParalisia(Graphics2D g, Rectangle b, double t) {
+        java.util.Random r = new java.util.Random(77);
+        for (int i = 0; i < 14; i++) {
+            int px = b.x + r.nextInt(Math.max(1, b.width)), py = b.y + r.nextInt(Math.max(1, b.height));
+            switch (tipoReacao) {
+                case 0: g.setColor(new Color(200, 240, 255, 210)); g.fillPolygon(new int[]{px, px + 6, px, px - 6}, new int[]{py - 12, py, py + 12, py}, 4); break;
+                case 5: g.setColor(i % 2 == 0 ? new Color(255, 170, 40) : new Color(255, 60, 30)); int h = 8 + (int) ((t * 40 + i * 7) % 16); g.fillPolygon(new int[]{px - 5, px, px + 5}, new int[]{py, py - h, py}, 3); break;
+                case 4: g.setColor(new Color(170, 210, 255)); g.drawPolyline(new int[]{px, px + 6, px - 2, px + 8}, new int[]{py, py + 6 + (int) (Math.sin(t * 50 + i) * 3), py + 10, py + 18}, 4); break;
+                case 6: g.setColor(new Color(110, 255, 140, 200)); g.drawPolygon(new int[]{px, px + 7, px, px - 7}, new int[]{py - 10, py, py + 10, py}, 4); break;
+                default: if (i < 5) { double a = t * 6 + i * 1.256; int sx = (int) b.getCenterX() + (int) (Math.cos(a) * 60), sy = b.y + 20 + (int) (Math.sin(a) * 14); g.setColor(new Color(255, 235, 110)); g.fillPolygon(new int[]{sx, sx + 3, sx + 9, sx + 3, sx, sx - 3, sx - 9, sx - 3}, new int[]{sy - 9, sy - 3, sy, sy + 3, sy + 9, sy + 3, sy, sy - 3}, 8); } break;
+            }
+        }
+    }
+
+    private void desenharCorpo(Graphics2D g) {
         if(artista!=null){artista.desenhar(g);return;}
         Graphics2D a=(Graphics2D)g.create();
         a.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
