@@ -96,6 +96,8 @@ public final class ArteNaves {
             // Nave centrada na area de colisao; fogo sai de cada bocal real do desenho.
             int ix = n3 + 24 - nova.getWidth() * 2 / 5, iy = n4 + 20 - nova.getHeight() / 2 + n5;
             int n9 = d4 <= 0.25 ? 90 : (d4 <= 0.5 ? 135 : 184);
+            // Dentro de cada estagio, o motor fica mais forte a cada nivel (chama maior).
+            n6 += 5 * (n - (n <= 2 ? 0 : n <= 5 ? 3 : 6)) + 3 * estagio(n);
             for (int my : MOTORES[n2][estagio(n)]) {
                 int bx = ix + 2, by = iy + my;
                 graphics2D2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 42));
