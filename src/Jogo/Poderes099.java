@@ -6,7 +6,7 @@ final class Poderes099 {
  static final String[] NOMES={"TENTACULOS ABISSAIS","PAINKILLER","ESPADA DO EDDIE","AS DE ESPADAS","RIDE THE LIGHTNING","ESCUDO DE FOGO","CLONE DE CRISTAL","REVOADA"};
  static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta perfurando","Raio salta entre inimigos e paralisa","Fogo orbita a nave e queima","Isca de cristal; use de novo p/ trocar","Vira morcegos: intocavel e fere"};
  static final int[] CUSTO={25,40,30,25,40,35,30,30};
- static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={3.2,10,1.5,2.4,1.2,8,6,2.5};
+ static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={3.2,10,2.0,2.4,1.2,8,6,2.5};
  private static final BufferedImage[][] ARTE=new BufferedImage[8][4];
  static{try{BufferedImage a=ImageIO.read(Poderes099.class.getResource("/ImagemIcon/poderes_099.png"));for(int r=0;r<8;r++)for(int c=0;c<4;c++){int x=c*a.getWidth()/4,y=r*a.getHeight()/8;ARTE[r][c]=a.getSubimage(x,y,a.getWidth()/4,a.getHeight()/8);}}catch(java.io.IOException e){throw new ExceptionInInitializerError(e);}}
  final int[] energia={100,100,100,100,100,100,100,100};final double[] cooldown=new double[8];int selecionado,ativo=-1,vidaMoto,pendente=-1;double tempo,restante,pulso,x,y,recargaPassiva,preparo,naveX,naveY;
@@ -119,8 +119,49 @@ final class Poderes099 {
    if(melhor==null)break;livres.remove(melhor);corrente.add(melhor);cx=melhor[0];cy=melhor[1];}
   if(corrente.size()==1)corrente.add(new double[]{ox+420,oy});
  }
- private double anguloEspada(){double t=tempo%.5/.5;int corte=(int)(tempo/.5);double s2=1-Math.pow(1-t,2);double a=-1.25+2.5*s2;return corte%2==0?a:-a;}
- private double[] pontaEspada(){double a=anguloEspada();return new double[]{x+Math.cos(a)*175,y+Math.sin(a)*175};}
+ // Espada do Eddie: tres cortes; cada um forma uma meia-lua de energia que voa para frente e atravessa os inimigos.
+ private static final double CORTE=.42,GIRO=.12,VOO=1.0;
+ /** Centro da meia-lua k (ou null se ainda nao saiu ou ja sumiu) e o quanto ela ja se formou/apagou. */
+ private double[] onda(int k){double idade=tempo-k*CORTE;if(idade<0||idade>GIRO+VOO)return null;
+  double forma=Math.min(1,idade/GIRO),voo=Math.max(0,idade-GIRO);
+  return new double[]{naveX+40+voo*760+voo*voo*200,naveY,forma,Math.max(0,(voo-VOO*.6)/(VOO*.4)),k==2?1.35:1};}
+ private boolean cortaRetangulo(Rectangle b){
+  for(int k=0;k<3;k++){double[] o=onda(k);if(o==null||o[2]<.5)continue;double R=70*o[4];
+   if(new Rectangle((int)(o[0]-R*.35),(int)(o[1]-R*1.25),(int)(R*.75),(int)(R*2.5)).intersects(b))return true;}
+  return false;
+ }
+ /** Uma lamina de energia em meia-lua: fina, afiada, inclinada; desenhada em (cx,cy) com rotacao rot. */
+ private static void lamina(Graphics2D g,double cx,double cy,double R,double abre,double rot,float alfa,double espessura){
+  int n=34;double[][] camadas={{1.0,1.0,.35},{.97,.62,.8},{.95,.28,1}};Color[] cores={new Color(20,150,255),new Color(110,215,255),new Color(245,254,255)};
+  for(int c=0;c<3;c++){int[] xs=new int[2*n+2],ys=new int[2*n+2];double Rc=R*camadas[c][0];
+   for(int i=0;i<=n;i++){double t=-abre+2*abre*i/n;double esp=R*espessura*camadas[c][1]*Math.pow(Math.cos(Math.PI/2*t/abre),1.6);
+    double ox=Math.cos(t)*Rc,oy=Math.sin(t)*Rc,ix=Math.cos(t)*(Rc-esp),iy=Math.sin(t)*(Rc-esp);
+    xs[i]=(int)(cx+ox*Math.cos(rot)-oy*Math.sin(rot));ys[i]=(int)(cy+ox*Math.sin(rot)+oy*Math.cos(rot));
+    xs[2*n+1-i]=(int)(cx+ix*Math.cos(rot)-iy*Math.sin(rot));ys[2*n+1-i]=(int)(cy+ix*Math.sin(rot)+iy*Math.cos(rot));}
+   g.setComposite(AlphaComposite.SrcOver.derive((float)(alfa*camadas[c][2])));g.setColor(cores[c]);g.fillPolygon(xs,ys,2*n+2);}
+  g.setComposite(AlphaComposite.SrcOver);
+ }
+ private void desenharCorte(Graphics2D g){
+  int k=Math.min(2,(int)(tempo/CORTE));double idade=tempo-k*CORTE;
+  // 1) O giro da espada na nave: arco largo que acompanha a lamina, grosso na ponta e fino atras (como um cometa).
+  if(idade<GIRO+.12){double f=Math.min(1,idade/GIRO),sumir=Math.max(0,(idade-GIRO)/.12);double dir=k==1?-1:1,R=k==2?150:120;
+   int n=30;for(int c=0;c<3;c++){int[] xs=new int[2*n+2],ys=new int[2*n+2];double larg=(c==0?30:c==1?18:8)*(k==2?1.3:1);
+    for(int i=0;i<=n;i++){double u=i/(double)n,t=dir*(-1.35+2.7*f*u);double esp=larg*Math.pow(u,1.4);
+     xs[i]=(int)(naveX+20+Math.cos(t)*R);ys[i]=(int)(naveY+Math.sin(t)*R);xs[2*n+1-i]=(int)(naveX+20+Math.cos(t)*(R-esp));ys[2*n+1-i]=(int)(naveY+Math.sin(t)*(R-esp));}
+    g.setComposite(AlphaComposite.SrcOver.derive((float)((1-sumir)*(c==0?.4:c==1?.8:1))));g.setColor(c==0?new Color(20,150,255):c==1?new Color(110,215,255):new Color(245,254,255));g.fillPolygon(xs,ys,2*n+2);}
+   g.setComposite(AlphaComposite.SrcOver);
+   BufferedImage[] q=quadrosSimbolo(2);if(q!=null&&sumir<.5){double t=dir*(-1.35+2.7*f);Graphics2D e=(Graphics2D)g.create();e.translate(naveX+20+Math.cos(t)*R*.5,naveY+Math.sin(t)*R*.5);e.rotate(t+Math.PI/2);e.drawImage(q[2],-24,-R*.62>-200?(int)(-R*.62):-90,48,(int)(R*.72),null);e.dispose();}
+  }
+  // 2) As laminas que voam: inclinadas, afiadas, com copias de rastro e linhas de velocidade.
+  for(int j=0;j<3;j++){double[] o=onda(j);if(o==null||o[2]<1)continue;
+   double cx=o[0],cy=o[1],R=72*o[4],rot=(j==1?-1:1)*.42;float alfa=(float)(1-o[3]);
+   for(int r=4;r>=1;r--)lamina(g,cx-r*22,cy,R,1.15,rot,alfa*(.12f*(5-r)/4f),.22);
+   lamina(g,cx,cy,R,1.15,rot,alfa,.26);
+   g.setComposite(AlphaComposite.SrcOver.derive(alfa*.7f));g.setColor(new Color(170,235,255));
+   for(int i=0;i<7;i++){int ly=(int)(cy-R*.9+i*R*.3),lx=(int)(cx-R*.1-(i%3)*18);g.fillRect(lx-60-(i%2)*30,ly,60+(i%2)*30,2);}
+   g.setComposite(AlphaComposite.SrcOver);
+  }
+ }
  private double[][] orbes(){double[][] o=new double[6][];for(int k=0;k<6;k++){double a=tempo*3.2+k*Math.PI/3;o[k]=new double[]{x+Math.cos(a)*74,y+Math.sin(a)*62};}return o;}
 
  /** Onde o poder acerta neste quadro. */
@@ -128,7 +169,7 @@ final class Poderes099 {
   switch(ativo){
    case 0:if(extensao()<.55)return false;for(double[] p:pontasTentaculo)if(new Rectangle((int)p[0]-34,(int)p[1]-34,68,68).intersects(b))return true;return false;
    case 1:return new Rectangle((int)x-45,(int)y-26,90,52).intersects(b);
-   case 2:{double[] pt=pontaEspada();return b.intersectsLine(x,y,pt[0],pt[1]);}
+   case 2:return cortaRetangulo(b);
    case 3:return new Rectangle((int)x-34,(int)y-34,68,68).intersects(b);
    case 4:for(int i=1;i<corrente.size();i++){double[] c=corrente.get(i);if(b.contains(c[0],c[1])||b.intersectsLine(corrente.get(i-1)[0],corrente.get(i-1)[1],c[0],c[1])&&i<corrente.size())return true;}return false;
    case 5:for(double[] o:orbes())if(new Rectangle((int)o[0]-20,(int)o[1]-20,40,40).intersects(b))return true;return false;
@@ -141,7 +182,7 @@ final class Poderes099 {
  boolean interceptar(Rectangle b){
   switch(ativo){
    case 1:{boolean bate=new Rectangle((int)x-45,(int)y-26,90,52).intersects(b);if(bate&&--vidaMoto<=0){ativo=-1;SomJogo.tocar(SomJogo.Efeito.EXPLOSAO);}return bate;}
-   case 2:{double[] pt=pontaEspada();return b.intersectsLine(x,y,pt[0],pt[1]);}
+   case 2:return cortaRetangulo(b);
    case 5:for(double[] o:orbes())if(Math.hypot(b.getCenterX()-o[0],b.getCenterY()-o[1])<24)return true;return false;
    case 6:{boolean bate=new Rectangle((int)cloneX,(int)cloneY,46,40).intersects(b);if(bate&&--vidaClone<=0){ativo=-1;SomJogo.tocar(SomJogo.Efeito.ESCUDO_QUEBRA);}return bate;}
    case 7:return b.intersects(new Rectangle((int)x-75,(int)y-65,150,130));
@@ -156,12 +197,7 @@ final class Poderes099 {
    case 1:{ // moto com rastro de fogo
     for(int k=0;k<10;k++){double f=k/10.0;int fx=px-40-(int)(k*9+Math.sin(tempo*30+k)*3),fy=py+12+(int)(Math.sin(tempo*25+k*1.3)*4);a.setColor(new Color(255,(int)(200-150*f),40,(int)(200*(1-f))));a.fillOval(fx-6,fy-6,12-k/2,12-k/2);}
     sprite(a,1,px-55,py-55,110,tempo);a.setColor(Color.DARK_GRAY);a.fillRect(px-28,py+40,56,4);a.setColor(new Color(255,150,40));a.fillRect(px-28,py+40,7*vidaMoto,4);break;}
-   case 2:{ // espada do Eddie girando a partir do nariz, com rastro do corte
-    double ang=anguloEspada();int corte=(int)(tempo/.5);
-    for(int k=1;k<=6;k++){double ak=ang+(corte%2==0?-1:1)*k*.09;a.setColor(new Color(120,220,255,110-k*16));a.setStroke(new BasicStroke(10-k));a.drawLine(px,py,px+(int)(Math.cos(ak)*170),py+(int)(Math.sin(ak)*170));}
-    BufferedImage[] q=quadrosSimbolo(2);
-    if(q!=null){Graphics2D e=(Graphics2D)a.create();e.translate(px,py);e.rotate(ang+Math.PI/2);e.drawImage(q[2],-70,-200,140,220,null);e.dispose();}
-    break;}
+   case 2:desenharCorte(a);break;
    case 3:{ // carta girando com rastro de cartas fantasma
     BufferedImage[] q=quadrosSimbolo(3);
     for(int k=3;k>=0;k--){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(k==0?1f:.18f));c.translate(px-k*14*Math.signum(Math.cos(Math.PI*tempo/DURACAO[3])),py);c.rotate(giroCarta-k*.3);if(q!=null)c.drawImage(q[2],-38,-38,76,76,null);c.dispose();}

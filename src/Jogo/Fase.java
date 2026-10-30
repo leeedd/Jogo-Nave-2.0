@@ -639,6 +639,12 @@ implements ActionListener {
         graphics2D.drawString("CR "+inventario.saldo()+"  Q "+energia.carga(0)+"% E "+energia.carga(1)+"%",630,chefe!=null?95:592);
         graphics2D.drawString("R: RESERVAS "+inventario.carga(0)+"/"+inventario.carga(1)+"/"+inventario.carga(2)+"/"+inventario.carga(3),16,572);
         graphics2D.drawString("C: PODER  X: TROCAR  "+Poderes099.NOMES[poderes.selecionado],16,592);
+        // Energia do poder equipado: gasta a cada uso e recarrega aos poucos (ou com relíquias).
+        if(inventario.temChaveIndice(poderes.selecionado)){int sel=poderes.selecionado,bx=16+graphics2D.getFontMetrics().stringWidth("C: PODER  X: TROCAR  "+Poderes099.NOMES[sel])+10;
+            Poderes099.simbolo(graphics2D,sel,bx+9,587,1);graphics2D.setColor(new Color(20,30,44));graphics2D.fillRect(bx+22,582,104,10);
+            graphics2D.setColor(poderes.energia[sel]>=Poderes099.CUSTO[sel]&&poderes.cooldown[sel]<=0?Poderes099.CORES_SIMBOLO[sel]:new Color(110,110,120));
+            graphics2D.fillRect(bx+24,584,poderes.energia[sel],6);graphics2D.setColor(Color.WHITE);graphics2D.drawLine(bx+24+Poderes099.CUSTO[sel],582,bx+24+Poderes099.CUSTO[sel],592);
+            if(poderes.cooldown[sel]>0)graphics2D.drawString((int)Math.ceil(poderes.cooldown[sel])+"s",bx+132,592);}
         if (this.chefe != null && this.emJogo) {
             this.chefe.desenharVida(graphics2D);
         }
