@@ -675,11 +675,12 @@ implements ActionListener {
         graphics2D.setColor(Color.WHITE);graphics2D.setFont(new Font("Monospaced",1,12));
         graphics2D.drawString("CR "+inventario.saldo()+"  Q "+energia.carga(0)+"% E "+energia.carga(1)+"%",630,chefe!=null?95:592);
         graphics2D.drawString("R: RESERVAS "+inventario.carga(0)+"/"+inventario.carga(1)+"/"+inventario.carga(2)+"/"+inventario.carga(3),16,572);
-        graphics2D.drawString("C: PODER  X: TROCAR  "+Poderes099.NOMES[poderes.selecionado],16,592);
+        graphics2D.drawString(inventario.temChaveIndice(poderes.selecionado)?"PODER: "+Poderes099.NOMES[poderes.selecionado]+"  (C USAR / X TROCAR / 1-8)":"",16,592);
         // Energia do poder equipado em gomos (estilo arcade), abaixo do painel superior; cadeado enquanto nao houver poder.
         {int sel=poderes.selecionado;double alvo=inventario.temChaveIndice(sel)?poderes.energia[sel]:0;
             if(energiaExibidaPoder<alvo){int antes=(int)(energiaExibidaPoder/100*19);energiaExibidaPoder=Math.min(alvo,energiaExibidaPoder+1.2);if((int)(energiaExibidaPoder/100*19)>antes)SomJogo.tocar(SomJogo.Efeito.COLETA);}else energiaExibidaPoder=alvo;
-            HudEnergia.desenhar(graphics2D,6,Config.HUD+42,poderes,inventario,energiaExibidaPoder,tempoTotal);}
+            HudEnergia.desenhar(graphics2D,6,Config.HUD+42,poderes,inventario,energiaExibidaPoder,tempoTotal);
+            if(inventario.temChaveIndice(sel))HudEnergia.teclas(graphics2D,6,Config.HUD+42);}
         if (this.chefe != null && this.emJogo) {
             this.chefe.desenharVida(graphics2D);
         }
@@ -2201,6 +2202,8 @@ implements ActionListener {
             }
             if(codigo==KeyEvent.VK_C&&!pausado){if(teclasTeste.add(codigo))usarPoderDoChefe();return;}
             if(codigo==KeyEvent.VK_X&&!pausado){if(teclasTeste.add(codigo))poderes.proximo(inventario);return;}
+            // Atalho direto: 1 a 8 equipa o poder daquele chefe (na ordem do Arsenal), se ja foi conquistado.
+            if(codigo>=KeyEvent.VK_1&&codigo<=KeyEvent.VK_8&&!pausado&&!painelTeste){if(teclasTeste.add(codigo)){int i=codigo-KeyEvent.VK_1;if(inventario.temChaveIndice(i)){poderes.selecionar(i,inventario);SomJogo.tocar(SomJogo.Efeito.TROCA);}else SomJogo.tocar(SomJogo.Efeito.ERRO);}return;}
             if(codigo==KeyEvent.VK_V&&!pausado){if(teclasTeste.add(codigo))ativarFusao();return;}
             if(codigo==KeyEvent.VK_R&&!pausado&&(etapa==Etapa.COMBATE||etapa==Etapa.BATALHA_CHEFE)){
                 if(teclasTeste.add(codigo))usarSubtanque();return;

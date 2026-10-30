@@ -80,6 +80,32 @@ final class HudEnergia {
         g.dispose();
     }
 
+    /** Teclas sob a barra: C usa o poder, X troca. */
+    static void teclas(Graphics2D g, int x, int y) {
+        if (MOLDURA == null) return;
+        int by = y + MOLDURA.getHeight() + 4;
+        tecla(g, x, by, "C", "USAR"); tecla(g, x, by + 18, "X", "TROCA");
+    }
+    private static void tecla(Graphics2D g, int x, int y, String k, String rotulo) {
+        g.setColor(new Color(30, 36, 52)); g.fillRoundRect(x, y, 15, 15, 4, 4);
+        g.setColor(new Color(160, 175, 200)); g.drawRoundRect(x, y, 15, 15, 4, 4);
+        g.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.BOLD, 11)); g.setColor(Color.WHITE); g.drawString(k, x + 4, y + 12);
+        g.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.BOLD, 9)); g.setColor(new Color(200, 210, 225)); g.drawString(rotulo, x + 18, y + 11);
+    }
+
+    /** Mini barra em gomos para o menu de pausa (horizontal). */
+    static void miniBarra(Graphics2D g, int x, int y, int largura, int energia, int custo, Color cor, boolean liberado) {
+        int n = 19, w = Math.max(2, (largura - (n - 1)) / n);
+        int cheios = liberado ? (int) Math.round(energia / 100.0 * n) : 0, marca = (int) Math.ceil(custo / 100.0 * n);
+        for (int k = 0; k < n; k++) {
+            int gx = x + k * (w + 1);
+            g.setColor(k < cheios ? (energia >= custo ? cor : cor.darker().darker()) : new Color(26, 34, 46));
+            g.fillRect(gx, y, w, 6);
+            if (k < cheios) { g.setColor(new Color(255, 255, 255, 120)); g.fillRect(gx, y, w, 1); }
+            if (liberado && k == marca - 1) { g.setColor(Color.WHITE); g.fillRect(gx + w - 1, y - 2, 1, 10); }
+        }
+    }
+
     private static final java.util.Map<Integer, BufferedImage> TINTAS = new java.util.HashMap<>();
     /** Capsula com o vidro tingido da cor do poder (o metal cromado fica como esta). */
     static boolean capsula(Graphics2D g, int cx, int cy, boolean grande, Color cor) {
