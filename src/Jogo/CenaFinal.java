@@ -252,7 +252,13 @@ public final class CenaFinal {
             int sw = (int) (s.getWidth() * e), sh = (int) (s.getHeight() * e);
             // Sprites do jogo encaram a esquerda como nas fases; retratos novos ja vem virados.
             if (sprite) Sprites16Bits.desenharVirado(g, s, id, 2, x + (lado - sw) / 2, y + (lado - sh) / 2, sw, sh);
-            else g.drawImage(s, x + (lado - sw) / 2, y + (lado - sh) / 2, sw, sh, null);
+            else {
+                // Retratos reais: reducao suave para manter a nitidez.
+                Graphics2D a = (Graphics2D) g.create();
+                a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                a.drawImage(s, x + (lado - sw) / 2, y + (lado - sh) / 2, sw, sh, null);
+                a.dispose();
+            }
             return;
         }
         int p = lado / 28, cx = x + lado / 2;
