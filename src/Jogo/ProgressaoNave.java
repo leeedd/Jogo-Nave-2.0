@@ -30,6 +30,7 @@ final class ProgressaoNave {
  boolean abastecer(int i){if(!temTanque(i)||celulas==0||carga[i]>=100)return false;celulas--;carga[i]=Math.min(100,carga[i]+25);salvar();return true;}
  int usar(int i,int vida,int maxima){if(!temTanque(i)||carga[i]==0||vida>=maxima)return 0;int pontos=Math.min(maxima-vida,(int)Math.ceil(maxima*carga[i]/100.0));int gasto=Math.min(carga[i],(int)Math.ceil(100.0*pontos/maxima));carga[i]-=gasto;salvar();return pontos;}
  int primeiroCarregado(){for(int i=0;i<4;i++)if(carga[i]>0)return i;return -1;}
+ boolean gastar(int n){if(n<=0||saldo<n)return false;saldo-=n;salvar();return true;}
  void creditar(int n){if(n<=0)return;saldo=(int)Math.min(9999999L,(long)saldo+n);salvar();}
  void registrarChave(int chefe){for(int i=0;i<8;i++)if(ORDEM[i]==chefe)chaves|=1<<i;salvar();}
  boolean temChaveIndice(int i){return i>=0&&i<8&&(chaves&(1<<i))!=0;}

@@ -135,6 +135,9 @@ implements ActionListener {
     /** Poder (indice de Poderes099) que e o ponto fraco de cada chefe, pelo id do chefe. */
     static final int[] FRAQUEZA = {-1, 3, 4, 1, 2, 6, 0, 5, 7};
     private double tempoCritico, energiaExibidaPoder;
+    /** Base aliada do setor e ponto de retomada gravado na ultima atracagem. */
+    private EstacaoAliada base; private boolean naBase; private int cursorBase, modeloBase; private String avisoBase = "";
+    private double[] retomada;
     private boolean oculosOzzyColetados;
     private boolean emblemaHalfordColetado;
     private boolean insigniaEddieColetada;
@@ -270,7 +273,74 @@ implements ActionListener {
         mostrarAviso(cura>0?"CASCO REPARADO / EXCEDENTE NOS SUBTANQUES":"SUBTANQUES ABASTECIDOS");return true;
     }
     private void usarSubtanque(){int cura=inventario.usar(inventario.primeiroCarregado(),nave.getVida(),nave.getVidaMaxima());if(cura>0){SomJogo.tocar(SomJogo.Efeito.REPARO);nave.curar(cura);mostrarAviso("SUBTANQUE: CASCO REPARADO");}}
+    private void atualizarBase(double dt) {
+        if (base == null) return;
+        if (etapa != Etapa.COMBATE) { base = null; return; }
+        base.atualizar(dt);
+        // Enquanto a base espera, nao chegam esquadroes novos.
+        if (base.aguardando()) esperaProximoEsquadrao = Math.max(esperaProximoEsquadrao, .5);
+        if (base.aguardando() && nave.getBounds().intersects(base.doca())) atracar();
+        if (base.saiu()) base = null;
+    }
+    private void atracar() {
+        naBase = true; cursorBase = 0; modeloBase = modeloVisual; avisoBase = "";
+        nave.soltarTeclas(); espacoPressionado = geloPressionado = fogoPressionado = false;
+        tirosInimigos.clear(); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
+        gravarRetomada();
+    }
+    private void partirDaBase() { naBase = false; if (base != null) base.partir(); gravarRetomada(); nave.tornarIntangivel(1.5); }
+    /** Retomada: setor, progresso do setor, pontos, nivel, casco e energia dos poderes no momento da atracagem. */
+    private void gravarRetomada() {
+        if (partidaTeste) return;
+        double[] r = new double[16 + 8];
+        r[0] = setorAtual; r[1] = setoresVencidos; r[2] = chefesDerrotados; r[3] = eliminados; r[4] = pontos;
+        r[5] = nave.getNivel(); r[6] = nave.getVida(); r[7] = nave.temArmaSecundaria() ? 1 : 0; r[8] = geloColetado ? 1 : 0; r[9] = fogoColetado ? 1 : 0;
+        r[10] = lancadosNoSetor; r[11] = numeroEsquadrao; r[12] = modeloVisual; r[13] = creditos;
+        for (int i = 0; i < 8; i++) r[16 + i] = poderes.energia[i];
+        retomada = r;
+    }
+    private void voltarParaBase() {
+        double[] r = retomada; if (r == null) return;
+        reiniciar();
+        selecionarModeloNave((int) r[12]); aplicarInventario();
+        setorAtual = (int) r[0]; setoresVencidos = (int) r[1]; chefesDerrotados = (int) r[2]; eliminados = (int) r[3]; pontos = (int) r[4]; creditos = (int) r[13];
+        for (int i = 0; i < (int) r[5]; i++) nave.melhorar();
+        if (r[7] > 0) nave.coletarArmaSecundaria();
+        geloColetado = r[8] > 0; fogoColetado = r[9] > 0;
+        lancadosNoSetor = (int) r[10]; numeroEsquadrao = (int) r[11]; miniChefeEnfrentado = true;
+        for (int i = 0; i < 8; i++) poderes.energia[i] = (int) r[16 + i];
+        nave.definirVida((int) r[6]);
+        retomada = r; alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
+        iniciarRitmoSetor(); fundoEspacial.definirProgresso(0, setorAtual);
+        MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(setorAtual));
+        base = null; esperaProximoEsquadrao = 2.5; nave.tornarIntangivel(2);
+        mostrarAviso("DE VOLTA A BASE ALIADA"); ultimoQuadroNanos = System.nanoTime();
+    }
+    private void confirmarBase() {
+        switch (cursorBase) {
+            case 0: {
+                int falta = nave.getVidaMaxima() - nave.getVida();
+                if (falta == 0) { avisoBase = "O CASCO JA ESTA INTEIRO"; SomJogo.tocar(SomJogo.Efeito.ERRO); break; }
+                int pontosPagos = Math.min(falta, inventario.saldo() / EstacaoAliada.CUSTO_REPARO);
+                if (pontosPagos == 0) { avisoBase = "CREDITOS INSUFICIENTES"; SomJogo.tocar(SomJogo.Efeito.ERRO); break; }
+                inventario.gastar(pontosPagos * EstacaoAliada.CUSTO_REPARO); nave.curar(pontosPagos);
+                avisoBase = "CASCO REPARADO: +" + pontosPagos; SomJogo.tocar(SomJogo.Efeito.REPARO); gravarRetomada(); break;
+            }
+            case 1: pausado = true; abaPausa = 4; cursorPausa = 0; break;
+            case 2: {
+                if (!ProgressoJogo.modeloDisponivel(modeloBase)) { avisoBase = "NAVE BLOQUEADA: VENCA MAIS CHEFES"; SomJogo.tocar(SomJogo.Efeito.ERRO); break; }
+                if (modeloBase == modeloVisual) { avisoBase = "ESTA NAVE JA ESTA EQUIPADA"; break; }
+                int nivel = nave.getNivel(); double fracao = nave.getVida() / (double) nave.getVidaMaxima();
+                selecionarModeloNave(modeloBase); aplicarInventario();
+                nave.definirVida((int) Math.ceil(nave.getVidaMaxima() * fracao));
+                avisoBase = "NAVE TROCADA: " + Pausa099.NAVES[modeloBase] + " (NIVEL " + nivel + ")"; SomJogo.tocar(SomJogo.Efeito.TROCA); gravarRetomada(); break;
+            }
+            default: partirDaBase();
+        }
+    }
+
     private void atualizarSegredo(double dt){
+        atualizarBase(dt);
         if(etapa!=Etapa.COMBATE||intercepcao)return;
         if(!segredoGerado&&tempoSetor>=18){segredoGerado=true;int setor=setorAtual;
             if(setor<8&&setor%2==0&&!inventario.temTanque(setor/2))segredo=new Segredo098(setor,false);
@@ -303,6 +373,7 @@ implements ActionListener {
         Placar.desenhar(g,placar.ler(),erroPlacar.isEmpty()?rodape:erroPlacar);
         g.setColor(Color.WHITE);g.setFont(new Font("Monospaced",1,16));
         g.drawString("SUA PONTUACAO: "+pontos+"    CREDITOS DA PARTIDA: "+creditos,170,505);
+        if(retomada!=null&&!partidaTeste){g.setColor(new Color(130,255,160));g.drawString("TAB: VOLTAR A ULTIMA BASE ALIADA (SETOR "+((int)retomada[0]+1)+")",170,530);}
     }
 
     private int eliminados;
@@ -608,6 +679,7 @@ implements ActionListener {
         this.fundoEspacial.desenhar(graphics2D2);
         if(segredo!=null)segredo.desenhar(graphics2D2,tempoTotal);
         if(segredoCasco!=null)segredoCasco.desenhar(graphics2D2,tempoTotal);
+        if(base!=null)base.desenhar(graphics2D2);
         if (this.emJogo) {
             for (Asteroide object : this.asteroides) {
                 if (!object.isVisible()) continue;
@@ -710,6 +782,7 @@ implements ActionListener {
             graphics2D.setColor(new Color(255, 230, 60, (int) (255 * Math.min(1, tempoCritico / .3))));
             graphics2D.drawString("PONTO FRACO! x2", chefe.getBounds().x - 40, chefe.getBounds().y - 12 - (int) ((.6 - tempoCritico) * 40));
         }
+        if (naBase && !pausado) EstacaoAliada.desenharMenu(graphics2D, cursorBase, nave, inventario, modeloBase, avisoBase, tempoTotal);
         if (escolhendoSetor || this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
         graphics2D.setColor(Color.CYAN);
         graphics2D.setFont(new Font("Monospaced", Font.BOLD, 12));
@@ -945,6 +1018,7 @@ implements ActionListener {
             return;
         }
         if (escolhendoSetor) { mapaEstelar.atualizar(d); this.repaint(); return; }
+        if (naBase && !pausado) { this.repaint(); return; }
         tempoCritico = Math.max(0, tempoCritico - d);
         if (this.pausado) {
             if (mapaAberto()) mapaEstelar.atualizar(d);
@@ -1451,6 +1525,7 @@ implements ActionListener {
         }
         this.esperaProximoEsquadrao = 1.5;
         this.mostrarAviso(intercepcao?"COMANDANTE DESTRUIDO! ELIMINE O ENXAME RESTANTE":"SENTINELA DESTRUIDA! +1500 PONTOS");
+        if (!intercepcao && etapa == Etapa.COMBATE) { base = new EstacaoAliada(); mostrarAviso("SENTINELA DESTRUIDA! BASE ALIADA SE APROXIMANDO"); }
     }
 
     private void iniciarChefao(int n) {SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA);
@@ -2157,6 +2232,20 @@ implements ActionListener {
         @Override
         public void keyPressed(KeyEvent keyEvent) {
             int codigo = keyEvent.getKeyCode();
+            if (naBase && !pausado) {
+                if (!teclasTeste.add(codigo)) return;
+                if (codigo == KeyEvent.VK_UP || codigo == KeyEvent.VK_W) { cursorBase = Math.floorMod(cursorBase - 1, 4); avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                else if (codigo == KeyEvent.VK_DOWN || codigo == KeyEvent.VK_S) { cursorBase = (cursorBase + 1) % 4; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                else if (cursorBase == 2 && (codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_A || codigo == KeyEvent.VK_D)) {
+                    // percorre so as naves ja desbloqueadas
+                    int passo = codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_A ? -1 : 1;
+                    for (int k = 1; k <= 5; k++) { int m = Math.floorMod(modeloBase + passo * k, 5); if (ProgressoJogo.modeloDisponivel(m)) { modeloBase = m; break; } }
+                    avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU);
+                }
+                else if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) confirmarBase();
+                else if (codigo == KeyEvent.VK_ESCAPE) partirDaBase();
+                repaint(); return;
+            }
             if (escolhendoSetor) {
                 if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) confirmarSetor();
                 else if (codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_UP) mapaEstelar.escolherProximo(-1);
@@ -2197,6 +2286,7 @@ implements ActionListener {
                 if(venceu&&!mostrarPlacarFinal){if(keyEvent.getKeyCode()==KeyEvent.VK_ENTER && cenaFinal!=null&&cenaFinal.podeEncerrar())mostrarPlacarFinal=true;return;}
                 if(!venceu&&cenaNave!=null&&!cenaNave.terminou())return;
                 int k=keyEvent.getKeyCode();
+                if(k==KeyEvent.VK_TAB&&retomada!=null&&!partidaTeste){voltarParaBase();return;}
                 if(k==KeyEvent.VK_ENTER){
                     if(placarConfirmado||pontos==0){reiniciar();return;}
                     if(!partidaTeste && iniciais.length()==3){placarConfirmado=placar.salvar(iniciais,pontos,"CAMPANHA"+(novoJogoMais?"+":""));erroPlacar=placarConfirmado?"":"FALHA AO SALVAR. ENTER: TENTAR NOVAMENTE";}

@@ -476,6 +476,8 @@ public class Nave {
 
     /** Poderes: Revoada deixa a nave intocavel; o Clone de cristal troca a nave de lugar. */
     void tornarIntangivel(double s) { this.invulneravel = Math.max(this.invulneravel, s); }
+    /** Restaura o casco gravado (retomada, troca de nave). */
+    void definirVida(int v) { this.vida = Math.max(1, Math.min(getVidaMaxima(), v)); }
     void teleportar(double nx, double ny) { this.x = Nave.limitar(nx, 8.0, 905.0); this.y = Nave.limitar(ny, 90.0, 554.0); }
 
     public Rectangle getBounds() {
