@@ -89,8 +89,16 @@ public final class Sprites16Bits {
         int x = (largura - baseW) / 2 - (int)Math.round(margem * escala);
         int y = (altura - baseH) / 2 - (int)Math.round(margem * escala)
                 + (int)Math.round(Math.sin(tempo * 1.2) * 2);
-        a.drawImage(sprite, x, y, w, h, null);
+        // O jogador fica a esquerda: artes desenhadas olhando para a direita sao espelhadas.
+        if (voltadoParaDireita(id, forma)) a.drawImage(sprite, x + w, y, -w, h, null);
+        else a.drawImage(sprite, x, y, w, h, null);
         a.dispose();
         return true;
+    }
+
+    /** Poses cuja arte original encara a direita (Bruce no ato II e de frente, com a bandeira). */
+    static boolean voltadoParaDireita(int id, int forma) {
+        if (forma == 1) return id == 1 || id == 2 || id == 3;
+        return forma == 2 && (id == 1 || id == 2 || id == 4 || id == 5 || id == 6);
     }
 }
