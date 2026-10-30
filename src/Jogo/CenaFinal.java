@@ -175,6 +175,7 @@ public final class CenaFinal {
         Object[][] itens = lendas ? LENDAS : CHEFES;
         int altura = 60 + itens.length * 190 + (lendas ? 160 : ENCERRAMENTO_CREDITOS.length * 44 + 40);
         BufferedImage b = new BufferedImage(w, altura, BufferedImage.TYPE_INT_ARGB);
+        List<int[]> retratos = new ArrayList<int[]>();
         Graphics2D g = b.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -196,7 +197,7 @@ public final class CenaFinal {
                 y += 30;
                 centroOzzy = y + lado / 2;
                 int x = (w - lado) / 2;
-                retrato(g, (Integer) it[0], x, y, lado);
+                retratos.add(new int[]{(Integer) it[0], x, y, lado});
                 int ty = y + lado + 42;
                 g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 32));
                 g.setColor(Color.WHITE);
@@ -213,7 +214,7 @@ public final class CenaFinal {
                 continue;
             }
             int x = 120;
-            retrato(g, (Integer) it[0], x, y, lado);
+            retratos.add(new int[]{(Integer) it[0], x, y, lado});
             int tx = x + lado + 30;
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
             g.setColor(lendas ? Color.WHITE : new Color(255, 210, 94));
@@ -238,7 +239,13 @@ public final class CenaFinal {
             }
         }
         g.dispose();
-        return lendas ? cinza(b) : b;
+        // Na homenagem so o fundo e o texto ficam em cinza; os retratos seguem coloridos e nitidos.
+        if (lendas) b = cinza(b);
+        g = b.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        for (int[] r : retratos) retrato(g, r[0], r[1], r[2], r[3]);
+        g.dispose();
+        return b;
     }
 
     /** Retrato em moldura do HUD: sprite do chefe, retrato desenhado, ou uma vela quando nao ha nenhum. */
