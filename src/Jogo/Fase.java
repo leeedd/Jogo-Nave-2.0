@@ -184,8 +184,9 @@ implements ActionListener {
     private void usarPoderDoChefe(){
         if(etapa!=Etapa.COMBATE && etapa!=Etapa.BATALHA_CHEFE)return;
         if(poderes.cloneAtivo()){poderes.trocarComClone(nave);return;}
-        if(!poderes.ativar(inventario,nave))mostrarAviso("PODER BLOQUEADO / RECARGA / ENERGIA");
-        else mostrarAviso("PODER: "+Poderes099.NOMES[poderes.selecionado]);
+        // Sem aviso quando nao ha energia: o jogador confere na pausa ou na barra do HUD.
+        if(poderes.ativar(inventario,nave))mostrarAviso("PODER: "+Poderes099.NOMES[poderes.selecionado]);
+        else SomJogo.tocar(SomJogo.Efeito.ERRO);
     }
     private void atualizarPoderes(double d){
         if(poderes.ativo>=0||poderes.pendente>=0){java.util.List<double[]> alvos=new java.util.ArrayList<>();

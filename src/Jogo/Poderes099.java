@@ -4,9 +4,9 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 final class Poderes099 {
  static final String[] NOMES={"TENTACULOS ABISSAIS","PAINKILLER","ESPADA DO EDDIE","AS DE ESPADAS","RIDE THE LIGHTNING","ESCUDO DE FOGO","CLONE DE CRISTAL","REVOADA"};
- static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta perfurando","Raio salta entre inimigos e paralisa","Fogo orbita a nave e queima","Isca de cristal; use de novo p/ trocar","Vira morcegos: intocavel e fere"};
+ static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta; pegue de volta p/ recuperar energia","Raio salta entre inimigos e paralisa","Fogo orbita a nave e queima","Isca de cristal; use de novo p/ trocar","Vira morcegos: intocavel e fere"};
  static final int[] CUSTO={25,40,30,25,40,35,30,30};
- static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={3.2,10,2.0,2.4,1.2,8,6,2.5};
+ static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={3.2,10,2.0,4.0,1.2,8,6,2.5};
  private static final BufferedImage[][] ARTE=new BufferedImage[8][4];
  static{try{BufferedImage a=ImageIO.read(Poderes099.class.getResource("/ImagemIcon/poderes_099.png"));for(int r=0;r<8;r++)for(int c=0;c<4;c++){int x=c*a.getWidth()/4,y=r*a.getHeight()/8;ARTE[r][c]=a.getSubimage(x,y,a.getWidth()/4,a.getHeight()/8);}}catch(java.io.IOException e){throw new ExceptionInInitializerError(e);}}
  final int[] energia={100,100,100,100,100,100,100,100};final double[] cooldown=new double[8];int selecionado,ativo=-1,vidaMoto,pendente=-1;double tempo,restante,pulso,x,y,recargaPassiva,preparo,naveX,naveY;
@@ -24,6 +24,7 @@ final class Poderes099 {
     if(recargaPassiva>=.65){int ganho=(int)(recargaPassiva/.65);recargaPassiva-=ganho*.65;for(int i=0;i<8;i++)energia[i]=Math.min(100,energia[i]+ganho);}
     naveX=n.getX()+22;naveY=n.getY()+20;
     if(pendente>=0){preparo-=dt;if(preparo<=0){int i=pendente;pendente=-1;disparar(i,n);}return;}
+    pegouCarta=Math.max(0,pegouCarta-dt);
     if(ativo<0)return;tempo+=dt;restante-=dt;pulso-=dt;if(restante<=0){ativo=-1;return;}if(ativo==0)atualizarTentaculos(dt,n);else atualizarPoder(dt,n);}
  // ---- Tentaculos da Lula: saem da nave, buscam ate 3 alvos a frente, agarram e voltam ----
  private final double[][] alvosTentaculo=new double[3][2];private final double[][] pontasTentaculo=new double[3][2];private int alvosDefinidos;private final boolean[] preso=new boolean[3];
@@ -49,6 +50,7 @@ final class Poderes099 {
  private java.util.List<double[]> alvos=new java.util.ArrayList<>();
  // estado dos poderes 1 a 7
  private double cloneX,cloneY,giroCarta;private int vidaClone;private final java.util.List<double[]> corrente=new java.util.ArrayList<>();private double proximaCorrente;
+ private double cartaX0,cartaY0,pegouCarta;
  private final java.util.Random acaso=new java.util.Random(7);private Nave nave;
  private double extensao(){double t=DURACAO[0]-restante;return t<.3?t/.3:restante<.45?Math.max(0,restante/.45):1;}
  private double[] raizTentaculo(int i,Nave n){return new double[]{n.getX()+6,n.getY()+20+(i-1)*12};}
@@ -104,7 +106,12 @@ final class Poderes099 {
     double ciclo=tempo%2.2,alvoX=nx+120;if(ciclo>1.3){double f=(ciclo-1.3)/.9;alvoX=nx+120+Math.sin(Math.PI*f)*(820-nx);}
     x+=(alvoX-x)*Math.min(1,dt*(ciclo>1.3?14:6));y+=(ny-2-y)*Math.min(1,dt*6);break;}
    case 2:x=nx+26;y=ny;break; // Espada: o pivo e o nariz da nave
-   case 3:{double f=tempo/DURACAO[3];x=nx+30+Math.sin(Math.PI*f)*520;y+=(ny+Math.sin(tempo*5)*40-y)*Math.min(1,dt*5);giroCarta+=dt*16;break;}
+   case 3:{ // As de Espadas: vai ate longe e volta em linha reta; nao segue a nave, o jogador tem que pegar
+    if(tempo<=dt){cartaX0=nx+30;cartaY0=ny;}giroCarta+=dt*16;
+    x=tempo<1.0?cartaX0+560*Math.sin(Math.PI/2*tempo):cartaX0+560-720*(tempo-1.0);y=cartaY0+Math.sin(tempo*5)*18;
+    if(tempo>1.0&&Math.hypot(x-nx,y-ny)<42){energia[3]=Math.min(100,energia[3]+CUSTO[3]);pegouCarta=.5;SomJogo.tocar(SomJogo.Efeito.COLETA);ativo=-1;}
+    else if(x<-60)ativo=-1;
+    break;}
    case 4:{x=nx+30;y=ny;proximaCorrente-=dt;if(proximaCorrente<=0){proximaCorrente=.35;montarCorrente(x,y);}break;}
    case 5:case 7:x=nx;y=ny;if(ativo==7)n.tornarIntangivel(.1);break;
    case 6:cloneY+=Math.sin(tempo*2)*12*dt;x=cloneX+22;y=cloneY+20;break;
@@ -190,7 +197,8 @@ final class Poderes099 {
   }
  }
  static void sprite(Graphics2D g,int i,int x,int y,int s,double t){g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);g.drawImage(ARTE[Math.max(0,Math.min(7,i))][((int)(Math.max(0,t)*8))%4],x,y,s,s,null);}
- void desenhar(Graphics2D g){if(pendente>=0){simbolo(g,pendente,(int)naveX,(int)naveY,1-preparo/PREPARO);return;}if(ativo<0)return;int px=(int)x,py=(int)y;
+ void desenhar(Graphics2D g){if(pegouCarta>0&&ativo<0){int r=(int)(20+(.5-pegouCarta)*80);g.setColor(new Color(255,230,140,(int)(400*pegouCarta)));g.drawOval((int)naveX-r,(int)naveY-r,2*r,2*r);g.setFont(new Font(Font.MONOSPACED,Font.BOLD,14));g.drawString("+ENERGIA",(int)naveX-30,(int)naveY-30-(int)((.5-pegouCarta)*30));}
+  if(pendente>=0){simbolo(g,pendente,(int)naveX,(int)naveY,1-preparo/PREPARO);return;}if(ativo<0)return;int px=(int)x,py=(int)y;
   Graphics2D a=(Graphics2D)g.create();a.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
   switch(ativo){
    case 0:desenharTentaculos(a,px,py);break;
@@ -200,7 +208,7 @@ final class Poderes099 {
    case 2:desenharCorte(a);break;
    case 3:{ // carta girando com rastro de cartas fantasma
     BufferedImage[] q=quadrosSimbolo(3);
-    for(int k=3;k>=0;k--){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(k==0?1f:.18f));c.translate(px-k*14*Math.signum(Math.cos(Math.PI*tempo/DURACAO[3])),py);c.rotate(giroCarta-k*.3);if(q!=null)c.drawImage(q[2],-38,-38,76,76,null);c.dispose();}
+    for(int k=3;k>=0;k--){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(k==0?1f:.18f));c.translate(px-k*14*(tempo<1.0?1:-1),py);c.rotate(giroCarta-k*.3);if(q!=null)c.drawImage(q[2],-38,-38,76,76,null);c.dispose();}
     break;}
    case 4:{ // raios em zigue-zague entre os alvos
     for(int i=1;i<corrente.size();i++){double[] p0=corrente.get(i-1),p1=corrente.get(i);int seg=9;int[] xs=new int[seg+1],ys=new int[seg+1];
