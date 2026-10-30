@@ -39,6 +39,7 @@ public final class TiroChefe {
     }
     public void desenhar(Graphics2D g) {
         int px = (int) x, py = (int) y;
+        if (estilo == 1 && movimento == Movimento.ONDA) { desenharMorcego(g, px, py); return; }
         int r = pesado ? 12 : 7;
         Color c = estilo == 8 ? new Color(255,116,12) : estilo == 1 ? new Color(199, 76, 232) : estilo == 2
                 ? new Color(255, 156, 44) : estilo == 3 ? new Color(74, 228, 223)
@@ -86,6 +87,41 @@ public final class TiroChefe {
             g.drawArc(px - r * 2, py - r * 2, 4 * r, 4 * r, -75, 150);
         }
         g.setColor(Color.WHITE); g.fillOval(px - 3, py - 3, 6, 6);
+    }
+    /** Morcegos do Ozzy em pixel art: asas batendo, olhos voltados para onde voam. */
+    private static final String[][] MORCEGO = {
+        { // asas no alto
+            "M...............M", "WM.............MW", "WWM...H...H...MWW", ".WWM..HBBBH..MWW.",
+            ".WWWMBEBEBBBMWWW.", "..WWWWBBBBBWWWW..", "...WWWWBBBWWWW...", "....W.W.B.W.W...."
+        }, { // asas abertas
+            ".................", ".................", "......H...H......", "MMM...HBBBH...MMM",
+            "WWWWMBEBEBBBMWWWW", ".WWWWWBBBBBWWWWW.", "..W.WWWBBBWWW.W..", "........B........"
+        }, { // asas embaixo
+            ".................", ".................", "......H...H......", "......HBBBH......",
+            "...MMBEBEBBBMM...", "..MWWWBBBBBWWWM..", ".MWWWWWBBBWWWWWM.", "MWW.W.W.B.W.W.WWM"
+        }
+    };
+    private static final Color MORCEGO_CORPO = new Color(44, 16, 58), MORCEGO_ASA = new Color(104, 42, 136),
+            MORCEGO_BORDA = new Color(192, 110, 238), MORCEGO_OLHO = new Color(255, 58, 58),
+            MORCEGO_ORELHA = new Color(78, 28, 100);
+
+    private void desenharMorcego(Graphics2D g, int px, int py) {
+        int p = pesado ? 3 : 2;
+        g.setColor(new Color(150, 60, 210, 42));
+        g.fillOval(px - 10 * p, py - 6 * p, 20 * p, 12 * p);
+        int[] ciclo = {0, 1, 2, 1};
+        String[] quadro = MORCEGO[ciclo[(int) (tempo * 14) % 4]];
+        boolean paraDireita = vx > 0;
+        int largura = quadro[0].length(), ox = px - largura * p / 2, oy = py - 4 * p;
+        for (int linha = 0; linha < quadro.length; linha++) {
+            for (int coluna = 0; coluna < largura; coluna++) {
+                char c = quadro[linha].charAt(paraDireita ? largura - 1 - coluna : coluna);
+                if (c == '.') continue;
+                g.setColor(c == 'B' ? MORCEGO_CORPO : c == 'W' ? MORCEGO_ASA : c == 'M' ? MORCEGO_BORDA
+                        : c == 'E' ? MORCEGO_OLHO : MORCEGO_ORELHA);
+                g.fillRect(ox + coluna * p, oy + linha * p, p, p);
+            }
+        }
     }
     Movimento getMovimentoTeste() { return movimento; }
     int getEstiloTeste() { return estilo; }
