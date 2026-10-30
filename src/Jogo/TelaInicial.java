@@ -188,7 +188,7 @@ extends JPanel {
                 break;
             }
             case 3: {
-                this.pagina = Pagina.INFORMACOES;
+                PainelSom.abrir();
                 break;
             }
             case 4: {
@@ -373,7 +373,7 @@ extends JPanel {
         }
         if(pagina==Pagina.INICIO){graphics2D.setColor(Color.WHITE);graphics2D.setFont(new Font("Monospaced",1,14));graphics2D.drawString("[H] PLACAR DAS LENDAS",115,574);}
         if(verPlacar)Placar.desenhar(graphics2D,placar.ler(),"ESC / H: VOLTAR");
-        graphics2D.setFont(new java.awt.Font("Monospaced",java.awt.Font.BOLD,12));graphics2D.setColor(java.awt.Color.CYAN);graphics2D.drawString("F9: AUDIO   F10: SILENCIAR",24,587);PainelSom.desenhar(graphics2D);graphics2D.dispose();
+        graphics2D.setFont(new java.awt.Font("Monospaced",java.awt.Font.BOLD,12));graphics2D.setColor(java.awt.Color.CYAN);graphics2D.drawString("F9: OPCOES   F10: SILENCIAR",24,587);PainelSom.desenhar(graphics2D);graphics2D.dispose();
     }
 
     private void desenharLuzesInicio(Graphics2D graphics2D) {

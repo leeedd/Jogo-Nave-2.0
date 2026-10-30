@@ -599,7 +599,7 @@ implements ActionListener {
             int n = (int)Math.round(9.0 * (1.0 - this.tempoNuclear / 0.42));
             graphics2D2.translate(this.aleatorio.nextInt(n * 2 + 1) - n, this.aleatorio.nextInt(n * 2 + 1) - n);
         }
-        if(intercepcao&&miniChefe!=null&&miniChefe.morrendo())graphics2D2.translate((int)(Math.sin(miniChefe.comandanteTeste().relogio()*70)*4),(int)(Math.cos(miniChefe.comandanteTeste().relogio()*70)*3));
+        if(PainelSom.tremorTela()&&intercepcao&&miniChefe!=null&&miniChefe.morrendo())graphics2D2.translate((int)(Math.sin(miniChefe.comandanteTeste().relogio()*70)*4),(int)(Math.cos(miniChefe.comandanteTeste().relogio()*70)*3));
         this.fundoEspacial.desenhar(graphics2D2);
         if(segredo!=null)segredo.desenhar(graphics2D2,tempoTotal);
         if (this.emJogo) {
@@ -680,7 +680,7 @@ implements ActionListener {
         {int sel=poderes.selecionado;double alvo=inventario.temChaveIndice(sel)?poderes.energia[sel]:0;
             if(energiaExibidaPoder<alvo){int antes=(int)(energiaExibidaPoder/100*19);energiaExibidaPoder=Math.min(alvo,energiaExibidaPoder+1.2);if((int)(energiaExibidaPoder/100*19)>antes)SomJogo.tocar(SomJogo.Efeito.COLETA);}else energiaExibidaPoder=alvo;
             HudEnergia.desenhar(graphics2D,6,Config.HUD+42,poderes,inventario,energiaExibidaPoder,tempoTotal);
-            if(inventario.temChaveIndice(sel))HudEnergia.teclas(graphics2D,6,Config.HUD+42);}
+            if(inventario.temChaveIndice(sel)&&PainelSom.dicasTeclas())HudEnergia.teclas(graphics2D,6,Config.HUD+42);}
         if (this.chefe != null && this.emJogo) {
             this.chefe.desenharVida(graphics2D);
         }
