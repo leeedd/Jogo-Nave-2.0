@@ -89,6 +89,7 @@ final class EstacaoAliada {
     }
 
     // ---- menu da base ----
+    private static final BufferedImage[] FRENTE = {ler("nave_0_frente.png"), ler("nave_1_frente.png"), ler("nave_2_frente.png"), ler("nave_3_frente.png"), ler("nave_4_frente.png")};
     static final String[] OPCOES = {"REPARAR CASCO", "MERCADO", "HANGAR", "PARTIR"};
     static final int CUSTO_REPARO = 30;
 
@@ -99,14 +100,18 @@ final class EstacaoAliada {
         a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         boolean livre = ProgressoJogo.modeloDisponivel(modelo);
         a.setColor(new Color(0, 0, 0, 90)); a.fillOval(560, 410, 300, 46);
-        a.translate(600, 350 + Math.sin(tempo * 1.6) * 3); a.scale(2.6, 2.6);
+        BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
         if (!livre) a.setComposite(java.awt.AlphaComposite.SrcOver.derive(.35f));
-        ArteNaves.desenharJogador(a, nave.getNivel(), modelo, 0, 0, tempo, 0, 0, 0, false);
+        if (frente != null) {
+            // nave de frente, estacionada na plataforma, com a placa do nome embaixo
+            int fw = frente.getWidth() * 290 / frente.getHeight(); a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            a.drawImage(frente, 710 - fw / 2, 190, fw, 290, null);
+        } else { a.translate(600, 350 + Math.sin(tempo * 1.6) * 3); a.scale(2.6, 2.6); ArteNaves.desenharJogador(a, nave.getNivel(), modelo, 0, 0, tempo, 0, 0, 0, false); }
         a.dispose();
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16)); g.setColor(livre ? new Color(255, 206, 98) : new Color(255, 120, 100));
-        String nome = Pausa099.NAVES[modelo] + (livre ? "" : "  [BLOQUEADA]");
-        g.drawString(nome, 710 - g.getFontMetrics().stringWidth(nome) / 2, 500);
-        if (cursor == 2) { g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30)); g.drawString("<", 540, 380); g.drawString(">", 860, 380); }
+        String nome = frente != null ? (livre ? "" : "BLOQUEADA") : Pausa099.NAVES[modelo] + (livre ? "" : "  [BLOQUEADA]");
+        if (!nome.isEmpty()) g.drawString(nome, 710 - g.getFontMetrics().stringWidth(nome) / 2, 510);
+        if (cursor == 2) { g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30)); g.drawString("<", 524, 330); g.drawString(">", 878, 330); }
         // painel de opcoes
         HudMetal.painel(g, 24, 96, 430, 404);
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24)); g.setColor(new Color(130, 255, 160)); g.drawString("BASE ALIADA", 52, 144);
