@@ -52,7 +52,10 @@ public class Alien {
     private int armaRoubada = -1;
     private int resistencia;
     private double congelado, queimando, pulsoQueimadura;
-    void congelarPor(double s){congelado=Math.max(congelado,s);}
+    void congelarPor(double s){congelado=Math.max(congelado,s);enrolado=false;}
+    /** Preso pelos tentaculos: fica imovel como congelado, mas sem o gelo (o tentaculo e desenhado por cima). */
+    private boolean enrolado;
+    void agarrarPor(double s){if(congelado<=0)enrolado=true;congelado=Math.max(congelado,s);}
     void incendiarPor(double s){queimando=Math.max(queimando,s);}
 
     public Alien(int n, int n2) {
@@ -212,6 +215,7 @@ public class Alien {
         }
         if (this.congelado > 0.0) {
             this.congelado = Math.max(0.0, this.congelado - d);
+            if (this.congelado == 0) enrolado = false;
             return;
         }
         if (this.emFormacao) {
@@ -363,7 +367,7 @@ public class Alien {
         }
         if(queimando>0){for(int f=0;f<5;f++){graphics2D.setColor(f%2==0?Color.ORANGE:Color.RED);int yy=(int)y+45-(int)((tempoAnimacao*35+f*9)%40);graphics2D.fillRect((int)x+8+f*9,yy,4,8);}}
         if(escudoCapturado>0){graphics2D.setColor(new Color(110,225,255,170));graphics2D.drawPolygon(new int[]{(int)x-5,(int)x+10,(int)x+55,(int)x+70,(int)x+55,(int)x+10},new int[]{(int)y+28,(int)y-5,(int)y-5,(int)y+28,(int)y+62,(int)y+62},6);}
-        if (this.congelado > 0.0) {
+        if (this.congelado > 0.0 && !enrolado) {
             graphics2D.setColor(new Color(92, 224, 255, 130));
             graphics2D.fillRoundRect((int)this.x, (int)this.y, 64, 57, 10, 10);
             graphics2D.setColor(new Color(205, 248, 255));

@@ -199,7 +199,7 @@ implements ActionListener {
         if(!poderes.pulso())return;
         Rectangle area=poderes.alcance();int dano=poderes.dano();
         for(Alien a:alien)if(a.isVisible()&&poderes.atinge(a.getBounds())){
-            if(poderes.ativo==0)a.congelarPor(1.8);
+            if(poderes.ativo==0)a.agarrarPor(.6);
             if(poderes.ativo==5)a.incendiarPor(2);
             if(a.receberImpacto(0,dano))eliminarAlien(a,true);
         }

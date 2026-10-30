@@ -70,7 +70,11 @@ final class Poderes099 {
    for(int k=0;k<pts.size();k++){double[] p=pts.get(k),ant=pts.get(Math.max(0,k-1));double w=6+20*Math.sqrt(1-k/(double)Math.max(1,pts.size()-1));LulaVisual.elo(g,p[0],p[1],Math.atan2(p[1]-ant[1],p[0]-ant[0]),w);}
    if(e>.9&&preso[i]){
     // Enrolado no alvo: aneis apertando e gotas de energia sendo drenadas de volta para a nave.
-    for(int k=0;k<3;k++){int rr=26-k*6+(int)(Math.sin(tempo*14+k)*3);LulaVisual.elo(g,tx+Math.cos(tempo*6+k*2.1)*rr,ty+Math.sin(tempo*6+k*2.1)*rr*.6,tempo*6+k*2.1+Math.PI/2,10);}
+    // Tres voltas do tentaculo em volta do corpo, apertando; a frente de cada volta passa por cima do inimigo.
+    double aperto=1-.12*Math.abs(Math.sin(tempo*5));
+    for(int v=0;v<3;v++){double oy=(v-1)*14,rx2=40*aperto,ry2=11;
+     for(int k=0;k<=16;k++){double a2=Math.PI*k/16;double ex=tx+Math.cos(a2)*rx2,ey=ty+oy+Math.sin(a2)*ry2+(k/16.0-.5)*8;
+      LulaVisual.elo(g,ex,ey,a2+Math.PI/2,13-Math.abs(k-8)*.3);}}
     for(int k=0;k<4;k++){double f=((tempo*1.6+k*.25)%1);double gx=tx+(nx-tx)*f,gy=ty+(ny+(i-1)*12-ty)*f;g.setColor(new Color(120,255,200,(int)(220*(1-f))));g.fillOval((int)gx-4,(int)gy-4,8,8);}
    }
   }
