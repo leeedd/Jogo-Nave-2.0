@@ -15,8 +15,19 @@ final class RetratosLendas {
 
     static synchronized BufferedImage obter(int qual) {
         if (qual < 1 || qual > 5) return null;
+        if (CACHE[qual] == null) CACHE[qual] = arteFinal(qual);
         if (CACHE[qual] == null) CACHE[qual] = desenhar(qual);
         return CACHE[qual];
+    }
+
+    private static final String[] ARQUIVOS = {"", "lenda_chester.png", "lenda_joey.png", "lenda_cliff.png", "lenda_dio.png", "lenda_tenacious_d.png"};
+
+    /** Arte final em ImagemIcon tem prioridade; o desenho em codigo e so o provisorio. */
+    private static BufferedImage arteFinal(int qual) {
+        java.net.URL u = RetratosLendas.class.getResource("/ImagemIcon/" + ARQUIVOS[qual]);
+        if (u == null) return null;
+        try { return javax.imageio.ImageIO.read(u); }
+        catch (java.io.IOException e) { System.err.println("Retrato ilegivel: " + ARQUIVOS[qual]); return null; }
     }
 
     private static BufferedImage desenhar(int qual) {
