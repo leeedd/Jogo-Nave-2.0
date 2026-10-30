@@ -126,7 +126,7 @@ public final class EntradaChefe {
             // Mantem proporcao do sprite ao desenhar.
             double escala = Math.min(largura / (double) imagem.getWidth(), altura / (double)imagem.getHeight());
             int sw = (int)(imagem.getWidth() * escala), sh = (int)(imagem.getHeight() * escala);
-            g.drawImage(imagem, xx + (largura - sw) / 2, yy + (altura - sh) / 2, sw, sh, null);
+            Sprites16Bits.desenharVirado(g, imagem, id, 1, xx + (largura - sw) / 2, yy + (altura - sh) / 2, sw, sh);
         }
         // A segunda forma aparece em retrato: o jogador ja conhece o musico por tras da maquina.
         BufferedImage retrato = Sprites16Bits.carregarAnimado(id, 2, tempo);
@@ -140,7 +140,7 @@ public final class EntradaChefe {
             retratoG.drawRoundRect(37, 218, 202, 209, 15, 15);
             double e = Math.min(190d / retrato.getWidth(), 176d / retrato.getHeight());
             int rw = (int)(retrato.getWidth() * e), rh = (int)(retrato.getHeight() * e);
-            retratoG.drawImage(retrato, 43 + (190 - rw) / 2, 224 + (181 - rh) / 2, rw, rh, null);
+            Sprites16Bits.desenharVirado(retratoG, retrato, id, 2, 43 + (190 - rw) / 2, 224 + (181 - rh) / 2, rw, rh);
             retratoG.dispose();
         }
         g.setColor(new Color(0, 0, 0, 214));

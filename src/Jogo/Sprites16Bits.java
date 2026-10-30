@@ -96,6 +96,12 @@ public final class Sprites16Bits {
         return true;
     }
 
+    /** Desenha a imagem do chefe sempre encarando a esquerda, onde fica o jogador. */
+    public static void desenharVirado(Graphics2D g, BufferedImage img, int id, int forma, int x, int y, int w, int h) {
+        if (voltadoParaDireita(id, forma)) g.drawImage(img, x + w, y, -w, h, null);
+        else g.drawImage(img, x, y, w, h, null);
+    }
+
     /** Poses cuja arte original encara a direita (Bruce no ato II e de frente, com a bandeira). */
     static boolean voltadoParaDireita(int id, int forma) {
         if (forma == 1) return id == 1 || id == 2 || id == 3;

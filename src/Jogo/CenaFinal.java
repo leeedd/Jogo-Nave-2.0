@@ -245,11 +245,14 @@ public final class CenaFinal {
     private static void retrato(Graphics2D g, int id, int x, int y, int lado) {
         HudMetal.painel(g, x - 8, y - 8, lado + 16, lado + 16);
         BufferedImage s = id < 0 ? RetratosLendas.obter(-id) : RetratosLendas.chefe(id);
-        if (s == null && id > 0) s = Sprites16Bits.carregar(id, 2);
+        boolean sprite = s == null && id > 0;
+        if (sprite) s = Sprites16Bits.carregar(id, 2);
         if (s != null) {
             double e = Math.min(lado / (double) s.getWidth(), lado / (double) s.getHeight());
             int sw = (int) (s.getWidth() * e), sh = (int) (s.getHeight() * e);
-            g.drawImage(s, x + (lado - sw) / 2, y + (lado - sh) / 2, sw, sh, null);
+            // Sprites do jogo encaram a esquerda como nas fases; retratos novos ja vem virados.
+            if (sprite) Sprites16Bits.desenharVirado(g, s, id, 2, x + (lado - sw) / 2, y + (lado - sh) / 2, sw, sh);
+            else g.drawImage(s, x + (lado - sw) / 2, y + (lado - sh) / 2, sw, sh, null);
             return;
         }
         int p = lado / 28, cx = x + lado / 2;
