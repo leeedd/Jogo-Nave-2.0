@@ -34,7 +34,37 @@ final class Poderes099 {
 
  static final Color[] CORES_SIMBOLO={new Color(70,200,255),new Color(255,140,40),new Color(150,230,255),new Color(245,235,200),new Color(80,150,255),new Color(255,50,40),new Color(90,240,120),new Color(190,90,255)};
  /** Simbolo de cada chefe: ondas, roda em chamas, espada, as de espadas, raio, pentagrama, cristal e morcego. */
+ private static final String[] ARQ_SIMBOLO={"lula","rob","bruce","lemmy","james","tom","chuck","ozzy"};
+ private static final BufferedImage[][] SIMBOLOS=new BufferedImage[8][];private static final boolean[] LIDO=new boolean[8];
+ /** Prancha 1072x256: 4 quadros de 256 com 16 de intervalo; o preto puro vira transparencia e o brilho e mantido. */
+ private static synchronized BufferedImage[] quadrosSimbolo(int i){
+  if(LIDO[i])return SIMBOLOS[i];LIDO[i]=true;
+  java.net.URL u=Poderes099.class.getResource("/ImagemIcon/simbolo_"+ARQ_SIMBOLO[i]+".png");if(u==null)return null;
+  try{BufferedImage a=ImageIO.read(u);BufferedImage[] q=new BufferedImage[4];
+   for(int k=0;k<4;k++){BufferedImage o=new BufferedImage(256,256,BufferedImage.TYPE_INT_ARGB);
+    // So o escuro ligado a borda vira fundo; o miolo escuro do simbolo (carta, pentagrama) fica solido.
+    int[] px=new int[256*256];boolean[] fora=new boolean[256*256];int[] fila=new int[256*256];int ini=0,fim=0;
+    for(int y=0;y<256;y++)for(int x=0;x<256;x++)px[y*256+x]=a.getRGB(k*272+x,y);
+    for(int t=0;t<256;t++)for(int idx:new int[]{t,255*256+t,t*256,t*256+255})if(!fora[idx]&&brilho(px[idx])<40){fora[idx]=true;fila[fim++]=idx;}
+    while(ini<fim){int idx=fila[ini++],x=idx%256,y=idx/256;int[] viz={x>0?idx-1:-1,x<255?idx+1:-1,y>0?idx-256:-1,y<255?idx+256:-1};
+     for(int n:viz)if(n>=0&&!fora[n]&&brilho(px[n])<40){fora[n]=true;fila[fim++]=n;}}
+    for(int idx=0;idx<px.length;idx++){int c=px[idx],r=c>>16&255,gr=c>>8&255,b=c&255,m=brilho(c);
+     if(!fora[idx]&&!vizinhoFora(fora,idx)){o.setRGB(idx%256,idx/256,0xFF000000|c);continue;}
+     if(m<12)continue;int al=Math.min(255,m*2);o.setRGB(idx%256,idx/256,al<<24|Math.min(255,r*255/m)<<16|Math.min(255,gr*255/m)<<8|Math.min(255,b*255/m));}
+    q[k]=o;}
+   SIMBOLOS[i]=q;}catch(java.io.IOException e){System.err.println("Simbolo ilegivel: "+ARQ_SIMBOLO[i]);}
+  return SIMBOLOS[i];
+ }
+ private static int brilho(int c){return Math.max(c>>16&255,Math.max(c>>8&255,c&255));}
+ private static boolean vizinhoFora(boolean[] f,int i){int x=i%256,y=i/256;return x>0&&f[i-1]||x<255&&f[i+1]||y>0&&f[i-256]||y<255&&f[i+256];}
  static void simbolo(Graphics2D tela,int i,int cx,int cy,double p){
+  BufferedImage[] q=quadrosSimbolo(Math.max(0,Math.min(7,i)));
+  if(q!=null){
+   // Quadros 1 a 3 acompanham a carga; no fim, pulsa no quadro 4.
+   int k=p<.3?0:p<.6?1:p<.9?2:3;int lado=(int)(70+Math.min(1,p)*50);
+   Graphics2D g=(Graphics2D)tela.create();g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+   g.drawImage(q[k],cx-lado/2,cy-lado/2,lado,lado,null);g.dispose();return;
+  }
   Graphics2D g=(Graphics2D)tela.create();g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
   Color c=CORES_SIMBOLO[Math.max(0,Math.min(7,i))];double cresce=Math.min(1,p*1.6);int r=(int)(18+cresce*30);
   g.setColor(new Color(c.getRed(),c.getGreen(),c.getBlue(),(int)(60*cresce)));g.fillOval(cx-r-10,cy-r-10,2*r+20,2*r+20);
