@@ -4,9 +4,9 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 final class Poderes099 {
  static final String[] NOMES={"TENTACULOS ABISSAIS","PAINKILLER","EGIDE DE EDDIE","AS DE LEMMY","RIFF PEM","PENTAGRAMA","PACTO ROTATIVO","GRITO PARANOID"};
- static final String[] DICAS={"Tentaculos agarram e congelam","Moto aliada com vida propria","Escudos interceptam tiros","Cometa pesado perfurante","Paralisa mobs e chefes","Zona de fogo persistente","Cristais orbitais de defesa","Onda sonica perfurante"};
+ static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada com vida propria","Escudos interceptam tiros","Cometa pesado perfurante","Paralisa mobs e chefes","Zona de fogo persistente","Cristais orbitais de defesa","Onda sonica perfurante"};
  static final int[] CUSTO={25,40,30,25,40,35,30,30};
- static final double[] RECARGA={8,18,14,7,22,12,16,9},DURACAO={1.8,12,8,2.6,3,5,10,2.2};
+ static final double[] RECARGA={11,18,14,7,22,12,16,9},DURACAO={3.2,12,8,2.6,3,5,10,2.2};
  private static final BufferedImage[][] ARTE=new BufferedImage[8][4];
  static{try{BufferedImage a=ImageIO.read(Poderes099.class.getResource("/ImagemIcon/poderes_099.png"));for(int r=0;r<8;r++)for(int c=0;c<4;c++){int x=c*a.getWidth()/4,y=r*a.getHeight()/8;ARTE[r][c]=a.getSubimage(x,y,a.getWidth()/4,a.getHeight()/8);}}catch(java.io.IOException e){throw new ExceptionInInitializerError(e);}}
  final int[] energia={100,100,100,100,100,100,100,100};final double[] cooldown=new double[8];int selecionado,ativo=-1,vidaMoto,pendente=-1;double tempo,restante,pulso,x,y,recargaPassiva,preparo,naveX,naveY;
@@ -25,20 +25,30 @@ final class Poderes099 {
     if(pendente>=0){preparo-=dt;if(preparo<=0){int i=pendente;pendente=-1;disparar(i,n);}return;}
     if(ativo<0)return;tempo+=dt;restante-=dt;pulso-=dt;if(restante<=0){ativo=-1;return;}if(ativo==1){x+=(n.getX()+130-x)*Math.min(1,dt*6);y+=(n.getY()+18-y)*Math.min(1,dt*6);}if(ativo==2||ativo==6||ativo==4){x=n.getX()+23;y=n.getY()+18;}if(ativo==3||ativo==7)x+=dt*(ativo==3?420:360);if(ativo==0)atualizarTentaculos(dt,n);}
  // ---- Tentaculos da Lula: saem da nave, buscam ate 3 alvos a frente, agarram e voltam ----
- private final double[][] alvosTentaculo=new double[3][2];private final double[][] pontasTentaculo=new double[3][2];private int alvosDefinidos;
+ private final double[][] alvosTentaculo=new double[3][2];private final double[][] pontasTentaculo=new double[3][2];private int alvosDefinidos;private final boolean[] preso=new boolean[3];
  /** Fase informa os centros dos inimigos visiveis; os tentaculos escolhem os mais proximos a frente da nave. */
  void mirar(java.util.List<double[]> centros,Nave n){
   if(ativo!=0&&pendente!=0)return;double ox=n.getX()+30,oy=n.getY()+20;
-  java.util.List<double[]> a=new java.util.ArrayList<>();for(double[] c:centros)if(c[0]>ox+20&&Math.hypot(c[0]-ox,c[1]-oy)<460)a.add(c);
+  java.util.List<double[]> a=new java.util.ArrayList<>();for(double[] c:centros)if(c[0]>ox+20&&Math.hypot(c[0]-ox,c[1]-oy)<620)a.add(c);
   a.sort((p,q)->Double.compare(Math.hypot(p[0]-ox,p[1]-oy),Math.hypot(q[0]-ox,q[1]-oy)));
+  if(ativo==0&&DURACAO[0]-restante>.3){
+   // Ja agarrou: cada tentaculo segue o MESMO inimigo (o centro mais perto de onde estava);
+   // se ele morreu, procura outro alvo livre.
+   alvosDefinidos=0;
+   for(int i=0;i<3;i++){double[] melhor=null;double d=70;
+    for(double[] c:centros){double dd=Math.hypot(c[0]-alvosTentaculo[i][0],c[1]-alvosTentaculo[i][1]);if(dd<d){d=dd;melhor=c;}}
+    if(melhor==null)for(double[] c:a){boolean livre=true;for(int j=0;j<i;j++)if(Math.hypot(c[0]-alvosTentaculo[j][0],c[1]-alvosTentaculo[j][1])<30)livre=false;if(livre){melhor=c;break;}}
+    if(melhor!=null){alvosTentaculo[i][0]=melhor[0];alvosTentaculo[i][1]=melhor[1];preso[i]=true;alvosDefinidos++;}else preso[i]=false;}
+   return;
+  }
   alvosDefinidos=Math.min(3,a.size());
-  for(int i=0;i<3;i++){double[] c=i<alvosDefinidos?a.get(i):new double[]{ox+340,oy+(i-1)*110};alvosTentaculo[i][0]=c[0];alvosTentaculo[i][1]=c[1];}
+  for(int i=0;i<3;i++){double[] c=i<alvosDefinidos?a.get(i):new double[]{ox+340,oy+(i-1)*110};alvosTentaculo[i][0]=c[0];alvosTentaculo[i][1]=c[1];preso[i]=i<alvosDefinidos;}
  }
  private double extensao(){double t=DURACAO[0]-restante;return t<.3?t/.3:restante<.45?Math.max(0,restante/.45):1;}
  private double[] raizTentaculo(int i,Nave n){return new double[]{n.getX()+6,n.getY()+20+(i-1)*12};}
  private void atualizarTentaculos(double dt,Nave n){
   double e=extensao();e=1-Math.pow(1-e,3);
-  for(int i=0;i<3;i++){double[] r=raizTentaculo(i,n);double bal=Math.sin(tempo*9+i*2)*14*e;
+  for(int i=0;i<3;i++){double[] r=raizTentaculo(i,n);double bal=preso[i]&&e>.95?Math.sin(tempo*30+i)*2:Math.sin(tempo*9+i*2)*14*e;
    pontasTentaculo[i][0]=r[0]+(alvosTentaculo[i][0]-r[0])*e;pontasTentaculo[i][1]=r[1]+(alvosTentaculo[i][1]-r[1])*e+bal;}
   x=n.getX()+30;y=n.getY()+20;
  }
@@ -58,12 +68,16 @@ final class Poderes099 {
    for(int k=1;k<=80;k++){double p=k/80.0,q=1-p;double sx=q*q*q*rx+3*q*q*p*c1x+3*q*p*p*c2x+p*p*p*tx,sy=q*q*q*ry+3*q*q*p*c1y+3*q*p*p*c2y+p*p*p*ty;acum+=Math.hypot(sx-ax,sy-ay);ax=sx;ay=sy;if(acum>=9){pts.add(new double[]{sx,sy});acum=0;}}
    pts.add(new double[]{tx,ty});
    for(int k=0;k<pts.size();k++){double[] p=pts.get(k),ant=pts.get(Math.max(0,k-1));double w=6+20*Math.sqrt(1-k/(double)Math.max(1,pts.size()-1));LulaVisual.elo(g,p[0],p[1],Math.atan2(p[1]-ant[1],p[0]-ant[0]),w);}
-   if(e>.9&&i<alvosDefinidos){g.setColor(new Color(120,220,255,(int)(120+80*Math.sin(tempo*20))));g.drawOval((int)tx-22,(int)ty-22,44,44);}
+   if(e>.9&&preso[i]){
+    // Enrolado no alvo: aneis apertando e gotas de energia sendo drenadas de volta para a nave.
+    for(int k=0;k<3;k++){int rr=26-k*6+(int)(Math.sin(tempo*14+k)*3);LulaVisual.elo(g,tx+Math.cos(tempo*6+k*2.1)*rr,ty+Math.sin(tempo*6+k*2.1)*rr*.6,tempo*6+k*2.1+Math.PI/2,10);}
+    for(int k=0;k<4;k++){double f=((tempo*1.6+k*.25)%1);double gx=tx+(nx-tx)*f,gy=ty+(ny+(i-1)*12-ty)*f;g.setColor(new Color(120,255,200,(int)(220*(1-f))));g.fillOval((int)gx-4,(int)gy-4,8,8);}
+   }
   }
  }
  boolean pulso(){if(ativo<0||pulso>0)return false;pulso=ativo==1?.35:.25;return true;}
  boolean paralisa(){return ativo==4;}
- int dano(){return ativo==3?10:ativo==1?4:ativo==5?3:ativo==0?5:ativo==7?6:2;}
+ int dano(){return ativo==3?10:ativo==1?4:ativo==5?3:ativo==0?3:ativo==7?6:2;}
  Rectangle alcance(){if(ativo==4)return new Rectangle(0,80,960,520);if(ativo==1)return new Rectangle((int)x,(int)y-8,Math.max(1,960-(int)x),16);int r=ativo==5?115:ativo==0?85:ativo==3?40:ativo==7?95:70;return new Rectangle((int)x-r,(int)y-r,r*2,r*2);}
  boolean interceptar(Rectangle b){if(ativo!=1&&ativo!=2&&ativo!=6)return false;boolean bate=ativo==1?new Rectangle((int)x-34,(int)y-22,68,44).intersects(b):Math.hypot(b.getCenterX()-x,b.getCenterY()-y)<76;if(bate&&ativo==1&&--vidaMoto<=0){ativo=-1;SomJogo.tocar(SomJogo.Efeito.EXPLOSAO);}return bate;}
  static void sprite(Graphics2D g,int i,int x,int y,int s,double t){g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);g.drawImage(ARTE[Math.max(0,Math.min(7,i))][((int)(Math.max(0,t)*8))%4],x,y,s,s,null);}

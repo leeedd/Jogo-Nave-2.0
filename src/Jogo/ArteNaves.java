@@ -23,7 +23,47 @@ public final class ArteNaves {
         return CORES[Math.max(0, Math.min(4, n))];
     }
 
+    /** Arte nova: 3 estagios por nave (nave_M_estagio_E.png); o estagio acompanha o nivel de evolucao. */
+    private static final BufferedImage[][] ESTAGIOS = new BufferedImage[5][3];
+    private static final int[][][] MOTORES = new int[5][3][];
+    private static final boolean[] CONSULTADO = new boolean[5];
+
+    static int estagio(int nivel) { return nivel <= 2 ? 0 : nivel <= 5 ? 1 : 2; }
+
+    private static synchronized BufferedImage estagio(int modelo, int e) {
+        if (!CONSULTADO[modelo]) {
+            CONSULTADO[modelo] = true;
+            for (int k = 0; k < 3; k++) {
+                java.net.URL u = ArteNaves.class.getResource("/ImagemIcon/nave_" + modelo + "_estagio_" + k + ".png");
+                if (u == null) continue;
+                try { ESTAGIOS[modelo][k] = javax.imageio.ImageIO.read(u); MOTORES[modelo][k] = motores(ESTAGIOS[modelo][k]); }
+                catch (java.io.IOException ex) { System.err.println("Nave ilegivel: " + modelo + "/" + k); }
+            }
+        }
+        return ESTAGIOS[modelo][Math.max(0, Math.min(2, e))];
+    }
+
+    /** Bocais na traseira: trechos verticais opacos na coluna mais a esquerda (y do centro de cada bocal). */
+    private static int[] motores(BufferedImage b) {
+        int coluna = 0;
+        achar:
+        for (int x = 0; x < b.getWidth(); x++) for (int y = 0; y < b.getHeight(); y++) if ((b.getRGB(x, y) >>> 24) > 120) { coluna = x + 2; break achar; }
+        java.util.List<Integer> centros = new java.util.ArrayList<>();
+        int inicio = -1;
+        for (int y = 0; y <= b.getHeight(); y++) {
+            boolean opaco = y < b.getHeight() && (b.getRGB(coluna, y) >>> 24) > 120;
+            if (opaco && inicio < 0) inicio = y;
+            if (!opaco && inicio >= 0) { if (y - inicio >= Math.max(3, b.getHeight() * 15 / 100)) centros.add((inicio + y) / 2); inicio = -1; }
+        }
+        if (centros.isEmpty()) centros.add(b.getHeight() / 2);
+        int[] r = new int[centros.size()];
+        for (int i = 0; i < r.length; i++) r[i] = centros.get(i);
+        return r;
+    }
+
     private static BufferedImage jogador(int n) {
+        BufferedImage nova = estagio(Math.max(0, Math.min(4, n)), 0);
+        if (nova != null) return nova;
         if (JOGADOR[n = Math.max(0, Math.min(4, n))] == null) {
             ArteNaves.JOGADOR[n] = n == 0 ? ArteNaves.naveReferencia() : ArteNaves.carregar("nave_hangar_" + n + ".png", 80, 64);
         }
@@ -51,6 +91,24 @@ public final class ArteNaves {
         int n5 = (int)Math.round(Math.sin(d * 14.0) * 0.8);
         int n6 = 15 + (int)(4.0 * Math.sin(d * 19.0));
         Color color = ArteNaves.corModelo(n2);
+        BufferedImage nova = estagio(n2, estagio(n));
+        if (nova != null) {
+            // Nave centrada na area de colisao; fogo sai de cada bocal real do desenho.
+            int ix = n3 + 24 - nova.getWidth() * 2 / 5, iy = n4 + 20 - nova.getHeight() / 2 + n5;
+            int n9 = d4 <= 0.25 ? 90 : (d4 <= 0.5 ? 135 : 184);
+            for (int my : MOTORES[n2][estagio(n)]) {
+                int bx = ix + 2, by = iy + my;
+                graphics2D2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 42));
+                graphics2D2.fillPolygon(new int[]{bx + 2, bx - 9, bx - n6 - 17, bx - 8, bx + 2}, new int[]{by - 7, by - 7, by, by + 7, by + 7}, 5);
+                graphics2D2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), n9));
+                graphics2D2.fillPolygon(new int[]{bx + 2, bx - 7, bx - n6 - 8, bx - 6, bx + 2}, new int[]{by - 3, by - 3, by, by + 3, by + 3}, 5);
+                graphics2D2.setColor(new Color(247, 251, 255, 222));
+                graphics2D2.drawLine(bx - n6 / 2, by, bx + 1, by);
+            }
+            graphics2D2.drawImage(nova, ix - (int) (d3 * 4.0), iy, null);
+            graphics2D2.dispose();
+            return;
+        }
         int n7 = n3 - (n2 == 0 ? 20 : 0);
         for (int n8 : nArray = new int[]{13, 32}) {
             if (bl && n8 == 32) continue;
