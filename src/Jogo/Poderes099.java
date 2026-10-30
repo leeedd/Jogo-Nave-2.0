@@ -4,7 +4,7 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 final class Poderes099 {
  static final String[] NOMES={"TENTACULOS ABISSAIS","PAINKILLER","ESPADA DO EDDIE","AS DE ESPADAS","RIDE THE LIGHTNING","ESCUDO DE FOGO","CLONE DE CRISTAL","REVOADA"};
- static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta; pegue de volta p/ recuperar energia","Raio salta entre inimigos e paralisa","Fogo orbita a nave e queima","Isca de cristal; use de novo p/ trocar","Vira morcegos: intocavel e fere"};
+ static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta; pegue de volta p/ recuperar energia","Raio salta entre inimigos e paralisa","Fogo orbita a nave e queima","3 iscas de cristal; C troca de lugar","Vira morcegos: intocavel e fere"};
  static final int[] CUSTO={25,40,30,25,40,35,30,30};
  static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={3.2,10,2.0,4.0,1.2,8,6,2.5};
  private static final BufferedImage[][] ARTE=new BufferedImage[8][4];
@@ -16,7 +16,7 @@ final class Poderes099 {
  void proximo(ProgressaoNave p){for(int n=1;n<=8;n++){int i=(selecionado+n)%8;if(p.temChaveIndice(i)){selecionado=i;return;}}}
  boolean ativar(ProgressaoNave p,Nave n){int i=selecionado;if(!p.temChaveIndice(i)||ativo>=0||pendente>=0||cooldown[i]>0||energia[i]<CUSTO[i])return false;energia[i]-=CUSTO[i];cooldown[i]=RECARGA[i]*(1-.06*n.motorPermanente());pendente=i;preparo=PREPARO;naveX=n.getX()+22;naveY=n.getY()+20;SomJogo.tocar(SomJogo.Efeito.ENERGIA);return true;}
  private void disparar(int i,Nave n){nave=n;ativo=i;restante=DURACAO[i];tempo=pulso=0;vidaMoto=8;x=n.getX()+95;y=n.getY()+18;proximaCorrente=0;corrente.clear();
-  if(i==6){vidaClone=6;cloneX=n.getX();cloneY=n.getY()+(n.getY()>320?-110:110);}SomJogo.tocar(i==5?SomJogo.Efeito.FOGO:SomJogo.Efeito.FUSAO);}
+  if(i==6){double[][] off={{0,-105},{0,105},{150,0}};for(int c=0;c<3;c++){clones[c][0]=Math.max(8,Math.min(905,n.getX()+off[c][0]));clones[c][1]=Math.max(90,Math.min(554,n.getY()+off[c][1]));vidaClones[c]=3;}}SomJogo.tocar(i==5?SomJogo.Efeito.FOGO:SomJogo.Efeito.FUSAO);}
  int recarregar(ProgressaoNave p){return recarregar(p,20);}
  /** Capsula: enche primeiro o poder equipado; o que sobrar vai para os outros poderes liberados. */
  int recarregar(ProgressaoNave p,int quantidade){int sobra=quantidade;for(int j=0;j<8;j++){int i=(selecionado+j)%8;if(p.temChaveIndice(i)){int v=Math.min(sobra,100-energia[i]);energia[i]+=v;sobra-=v;}}return quantidade-sobra;}
@@ -50,7 +50,7 @@ final class Poderes099 {
  }
  private java.util.List<double[]> alvos=new java.util.ArrayList<>();
  // estado dos poderes 1 a 7
- private double cloneX,cloneY,giroCarta;private int vidaClone;private final java.util.List<double[]> corrente=new java.util.ArrayList<>();private double proximaCorrente;
+ private final double[][] clones=new double[3][2];private final int[] vidaClones=new int[3];private int proximaTroca;private double giroCarta;private final java.util.List<double[]> corrente=new java.util.ArrayList<>();private double proximaCorrente;
  private double cartaX0,cartaY0,pegouCarta;
  private final java.util.Random acaso=new java.util.Random(7);private Nave nave;
  private double extensao(){double t=DURACAO[0]-restante;return t<.3?t/.3:restante<.45?Math.max(0,restante/.45):1;}
@@ -96,9 +96,12 @@ final class Poderes099 {
  int dano(){return ativo==0?3:ativo==1?5:ativo==2?6:ativo==3?6:ativo==4?4:ativo==5?3:ativo==6?8:4;}
  Rectangle alcance(){int r=70;return new Rectangle((int)x-r,(int)y-r,r*2,r*2);}
  boolean cloneAtivo(){return ativo==6;}
- double cloneX(){return cloneX;}double cloneY(){return cloneY;}
+  /** Clone que os inimigos estao mirando agora: alterna entre os vivos para dividir o fogo. */
+ private int cloneAlvo(){int vivos=0;for(int v:vidaClones)if(v>0)vivos++;if(vivos==0)return -1;int k=(int)(tempo*1.6)%vivos;for(int c=0;c<3;c++)if(vidaClones[c]>0&&k--==0)return c;return -1;}
+ double cloneX(){int c=cloneAlvo();return c<0?naveX-22:clones[c][0];}double cloneY(){int c=cloneAlvo();return c<0?naveY-20:clones[c][1];}
  /** Clone de cristal: a nave e a isca trocam de lugar (o raio do James acerta a isca). */
- void trocarComClone(Nave n){if(ativo!=6)return;double ax=n.getX(),ay=n.getY();n.teleportar(cloneX,cloneY);cloneX=ax;cloneY=ay;n.tornarIntangivel(.25);SomJogo.tocar(SomJogo.Efeito.TROCA);}
+ /** Troca com o proximo clone vivo (C de novo); o lugar antigo da nave vira esse clone. */
+ void trocarComClone(Nave n){if(ativo!=6)return;int c=-1;for(int k=1;k<=3&&c<0;k++){int j=(proximaTroca+k-1)%3;if(vidaClones[j]>0){c=j;proximaTroca=(j+1)%3;}}if(c<0)return;double ax=n.getX(),ay=n.getY();n.teleportar(clones[c][0],clones[c][1]);clones[c][0]=ax;clones[c][1]=ay;n.tornarIntangivel(.25);SomJogo.tocar(SomJogo.Efeito.TROCA);}
 
  private void atualizarPoder(double dt,Nave n){
   double nx=n.getX()+22,ny=n.getY()+20;
@@ -115,7 +118,7 @@ final class Poderes099 {
     break;}
    case 4:{x=nx+30;y=ny;proximaCorrente-=dt;if(proximaCorrente<=0){proximaCorrente=.35;montarCorrente(x,y);}break;}
    case 5:case 7:x=nx;y=ny;if(ativo==7)n.tornarIntangivel(.1);break;
-   case 6:cloneY+=Math.sin(tempo*2)*12*dt;x=cloneX+22;y=cloneY+20;break;
+   case 6:for(int c=0;c<3;c++)clones[c][1]+=Math.sin(tempo*2+c*2.1)*12*dt;x=nx;y=ny;break;
    default:break;
   }
  }
@@ -192,7 +195,7 @@ final class Poderes099 {
    case 1:{boolean bate=new Rectangle((int)x-45,(int)y-26,90,52).intersects(b);if(bate&&--vidaMoto<=0){ativo=-1;SomJogo.tocar(SomJogo.Efeito.EXPLOSAO);}return bate;}
    case 2:return cortaRetangulo(b);
    case 5:for(double[] o:orbes())if(Math.hypot(b.getCenterX()-o[0],b.getCenterY()-o[1])<24)return true;return false;
-   case 6:{boolean bate=new Rectangle((int)cloneX,(int)cloneY,46,40).intersects(b);if(bate&&--vidaClone<=0){ativo=-1;SomJogo.tocar(SomJogo.Efeito.ESCUDO_QUEBRA);}return bate;}
+   case 6:{for(int c=0;c<3;c++)if(vidaClones[c]>0&&new Rectangle((int)clones[c][0],(int)clones[c][1],46,40).intersects(b)){if(--vidaClones[c]<=0){SomJogo.tocar(SomJogo.Efeito.ESCUDO_QUEBRA);if(vidaClones[0]+vidaClones[1]+vidaClones[2]==0)ativo=-1;}return true;}return false;}
    case 7:return b.intersects(new Rectangle((int)x-75,(int)y-65,150,130));
    default:return false;
   }
@@ -222,12 +225,14 @@ final class Poderes099 {
     if(q!=null){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(.35f));c.translate(px,py);c.rotate(tempo*.8);c.drawImage(q[2],-80,-80,160,160,null);c.dispose();}
     for(double[] o:orbes()){int ox=(int)o[0],oy=(int)o[1];for(int k=0;k<4;k++){a.setColor(new Color(255,90+k*30,30,200-k*40));int r2=14-k*3;a.fillOval(ox-r2-k*4,oy-r2+(int)(Math.sin(tempo*20+k)*2),r2*2,r2*2);}a.setColor(new Color(255,240,160));a.fillOval(ox-5,oy-5,10,10);}
     break;}
-   case 6:{ // isca: copia da nave em cristal verde
+   case 6:{ // tres iscas de cristal
+    for(int ic=0;ic<3;ic++){if(vidaClones[ic]<=0)continue;double cx=clones[ic][0],cy=clones[ic][1];
     if(nave!=null){BufferedImage cam=new BufferedImage(200,120,BufferedImage.TYPE_INT_ARGB);Graphics2D c=cam.createGraphics();ArteNaves.desenharJogador(c,nave.getNivel(),nave.getModeloVisual(),60,40,tempo);
      c.setComposite(AlphaComposite.SrcAtop.derive(.6f));c.setColor(new Color(80,255,140));c.fillRect(0,0,200,120);c.dispose();
-     a.setComposite(AlphaComposite.SrcOver.derive((float)(.75+.2*Math.sin(tempo*8))));a.drawImage(cam,(int)cloneX-60,(int)cloneY-40,null);a.setComposite(AlphaComposite.SrcOver);}
-    for(int k=0;k<5;k++){double an=tempo*2+k*1.26;int sx=(int)cloneX+22+(int)(Math.cos(an)*40),sy=(int)cloneY+20+(int)(Math.sin(an)*26);a.setColor(new Color(180,255,200));a.fillPolygon(new int[]{sx,sx+3,sx,sx-3},new int[]{sy-6,sy,sy+6,sy},4);}
-    a.setColor(new Color(90,240,120));for(int k=0;k<vidaClone;k++)a.fillRect((int)cloneX+k*8,(int)cloneY-10,6,4);
+     a.setComposite(AlphaComposite.SrcOver.derive((float)(.75+.2*Math.sin(tempo*8))));a.drawImage(cam,(int)cx-60,(int)cy-40,null);a.setComposite(AlphaComposite.SrcOver);}
+    for(int k=0;k<5;k++){double an=tempo*2+k*1.26;int sx=(int)cx+22+(int)(Math.cos(an)*40),sy=(int)cy+20+(int)(Math.sin(an)*26);a.setColor(new Color(180,255,200));a.fillPolygon(new int[]{sx,sx+3,sx,sx-3},new int[]{sy-6,sy,sy+6,sy},4);}
+    a.setColor(new Color(90,240,120));for(int k=0;k<vidaClones[ic];k++)a.fillRect((int)cx+k*8,(int)cy-10,6,4);
+    }
     break;}
    case 7:{ // revoada: morcegos rodando em volta da nave
     for(int k=0;k<22;k++){double an=tempo*(3+k%3)+k*.9;double rr=26+(k*13)%48;int bx=px+(int)(Math.cos(an)*rr*1.25),by=py+(int)(Math.sin(an)*rr*.9);TiroChefe.morcego(a,bx,by,2,tempo+k*.11,Math.cos(an+Math.PI/2)>0,k%4==0);}
