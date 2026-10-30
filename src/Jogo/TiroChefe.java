@@ -115,13 +115,13 @@ public final class TiroChefe {
             MORCEGO_BORDA = new Color(192, 110, 238), MORCEGO_OLHO = new Color(255, 58, 58),
             MORCEGO_ORELHA = new Color(78, 28, 100);
 
-    private void desenharMorcego(Graphics2D g, int px, int py) {
-        int p = pesado ? 3 : 2;
-        g.setColor(new Color(150, 60, 210, 42));
-        g.fillOval(px - 10 * p, py - 6 * p, 20 * p, 12 * p);
+    private void desenharMorcego(Graphics2D g, int px, int py) { morcego(g, px, py, pesado ? 3 : 2, tempo, vx > 0, true); }
+
+    /** Morcego em pixel art reutilizavel (tambem usado pela Revoada do jogador). */
+    static void morcego(Graphics2D g, int px, int py, int p, double tempo, boolean paraDireita, boolean aura) {
+        if (aura) { g.setColor(new Color(150, 60, 210, 42)); g.fillOval(px - 10 * p, py - 6 * p, 20 * p, 12 * p); }
         int[] ciclo = {0, 1, 2, 1};
-        String[] quadro = MORCEGO[ciclo[(int) (tempo * 14) % 4]];
-        boolean paraDireita = vx > 0;
+        String[] quadro = MORCEGO[ciclo[(int) (Math.max(0, tempo) * 14) % 4]];
         int largura = quadro[0].length(), ox = px - largura * p / 2, oy = py - 4 * p;
         for (int linha = 0; linha < quadro.length; linha++) {
             for (int coluna = 0; coluna < largura; coluna++) {

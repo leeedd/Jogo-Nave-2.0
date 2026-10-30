@@ -183,11 +183,12 @@ implements ActionListener {
     }
     private void usarPoderDoChefe(){
         if(etapa!=Etapa.COMBATE && etapa!=Etapa.BATALHA_CHEFE)return;
+        if(poderes.cloneAtivo()){poderes.trocarComClone(nave);return;}
         if(!poderes.ativar(inventario,nave))mostrarAviso("PODER BLOQUEADO / RECARGA / ENERGIA");
         else mostrarAviso("PODER: "+Poderes099.NOMES[poderes.selecionado]);
     }
     private void atualizarPoderes(double d){
-        if(poderes.ativo==0||poderes.pendente==0){java.util.List<double[]> alvos=new java.util.ArrayList<>();
+        if(poderes.ativo>=0||poderes.pendente>=0){java.util.List<double[]> alvos=new java.util.ArrayList<>();
             for(Alien a:alien)if(a.isVisible())alvos.add(new double[]{a.getBounds().getCenterX(),a.getBounds().getCenterY()});
             if(miniChefe!=null)alvos.add(new double[]{miniChefe.getBounds().getCenterX(),miniChefe.getBounds().getCenterY()});
             if(chefe!=null)alvos.add(new double[]{chefe.getBounds().getCenterX(),chefe.getBounds().getCenterY()});
@@ -200,6 +201,7 @@ implements ActionListener {
         Rectangle area=poderes.alcance();int dano=poderes.dano();
         for(Alien a:alien)if(a.isVisible()&&poderes.atinge(a.getBounds())){
             if(poderes.ativo==0)a.agarrarPor(.6);
+            if(poderes.ativo==4)a.agarrarPor(1.2);
             if(poderes.ativo==5)a.incendiarPor(2);
             if(a.receberImpacto(0,dano))eliminarAlien(a,true);
         }
@@ -448,9 +450,12 @@ implements ActionListener {
         }
     }
 
+    /** Para onde os inimigos miram: a isca de cristal, quando existe, atrai os disparos. */
+    private int alvoX(){return poderes.cloneAtivo()?(int)poderes.cloneX():nave.getX();}
+    private int alvoY(){return poderes.cloneAtivo()?(int)poderes.cloneY():nave.getY();}
     private void atirarInimigo(Alien a){a.animarAtaqueEnxame();SomJogo.tocar(SomJogo.Efeito.INIMIGO,a.getX());
-        tirosInimigos.add(new ProjetilInimigo(a,nave.getX()+20,nave.getY()+18));
-        if(a.getEquipamento()==Item.Tipo.ARMA_2){tirosInimigos.add(new ProjetilInimigo(a,nave.getX()+20,nave.getY()-100));tirosInimigos.add(new ProjetilInimigo(a,nave.getX()+20,nave.getY()+136));}
+        tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()+18));
+        if(a.getEquipamento()==Item.Tipo.ARMA_2){tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()-100));tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()+136));}
     }
     private void atualizarEsquadroes(double d) {
         if(intercepcao&&miniChefe!=null&&!miniChefe.morrendo()){
@@ -973,11 +978,11 @@ implements ActionListener {
             if (this.etapa == Etapa.COMBATE) {
                 for (ProjetilInimigo projetilInimigo2 : this.tirosInimigos) {
                     if (!projetilInimigo2.isVisible()) continue;
-                    projetilInimigo2.atualizarAlvo(this.nave.getX() + 20, this.nave.getY() + 18);
+                    projetilInimigo2.atualizarAlvo(alvoX() + 20, alvoY() + 18);
                     projetilInimigo2.mexer(d);
                 }
             } else if (this.etapa == Etapa.BATALHA_CHEFE && this.chefe != null) {
-                int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, this.nave.getX(), this.nave.getY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
+                int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, alvoX(), alvoY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
                 for (TiroChefe tiroChefe2 : this.tirosChefes) {
                     if (!tiroChefe2.isVisible()) continue;
                     tiroChefe2.mexer(d);
