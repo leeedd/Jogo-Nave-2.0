@@ -3,7 +3,24 @@ import java.awt.image.BufferedImage;import javax.imageio.ImageIO;
 /** Separa silhuetas completas, sem depender de linhas de corte aproximadas. */
 final class PosesChefes {
  private static final BufferedImage[][][] CACHE=new BufferedImage[8][3][4];
- static synchronized BufferedImage obter(int id,int forma,int quadro){if(CACHE[id][forma][0]==null)carregar(id);return CACHE[id][forma][quadro];}
+ static synchronized BufferedImage obter(int id,int forma,int quadro){if(forma==2){BufferedImage[] n=novaArte(id);if(n!=null)return n[quadro];}if(CACHE[id][forma][0]==null)carregar(id);return CACHE[id][forma][quadro];}
+ private static final BufferedImage[][] NOVA=new BufferedImage[8][];private static final boolean[] CONSULTADA=new boolean[8];
+ /** Arte nova do ato II (ImagemIcon/chefe_N_ato2.png), ja virada para a esquerda. */
+ static synchronized boolean temNovaArte(int id){return id>=1&&id<=7&&novaArte(id)!=null;}
+ private static BufferedImage[] novaArte(int id){
+  if(id<1||id>7)return null;if(CONSULTADA[id])return NOVA[id];CONSULTADA[id]=true;
+  java.net.URL u=PosesChefes.class.getResource("/ImagemIcon/chefe_"+id+"_ato2.png");if(u==null)return null;
+  try{BufferedImage a=ImageIO.read(u);
+   // Quatro quadros do mesmo tamanho: repouso, preparo (recua), golpe (avanca) e respiracao.
+   NOVA[id]=new BufferedImage[]{pose(a,0,1,1),pose(a,.05,1,1),pose(a,-.07,1.03,1.03),pose(a,0,1,.985)};
+  }catch(java.io.IOException e){System.err.println("Arte do ato II ilegivel: "+id);}
+  return NOVA[id];
+ }
+ private static BufferedImage pose(BufferedImage a,double giro,double ex,double ey){
+  int w=a.getWidth(),h=a.getHeight(),cw=(int)(w*1.16),ch=(int)(h*1.08);BufferedImage o=new BufferedImage(cw,ch,2);java.awt.Graphics2D g=o.createGraphics();
+  g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+  g.translate(cw/2.0,ch-4);g.rotate(giro);g.scale(ex,ey);g.drawImage(a,-w/2,-h,null);g.dispose();return o;
+ }
  private static void carregar(int id){try{
   BufferedImage a=ImageIO.read(PosesChefes.class.getResource("/ImagemIcon/boss_"+id+"_atlas_094.png"));int w=a.getWidth(),h=a.getHeight();int[] labels=new int[w*h],fila=new int[w*h];java.util.List<int[]> partes=new java.util.ArrayList<>();int rotulo=0;
   for(int y=0;y<h;y++)for(int x=0;x<w;x++){int inicio=y*w+x;if(labels[inicio]!=0||(a.getRGB(x,y)>>>24)<=100)continue;int codigo=++rotulo,ler=0,fim=1,minX=x,maxX=x,minY=y,maxY=y;fila[0]=inicio;labels[inicio]=codigo;
