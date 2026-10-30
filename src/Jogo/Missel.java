@@ -24,7 +24,7 @@ public class Missel {
     }
     /** Angulo: negativo sobe, positivo desce. Aplicado somente no tipo 1. */
     public Missel(int x, int y, int tipo, double anguloGraus) {
-        this.anguloGraus = tipo == 1 ? anguloGraus : 0;
+        this.anguloGraus = tipo <= 1 ? anguloGraus : 0;
         this.x = x;
         this.y = y;
         this.tipo = Math.max(0, Math.min(2, tipo));

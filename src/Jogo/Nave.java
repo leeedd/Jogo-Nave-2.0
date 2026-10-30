@@ -33,6 +33,30 @@ public class Nave {
     int motorPermanente(){return motorPermanente;}
 
     private double impulso;
+    // ---- Truque exclusivo de cada nave (tecla SHIFT) ----
+    static final String[] TRUQUES = {"IMPULSO", "CAMUFLAGEM", "ESCUDO DA VALQUIRIA", "INVESTIDA", "FURIA"};
+    static final String[] TRUQUES_DICA = {"Arrancada rapida e intangivel", "Some da mira inimiga por 2 s", "Escudo instantaneo", "Atropela e destroi o que tocar", "Dobra a cadencia; mais dano quanto menor o casco"};
+    static final double[] TRUQUE_RECARGA = {3, 9, 12, 6, 15}, TRUQUE_DURACAO = {.28, 2, 0, .6, 4};
+    private double truqueRecarga, truqueAtivo, camuflagemX, camuflagemY;
+    String nomeTruque() { return TRUQUES[Math.max(0, Math.min(4, modeloVisual))]; }
+    double recargaTruque() { return truqueRecarga; }
+    double maxRecargaTruque() { return TRUQUE_RECARGA[Math.max(0, Math.min(4, modeloVisual))]; }
+    boolean investindo() { return modeloVisual == 3 && truqueAtivo > 0; }
+    boolean camuflada() { return modeloVisual == 1 && truqueAtivo > 0; }
+    boolean emFuria() { return modeloVisual == 4 && truqueAtivo > 0; }
+    double camuflagemX() { return camuflagemX; } double camuflagemY() { return camuflagemY; }
+    void usarTruque() {
+        int m = Math.max(0, Math.min(4, modeloVisual));
+        if (truqueRecarga > 0 || vida <= 0) { SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
+        truqueRecarga = TRUQUE_RECARGA[m]; truqueAtivo = TRUQUE_DURACAO[m];
+        switch (m) {
+            case 0: invulneravel = Math.max(invulneravel, .3); SomJogo.tocar(SomJogo.Efeito.DOBRA); break;
+            case 1: camuflagemX = x; camuflagemY = y; SomJogo.tocar(SomJogo.Efeito.ESCUDO); break;
+            case 2: ativarEscudo(); SomJogo.tocar(SomJogo.Efeito.ESCUDO); break;
+            case 3: invulneravel = Math.max(invulneravel, .65); SomJogo.tocar(SomJogo.Efeito.IMPACTO); break;
+            default: SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); break;
+        }
+    }
     void aplicarBlindagem(int valor){int antes=getVidaMaxima();blindagemComprada=Math.max(0,Math.min(3,valor));vida=Math.max(1,Math.min(getVidaMaxima(),vida+getVidaMaxima()-antes));}
     int blindagemComprada(){return blindagemComprada;}
     void escudoPor(double s){escudo=Math.max(escudo,s);}
@@ -64,13 +88,14 @@ public class Nave {
     }
 
     public void mexer(double d) {
-        impulso=Math.max(0,impulso-d);
+        impulso=Math.max(0,impulso-d);truqueRecarga=Math.max(0,truqueRecarga-d);truqueAtivo=Math.max(0,truqueAtivo-d);
         int n = (this.direita ? 1 : 0) - (this.esquerda ? 1 : 0);
         int n2 = (this.baixo ? 1 : 0) - (this.cima ? 1 : 0);
         double d2 = n != 0 && n2 != 0 ? 0.7071068 : 1.0;
         this.motorFalhando = this.vida <= 3 && Math.sin(this.tempoVisual * 7.0) > 0.79;
         geloCapturado=Math.max(0,geloCapturado-d);
-        double d3 = (double)this.perfil().velocidade * (1+motorPermanente*(modeloVisual==1?.085:.045)) * (impulso>0?1.35:1.0) * (1.0 + (this.nivel / 2) * 0.025) * (this.motorFalhando ? 0.85 : 1.0)*(geloCapturado>0?.6:1);
+        double d3 = (double)this.perfil().velocidade * (1+motorPermanente*(modeloVisual==1?.085:.045)) * (impulso>0?1.35:1.0) * (1.0 + (this.nivel / 2) * 0.025) * (this.motorFalhando ? 0.85 : 1.0)*(geloCapturado>0?.6:1)*(modeloVisual==0&&truqueAtivo>0?3.2:1);
+        if (investindo()) { n = 1; d2 = 1; d3 = d3 * 2.6; }
         this.x = Nave.limitar(this.x + (double)n * d3 * d * d2, 8.0, 905.0);
         this.y = Nave.limitar(this.y + (double)n2 * d3 * d * d2, 90.0, 554.0);
         this.invulneravel = Math.max(0.0, this.invulneravel - d);
@@ -123,11 +148,27 @@ public class Nave {
                 this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 18, 1, n2));
             }
             this.recarga = 0.52 * this.perfil().intervalo / 0.28;
+        } else if (n == 0) {
+            // Arma de fabrica de cada nave
+            int bx = (int) this.x + 40, by = (int) this.y;
+            switch (Math.max(0, Math.min(4, modeloVisual))) {
+                case 0: misseis.add(new Missel(bx, by + 12, 0)); misseis.add(new Missel(bx - 5, by + 27, 0)); break; // tiro duplo
+                case 1: misseis.add(new Missel(bx + 6, by + 19, 0)); if (nivel >= 3) misseis.add(new Missel(bx, by + 19, 0, 0)); break; // agulha rapida
+                case 2: misseis.add(new Missel(bx, by + 19, 0, -7)); misseis.add(new Missel(bx, by + 19, 0)); misseis.add(new Missel(bx, by + 19, 0, 7)); break; // leque
+                case 3: misseis.add(new Missel(bx, by + 19, 0)); if (nivel >= 3) misseis.add(new Missel(bx - 8, by + 19, 0)); break; // obus pesado
+                default: misseis.add(new Missel(bx, by + 6, 0)); misseis.add(new Missel(bx + 6, by + 19, 0)); misseis.add(new Missel(bx, by + 32, 0)); break; // tridente
+            }
+            this.recarga = this.perfil().intervalo * (this.nivel >= 2 ? 0.65 : 1.0) * (emFuria() ? .5 : 1);
+            if (this.riffJames && ++this.tirosAposRiff % 4 == 0) {
+                this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 14, 0, -18.0));
+                this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 14, 0, 18.0));
+            }
+            if (this.ataqueSonico && ++this.tirosAposSonico % 5 == 0) {
+                this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 15, 0, -12.0));
+                this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 15, 0, 12.0));
+            }
         } else {
             this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 12, n));
-            if (this.nivel >= 3 && n == 0) {
-                this.misseis.add(new Missel((int)this.x + 35, (int)this.y + 27, n));
-            }
             this.recarga = n == 2 ? 0.95 : this.perfil().intervalo * (this.nivel >= 2 ? 0.65 : 1.0);
             if (this.riffJames && n == 0 && ++this.tirosAposRiff % 4 == 0) {
                 this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 14, 0, -18.0));
@@ -252,7 +293,7 @@ public class Nave {
     }
 
     public int danoBalistico() {
-        return this.perfil().dano + (this.nivel >= 6 ? 1 : 0)+canhaoPermanente*(modeloVisual==3?2:1);
+        return this.perfil().dano + (this.nivel >= 6 ? 1 : 0)+canhaoPermanente*(modeloVisual==3?2:1) + (modeloVisual == 4 ? (vida * 4 <= getVidaMaxima() ? 2 : vida * 2 <= getVidaMaxima() ? 1 : 0) : 0);
     }
 
     public int getModeloVisual() {
@@ -313,10 +354,38 @@ public class Nave {
     }
 
     public void desenhar(Graphics2D graphics2D) {
-        if (this.invulneravel > 0.0 && (int)(this.invulneravel * 14.0) % 2 == 0) {
+        efeitoTruque(graphics2D);
+        // durante o truque a nave nao pisca (impulso e investida deixam intangivel, mas sao golpes visiveis)
+        if (truqueAtivo <= 0 && this.invulneravel > 0.0 && (int)(this.invulneravel * 14.0) % 2 == 0) {
             return;
         }
+        if (camuflada()) {
+            Graphics2D a = (Graphics2D) graphics2D.create();
+            a.setComposite(java.awt.AlphaComposite.SrcOver.derive((float) (.22 + .08 * Math.sin(tempoVisual * 20))));
+            this.desenharSemPiscar(a); a.dispose(); return;
+        }
         this.desenharSemPiscar(graphics2D);
+    }
+
+    /** Visual de cada truque: rastro do impulso, chamas da investida, aura da furia, isca da camuflagem. */
+    private void efeitoTruque(Graphics2D g) {
+        if (truqueAtivo <= 0) return;
+        int cx = (int) x + 22, cy = (int) y + 20;
+        Graphics2D a = (Graphics2D) g.create();
+        switch (modeloVisual) {
+            case 0: for (int k = 1; k <= 4; k++) { a.setColor(new Color(120, 200, 255, 120 - k * 25)); a.fillRoundRect(cx - 30 - k * 22, cy - 12, 50, 24, 20, 20); } break;
+            case 1: { // a isca fantasma fica onde a nave estava: e ali que os inimigos miram
+                a.setComposite(java.awt.AlphaComposite.SrcOver.derive(.45f));
+                Graphics2D b = (Graphics2D) a.create(); b.translate((int) camuflagemX, (int) camuflagemY);
+                ArteNaves.desenharJogador(b, nivel, modeloVisual, 0, 0, tempoVisual); b.dispose();
+                break; }
+            case 3: for (int k = 0; k < 10; k++) { a.setColor(new Color(255, 120 + k * 12, 30, 200 - k * 18)); int r = 22 - k; a.fillOval(cx - 34 - k * 9 - r, cy - r + (int) (Math.sin(tempoVisual * 30 + k) * 4), r * 2, r * 2); }
+                a.setColor(new Color(255, 230, 150, 160)); a.fillPolygon(new int[]{cx + 30, cx + 52, cx + 30}, new int[]{cy - 22, cy, cy + 22}, 3); break;
+            case 4: { int r = 34 + (int) (Math.sin(tempoVisual * 12) * 4); a.setColor(new Color(255, 40, 30, 70)); a.fillOval(cx - r, cy - r, 2 * r, 2 * r);
+                a.setColor(new Color(255, 120, 40, 150)); for (int k = 0; k < 8; k++) { double an = tempoVisual * 6 + k * Math.PI / 4; a.fillRect(cx + (int) (Math.cos(an) * r) - 2, cy + (int) (Math.sin(an) * r * .7) - 2, 4, 4); } break; }
+            default: break;
+        }
+        a.dispose();
     }
 
     void desenharSemPiscar(Graphics2D graphics2D) {
@@ -393,6 +462,10 @@ public class Nave {
             }
             case 70: {
                 this.proximaArma();
+                break;
+            }
+            case 16: {
+                this.usarTruque();
                 break;
             }
         }

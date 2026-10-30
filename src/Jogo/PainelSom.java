@@ -87,8 +87,8 @@ final class PainelSom {
   texto(g,"O PROGRESSO E AS COMPRAS SAO SALVOS SOZINHOS.",x,y+190,11,new Color(140,150,170),false);
  }
  private static void controles(Graphics2D g,int x,int y,int w){
-  String[][] t={{"SETAS / WASD","PILOTAR"},{"ESPACO","ATIRAR"},{"F","TROCAR ARMA"},{"Q / E","GELO / FOGO"},{"V","CONVERGENCIA"},{"C","USAR PODER DO CHEFE"},{"X","PROXIMO PODER"},{"1 - 8","ESCOLHER PODER"},{"R","USAR RESERVA"},{"ENTER / P / ESC","PAUSA"},{"F9","OPCOES"},{"F10","SILENCIAR"}};
-  for(int i=0;i<t.length;i++){int col=i/6,lin=i%6,kx=x+col*(w/2),ky=y+lin*31;
+  String[][] t={{"SETAS / WASD","PILOTAR"},{"ESPACO","ATIRAR"},{"F","TROCAR ARMA"},{"Q / E","GELO / FOGO"},{"V","CONVERGENCIA"},{"C","USAR PODER DO CHEFE"},{"X","PROXIMO PODER"},{"SHIFT","TRUQUE DA NAVE"},{"1 - 8","ESCOLHER PODER"},{"R","USAR RESERVA"},{"ENTER / P / ESC","PAUSA"},{"F9","OPCOES"},{"F10","SILENCIAR"}};
+  for(int i=0;i<t.length;i++){int col=i/7,lin=i%7,kx=x+col*(w/2),ky=y+lin*27;
    g.setFont(new Font(Font.MONOSPACED,Font.BOLD,12));int kw=Math.max(26,g.getFontMetrics().stringWidth(t[i][0])+14);
    g.setColor(new Color(34,38,50));g.fillRoundRect(kx,ky,kw,22,6,6);g.setColor(new Color(150,160,180));g.drawRoundRect(kx,ky,kw,22,6,6);g.setColor(new Color(90,20,24));g.drawLine(kx+3,ky+21,kx+kw-3,ky+21);
    texto(g,t[i][0],kx+kw/2,ky+16,12,Color.WHITE,true);texto(g,t[i][1],kx+kw+10,ky+16,12,i>=5&&i<=7?new Color(255,210,110):new Color(200,210,225),false);}

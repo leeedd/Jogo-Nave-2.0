@@ -27,7 +27,7 @@ public final class TesteEvolucoes {
     g.setFont(new Font("Monospaced",Font.BOLD,11));g.setColor(ArteNaves.corModelo(modelo));g.drawString(nomes[modelo]+" / "+nivel,nivel*158+13,67+modelo*116);
    }
    nave.melhorar();ok(nave.getNivel()==8,"limite8");
-   Missel.setTipoTiro(0);nave.atira();ok(nave.getMisseis().size()==2,"duplo preservado8");
+   Missel.setTipoTiro(0);nave.atira();int[] tiros={2,2,3,2,3};ok(nave.getMisseis().size()==tiros[modelo],"arma de fabrica "+modelo+" no nivel 8");
    nave.perderModulo();ok(nave.getNivel()==7,"perda modulo");ok(nave.getVida()<=nave.getVidaMaxima(),"vida limitada");
    for(int i=0;i<10;i++)nave.perderModulo();ok(nave.getNivel()==0,"minimo0");
   }

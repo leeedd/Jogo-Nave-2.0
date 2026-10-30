@@ -226,8 +226,17 @@ implements ActionListener {
             g.setColor(new Color(255, 255, 255, 200)); g.fillRect(x + 3, y + 2, w - 6, 2);
         }
     }
+    /** Investida do Berserker: atropela inimigos e acerta o chefe uma vez por investida. */
+    private boolean investidaAcertouChefe;
+    private void atualizarInvestida() {
+        if (!nave.investindo()) { investidaAcertouChefe = false; return; }
+        Rectangle r = nave.getBounds(); r.grow(14, 10);
+        for (Alien a : alien) if (a.isVisible() && r.intersects(a.getBounds()) && a.receberImpacto(0, 6)) eliminarAlien(a, true);
+        if (miniChefe != null && r.intersects(miniChefe.getBounds()) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (miniChefe.receberDano(6)) derrotarMiniChefe(); }
+        if (chefe != null && r.intersects(chefe.getBounds()) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (chefe.receberDano(8)) derrotarChefao(); }
+    }
     private void atualizarPoderes(double d){
-        atualizarCapsulas(d);
+        atualizarCapsulas(d); atualizarInvestida();
         if(poderes.ativo>=0||poderes.pendente>=0){java.util.List<double[]> alvos=new java.util.ArrayList<>();
             for(Alien a:alien)if(a.isVisible())alvos.add(new double[]{a.getBounds().getCenterX(),a.getBounds().getCenterY()});
             if(miniChefe!=null)alvos.add(new double[]{miniChefe.getBounds().getCenterX(),miniChefe.getBounds().getCenterY()});
@@ -566,8 +575,8 @@ implements ActionListener {
     }
 
     /** Para onde os inimigos miram: a isca de cristal, quando existe, atrai os disparos. */
-    private int alvoX(){return poderes.cloneAtivo()?(int)poderes.cloneX():nave.getX();}
-    private int alvoY(){return poderes.cloneAtivo()?(int)poderes.cloneY():nave.getY();}
+    private int alvoX(){return poderes.cloneAtivo()?(int)poderes.cloneX():nave.camuflada()?(int)nave.camuflagemX():nave.getX();}
+    private int alvoY(){return poderes.cloneAtivo()?(int)poderes.cloneY():nave.camuflada()?(int)nave.camuflagemY():nave.getY();}
     private void atirarInimigo(Alien a){a.animarAtaqueEnxame();SomJogo.tocar(SomJogo.Efeito.INIMIGO,a.getX());
         tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()+18));
         if(a.getEquipamento()==Item.Tipo.ARMA_2){tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()-100));tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()+136));}
@@ -762,6 +771,10 @@ implements ActionListener {
             if(energiaExibidaPoder<alvo){int antes=(int)(energiaExibidaPoder/100*19);energiaExibidaPoder=Math.min(alvo,energiaExibidaPoder+1.2);if((int)(energiaExibidaPoder/100*19)>antes)SomJogo.tocar(SomJogo.Efeito.COLETA);}else energiaExibidaPoder=alvo;
             HudEnergia.desenhar(graphics2D,6,Config.HUD+42,poderes,inventario,energiaExibidaPoder,tempoTotal);
             if(inventario.temChaveIndice(sel)&&PainelSom.dicasTeclas())HudEnergia.teclas(graphics2D,6,Config.HUD+42);}
+        // Truque exclusivo da nave: nome e recarga no rodape
+        {double rc=nave.recargaTruque(),mx=nave.maxRecargaTruque();int tx=640,ty=578;graphics2D.setFont(new Font(Font.MONOSPACED,Font.BOLD,11));
+            graphics2D.setColor(new Color(20,26,38));graphics2D.fillRect(tx,ty,120,8);graphics2D.setColor(rc<=0?new Color(255,206,98):new Color(110,120,140));graphics2D.fillRect(tx,ty,(int)(120*(1-rc/mx)),8);
+            graphics2D.setColor(Color.WHITE);graphics2D.drawString((PainelSom.dicasTeclas()?"SHIFT: ":"")+nave.nomeTruque()+(rc>0?"  "+(int)Math.ceil(rc)+"s":""),tx,ty-3);}
         if (this.chefe != null && this.emJogo) {
             this.chefe.desenharVida(graphics2D);
         }
