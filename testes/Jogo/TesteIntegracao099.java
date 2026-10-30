@@ -22,7 +22,7 @@ public final class TesteIntegracao099 {
         Graphics2D g=b.createGraphics();
         Pausa099.desenhar(g,4,0,inventario,n,new Energia098(),poderes,true,true,1.0,"");
         ok(b.getRGB(300,130)!=0,"mercado renderizado");
-        CenaFinal c=new CenaFinal();for(int i=0;i<650;i++)c.atualizar(.1);
+        CenaFinal c=new CenaFinal();for(int i=0;i<780;i++)c.atualizar(.1);
         c.desenhar(g);ok(c.mostrandoMegazord(),"teaser final alcançado");
         g.dispose();
         System.out.println("OK 0.9.9: "+checks+" verificações.");

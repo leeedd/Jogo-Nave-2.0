@@ -2093,7 +2093,7 @@ implements ActionListener {
             }
 
             if(!emJogo){
-                if(venceu&&!mostrarPlacarFinal){if(keyEvent.getKeyCode()==KeyEvent.VK_ENTER && cenaFinal!=null&&cenaFinal.getTempo()>=68.0)mostrarPlacarFinal=true;return;}
+                if(venceu&&!mostrarPlacarFinal){if(keyEvent.getKeyCode()==KeyEvent.VK_ENTER && cenaFinal!=null&&cenaFinal.podeEncerrar())mostrarPlacarFinal=true;return;}
                 if(!venceu&&cenaNave!=null&&!cenaNave.terminou())return;
                 int k=keyEvent.getKeyCode();
                 if(k==KeyEvent.VK_ENTER){
