@@ -34,19 +34,21 @@ public final class CenaFinal {
         {5, "JAMES HETFIELD", "METALLICA", "RIFFS DE PALHETADA PRECISA QUE DEFINIRAM", "O THRASH. MASTER OF PUPPETS VIROU CLASSICO."},
         {6, "TOM ARAYA", "SLAYER", "BAIXO E VOZ DO THRASH MAIS EXTREMO. REIGN IN", "BLOOD INSPIROU O DEATH E O BLACK METAL."},
         {7, "CHUCK BILLY", "TESTAMENT", "VOZ PODEROSA DO THRASH DA BAY AREA. DESDE", "THE LEGACY, EM 1987, MANTEM O THRASH VIVO."},
-        {1, "OZZY OSBOURNE", "BLACK SABBATH", "O PRINCIPE DAS TREVAS. COM O BLACK SABBATH,", "AJUDOU A CRIAR O HEAVY METAL EM 1970."}
+        {1, "OZZY OSBOURNE", "BLACK SABBATH", "O PRINCIPE DAS TREVAS. COM O BLACK SABBATH,", "AJUDOU A CRIAR O HEAVY METAL EM 1970."},
+        {-5, "TENACIOUS D", "AGRADECIMENTO ESPECIAL / DEEZLEBOSS", "TRIBUTE E THE PICK OF DESTINY CELEBRARAM O", "ROCK COM HUMOR, RIFFS E MUITA REVERENCIA."}
     };
-    /** Lendas que partiram; id 0 = sem retrato, desenha uma vela. O ultimo fecha a homenagem. */
+    /** Lendas que partiram; id negativo = retrato de RetratosLendas. O ultimo fecha a homenagem. */
     private static final Object[][] LENDAS = {
-        {0, "CHESTER BENNINGTON", "LINKIN PARK", "1976 - 2017", "A VOZ DE HYBRID THEORY. SEU GRITO E SUA DOR", "FALARAM POR UMA GERACAO INTEIRA."},
-        {0, "JOEY JORDISON", "SLIPKNOT", "1975 - 2021", "BATERISTA FUNDADOR DO SLIPKNOT. VELOCIDADE E", "TECNICA QUE INSPIRARAM INCONTAVEIS BATERISTAS."},
-        {0, "CLIFF BURTON", "METALLICA", "1962 - 1986", "O BAIXO DE MASTER OF PUPPETS. TROUXE MELODIA", "E HARMONIA AO THRASH, COMO EM ORION."},
+        {-3, "CLIFF BURTON", "METALLICA", "1962 - 1986", "O BAIXO DE MASTER OF PUPPETS. TROUXE MELODIA", "E HARMONIA AO THRASH, COMO EM ORION."},
+        {-4, "RONNIE JAMES DIO", "RAINBOW / BLACK SABBATH / DIO", "1942 - 2010", "UMA DAS MAIORES VOZES DO METAL. ESPALHOU", "OS CHIFRES ERGUIDOS PELOS PALCOS DO MUNDO."},
         {4, "LEMMY KILMISTER", "MOTORHEAD", "1945 - 2015", "VIVEU DO JEITO QUE TOCAVA: ALTO, RAPIDO E", "SEM CONCESSOES. BORN TO LOSE, LIVE TO WIN."},
+        {-1, "CHESTER BENNINGTON", "LINKIN PARK", "1976 - 2017", "A VOZ DE HYBRID THEORY. SEU GRITO E SUA DOR", "FALARAM POR UMA GERACAO INTEIRA."},
+        {-2, "JOEY JORDISON", "SLIPKNOT", "1975 - 2021", "BATERISTA FUNDADOR DO SLIPKNOT. VELOCIDADE E", "TECNICA QUE INSPIRARAM INCONTAVEIS BATERISTAS."},
         {1, "OZZY OSBOURNE", "BLACK SABBATH", "1948 - 2025", "O PRINCIPE DAS TREVAS. ONDE TUDO COMECOU.", "OBRIGADO, OZZY."}
     };
     private static final String[] ENCERRAMENTO_CREDITOS = {
         "A JORNADA COMECOU COM A LULA DO ABISMO", "", "DESENVOLVIDO POR FLAVIO PRADO", "JOGO ORIGINAL - 2019",
-        "", "AGRADECIMENTOS ESPECIAIS", "RONNIE JAMES DIO", "TENACIOUS D / DEEZLEBOSS", "", "DE FAS DE METAL, PARA FAS DE METAL"
+        "", "DE FAS DE METAL, PARA FAS DE METAL"
     };
 
     private static final BufferedImage ROLO_CHEFES = rolo(false);
@@ -239,10 +241,10 @@ public final class CenaFinal {
         return lendas ? cinza(b) : b;
     }
 
-    /** Retrato em moldura do HUD: sprite do chefe, ou uma vela quando nao ha retrato. */
+    /** Retrato em moldura do HUD: sprite do chefe, retrato desenhado, ou uma vela quando nao ha nenhum. */
     private static void retrato(Graphics2D g, int id, int x, int y, int lado) {
         HudMetal.painel(g, x - 8, y - 8, lado + 16, lado + 16);
-        BufferedImage s = id > 0 ? Sprites16Bits.carregar(id, 2) : null;
+        BufferedImage s = id > 0 ? Sprites16Bits.carregar(id, 2) : id < 0 ? RetratosLendas.obter(-id) : null;
         if (s != null) {
             double e = Math.min(lado / (double) s.getWidth(), lado / (double) s.getHeight());
             int sw = (int) (s.getWidth() * e), sh = (int) (s.getHeight() * e);
