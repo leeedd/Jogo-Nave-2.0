@@ -17,11 +17,12 @@ final class Poderes099 {
  boolean ativar(ProgressaoNave p,Nave n){int i=selecionado;if(!p.temChaveIndice(i)||ativo>=0||pendente>=0||cooldown[i]>0||energia[i]<CUSTO[i])return false;energia[i]-=CUSTO[i];cooldown[i]=RECARGA[i]*(1-.06*n.motorPermanente());pendente=i;preparo=PREPARO;naveX=n.getX()+22;naveY=n.getY()+20;SomJogo.tocar(SomJogo.Efeito.ENERGIA);return true;}
  private void disparar(int i,Nave n){nave=n;ativo=i;restante=DURACAO[i];tempo=pulso=0;vidaMoto=8;x=n.getX()+95;y=n.getY()+18;proximaCorrente=0;corrente.clear();
   if(i==6){vidaClone=6;cloneX=n.getX();cloneY=n.getY()+(n.getY()>320?-110:110);}SomJogo.tocar(i==5?SomJogo.Efeito.FOGO:SomJogo.Efeito.FUSAO);}
- int recarregar(ProgressaoNave p){int sobra=20;for(int j=0;j<8;j++){int i=(selecionado+j)%8;if(p.temChaveIndice(i)){int v=Math.min(sobra,100-energia[i]);energia[i]+=v;sobra-=v;}}return 20-sobra;}
+ int recarregar(ProgressaoNave p){return recarregar(p,20);}
+ /** Capsula: enche primeiro o poder equipado; o que sobrar vai para os outros poderes liberados. */
+ int recarregar(ProgressaoNave p,int quantidade){int sobra=quantidade;for(int j=0;j<8;j++){int i=(selecionado+j)%8;if(p.temChaveIndice(i)){int v=Math.min(sobra,100-energia[i]);energia[i]+=v;sobra-=v;}}return quantidade-sobra;}
  void atualizar(double dt,Nave n){
     for(int i=0;i<8;i++)cooldown[i]=Math.max(0,cooldown[i]-dt);
-    recargaPassiva+=dt;
-    if(recargaPassiva>=.65){int ganho=(int)(recargaPassiva/.65);recargaPassiva-=ganho*.65;for(int i=0;i<8;i++)energia[i]=Math.min(100,energia[i]+ganho);}
+    // Sem recarga automatica: a energia so volta com capsulas, reliquias ou pegando o As de volta.
     naveX=n.getX()+22;naveY=n.getY()+20;
     if(pendente>=0){preparo-=dt;if(preparo<=0){int i=pendente;pendente=-1;disparar(i,n);}return;}
     pegouCarta=Math.max(0,pegouCarta-dt);

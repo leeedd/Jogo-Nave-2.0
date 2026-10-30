@@ -188,7 +188,40 @@ implements ActionListener {
         if(poderes.ativar(inventario,nave))mostrarAviso("PODER: "+Poderes099.NOMES[poderes.selecionado]);
         else SomJogo.tocar(SomJogo.Efeito.ERRO);
     }
+    /** Capsulas de energia dos poderes: {x, y, valor, idade}. Caem dos inimigos e somem apos 9 s. */
+    private final List<double[]> capsulas = new ArrayList<double[]>();
+    private void soltarCapsula(int x, int y, boolean garantida, boolean grande) {
+        boolean temPoder = false; for (int i = 0; i < 8; i++) temPoder |= inventario.temChaveIndice(i);
+        if (!temPoder) return;
+        if (!garantida && aleatorio.nextDouble() > .16) return;
+        capsulas.add(new double[]{x, y, grande || aleatorio.nextDouble() < .12 ? 50 : 20, 0});
+    }
+    private void atualizarCapsulas(double d) {
+        Rectangle pega = nave.getBounds(); pega.grow(10, 10);
+        for (double[] c : capsulas) {
+            c[0] -= 45 * d; c[3] += d;
+            if (pega.contains(c[0], c[1])) {
+                poderes.recarregar(inventario, (int) c[2]); SomJogo.tocar(SomJogo.Efeito.ENERGIA);
+                gerarParticulas((int) c[0], (int) c[1], 8); c[3] = 99;
+            }
+        }
+        capsulas.removeIf(c -> c[3] > 9 || c[0] < -20);
+    }
+    private void desenharCapsulas(Graphics2D g) {
+        Color cor = Poderes099.CORES_SIMBOLO[poderes.selecionado];
+        for (double[] c : capsulas) {
+            if (c[3] > 7 && (int) (c[3] * 10) % 2 == 0) continue; // pisca antes de sumir
+            boolean grande = c[2] >= 50; int w = grande ? 26 : 18, h = grande ? 14 : 10;
+            int x = (int) c[0] - w / 2, y = (int) (c[1] + Math.sin(c[3] * 4) * 3) - h / 2;
+            g.setColor(new Color(cor.getRed(), cor.getGreen(), cor.getBlue(), 70)); g.fillOval(x - 6, y - 6, w + 12, h + 12);
+            g.setColor(new Color(30, 34, 48)); g.fillRoundRect(x - 1, y - 1, w + 2, h + 2, h, h);
+            g.setColor(cor); g.fillRoundRect(x, y, w / 2 + h / 2, h, h, h);
+            g.setColor(new Color(235, 240, 250)); g.fillRoundRect(x + w / 2 - h / 2, y, w / 2 + h / 2, h, h, h); g.setColor(cor); g.fillRect(x + h / 2, y, w / 2 - h / 2, h);
+            g.setColor(new Color(255, 255, 255, 200)); g.fillRect(x + 3, y + 2, w - 6, 2);
+        }
+    }
     private void atualizarPoderes(double d){
+        atualizarCapsulas(d);
         if(poderes.ativo>=0||poderes.pendente>=0){java.util.List<double[]> alvos=new java.util.ArrayList<>();
             for(Alien a:alien)if(a.isVisible())alvos.add(new double[]{a.getBounds().getCenterX(),a.getBounds().getCenterY()});
             if(miniChefe!=null)alvos.add(new double[]{miniChefe.getBounds().getCenterX(),miniChefe.getBounds().getCenterY()});
@@ -572,6 +605,7 @@ implements ActionListener {
                 if (!object.isVisible()) continue;
                 object.desenhar(graphics2D2);
             }
+            desenharCapsulas(graphics2D2);
             for (Item item : this.itens) {
                 if (!item.isVisible()) continue;
                 item.desenhar(graphics2D2, this.tempoTotal);
@@ -1083,7 +1117,7 @@ implements ActionListener {
         }
         if(trofeuPendente!=0)return;
         if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal();MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
-        this.itens.clear();
+        this.itens.clear(); capsulas.clear();
         this.tempoAviso = 0.0;
         // Ordem livre: o jogador escolhe no Mapa Estelar o proximo setor ainda nao vencido.
         escolhendoSetor = true;
@@ -1398,6 +1432,7 @@ implements ActionListener {
             return;
         }
         SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE);Rectangle rectangle = this.miniChefe.getBounds();
+        soltarCapsula((int) rectangle.getCenterX(), (int) rectangle.getCenterY(), true, true);
         this.gerarParticulas((int)rectangle.getCenterX(), (int)rectangle.getCenterY(), 60);
         this.explosoes.add(new ExplosaoCurta((int)rectangle.getCenterX(), (int)rectangle.getCenterY(), 45));
         this.miniChefe = null;
@@ -1573,6 +1608,8 @@ implements ActionListener {
             default: recompensa=100;
         }
         premiar(recompensa+(alien.evoluido()?150:0));
+        soltarCapsula(n, n2, false, false);
+        if (alien.getClasse() == Alien.Classe.TANQUE || alien.evoluido()) soltarCapsula(n, n2 + 14, false, false);
         double suprimento=aleatorio.nextDouble();if(suprimento<.18)itens.add(new Item(Item.Tipo.REPARO,n,n2,false));else if(suprimento<.36)itens.add(new Item(Item.Tipo.ENERGIA,n,n2,false));
         if (this.eliminados == 7 || this.eliminados % 16 == 0 && !this.geloColetado) {
             this.itens.add(new Item(Item.Tipo.ARMA_GELO, n, n2, false));
@@ -1790,7 +1827,7 @@ implements ActionListener {
         this.chefePendente = 0;
         this.tirosChefes.clear();
         this.tirosInimigos.clear();
-        this.itens.clear();
+        this.itens.clear(); capsulas.clear();
         this.explosoes.clear();derrotasEnxame.clear();
         this.particulas.clear();
         this.tempoNuclear = 0.72;
