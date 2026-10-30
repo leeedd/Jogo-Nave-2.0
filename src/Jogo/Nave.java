@@ -24,7 +24,9 @@ public class Nave {
     private int vida = 12;
     public static final int MAX_EVOLUCAO = 8;
     private int nivel = 0;
-    private int blindagemComprada;
+    private int blindagemComprada, nucleosCasco;
+    /** Cada Nucleo de Casco encontrado aumenta o casco maximo em 2; o novo casco entra cheio. */
+    void aplicarNucleos(int n){int antes=getVidaMaxima();nucleosCasco=Math.max(0,Math.min(8,n));vida=Math.max(1,Math.min(getVidaMaxima(),vida+getVidaMaxima()-antes));}
     private int pisoPermanente,canhaoPermanente,motorPermanente;
     void aplicarPecas(int piso,int canhao,int motor){int antes=getVidaMaxima();pisoPermanente=piso;nivel=Math.max(nivel,piso);canhaoPermanente=canhao;motorPermanente=motor;vida=Math.min(getVidaMaxima(),vida+getVidaMaxima()-antes);}
     int pisoPermanente(){return pisoPermanente;}
@@ -246,7 +248,7 @@ public class Nave {
     }
 
     public int getVidaMaxima() {
-        return this.perfil().casco + this.nivel / 2 + blindagemComprada*4;
+        return this.perfil().casco + this.nivel / 2 + blindagemComprada*4 + nucleosCasco*2;
     }
 
     public int danoBalistico() {

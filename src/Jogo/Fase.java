@@ -157,7 +157,7 @@ implements ActionListener {
     private Energia098 energia = new Energia098();
     private Poderes099 poderes = new Poderes099();
     private int cursorPausa;
-    private Segredo098 segredo;
+    private Segredo098 segredo, segredoCasco;
     private boolean segredoGerado;
     private int produtoLoja;
     private boolean oficinaAberta;
@@ -177,6 +177,7 @@ implements ActionListener {
     }
     private void aplicarInventario(){
         nave.aplicarBlindagem(inventario.blindagem());
+        nave.aplicarNucleos(inventario.quantidadeNucleos());
         int m=nave.getModeloVisual();
         nave.aplicarPecas(inventario.peca(m,0),inventario.peca(m,1),inventario.peca(m,2));
         if(inventario.retencao()){geloColetado=inventario.gelo()>0;fogoColetado=inventario.fogo()>0;}
@@ -275,10 +276,14 @@ implements ActionListener {
             if(setor<8&&setor%2==0&&!inventario.temTanque(setor/2))segredo=new Segredo098(setor,false);
             else if(setor==3&&!inventario.reator())segredo=new Segredo098(setor,true);
         }
-        if(segredo==null||!segredo.ativo())return;
-        segredo.atualizar(dt);
-        for(Missel m:nave.getMisseis())if(segredo.ativo()&&m.isVisible()&&m.getBounds().intersects(segredo.bounds())){m.setVisible(false);if(segredo.atingir(nave.danoBalistico()))itens.add(segredo.liberar());}
-        for(DisparoElemental t:tirosElementais)if(segredo.ativo()&&t.ativo()&&t.getBounds().intersects(segredo.bounds())){t.apagar();if(segredo.atingir(t.dano()))itens.add(segredo.liberar());}
+        // Nucleo de Casco: aparece mais tarde no setor, so se ainda nao foi achado aqui.
+        if(segredoCasco==null&&tempoSetor>=34&&!inventario.temNucleo(setorAtual))segredoCasco=Segredo098.nucleo(setorAtual);
+        for(Segredo098 sg:new Segredo098[]{segredo,segredoCasco}){
+            if(sg==null||!sg.ativo())continue;
+            sg.atualizar(dt);
+            for(Missel m:nave.getMisseis())if(sg.ativo()&&m.isVisible()&&m.getBounds().intersects(sg.bounds())){m.setVisible(false);if(sg.atingir(nave.danoBalistico()))itens.add(sg.liberar());}
+            for(DisparoElemental t:tirosElementais)if(sg.ativo()&&t.ativo()&&t.getBounds().intersects(sg.bounds())){t.apagar();if(sg.atingir(t.dano()))itens.add(sg.liberar());}
+        }
     }
 
     private final Placar placar = new Placar();
@@ -602,6 +607,7 @@ implements ActionListener {
         if(PainelSom.tremorTela()&&intercepcao&&miniChefe!=null&&miniChefe.morrendo())graphics2D2.translate((int)(Math.sin(miniChefe.comandanteTeste().relogio()*70)*4),(int)(Math.cos(miniChefe.comandanteTeste().relogio()*70)*3));
         this.fundoEspacial.desenhar(graphics2D2);
         if(segredo!=null)segredo.desenhar(graphics2D2,tempoTotal);
+        if(segredoCasco!=null)segredoCasco.desenhar(graphics2D2,tempoTotal);
         if (this.emJogo) {
             for (Asteroide object : this.asteroides) {
                 if (!object.isVisible()) continue;
@@ -1156,7 +1162,7 @@ implements ActionListener {
     }
 
     private void iniciarRitmoSetor() {
-        segredo=null;segredoGerado=false;
+        segredo=null;segredoCasco=null;segredoGerado=false;
         this.tempoSetor = 0.0;
         this.secaoMusicalAnterior = -1;
         double d = MusicaJogo.duracaoSegundos(Recompensas.trilhaDoSetor(this.chefesDerrotados));
@@ -1235,6 +1241,7 @@ implements ActionListener {
                 if(!recolherReparo()){item.setVisible(true);continue;}
                 continue;
             }
+            if(item.getTipo()==Item.Tipo.NUCLEO_CASCO){if(inventario.coletarNucleo(item.origem())){nave.aplicarNucleos(inventario.quantidadeNucleos());SomJogo.tocar(SomJogo.Efeito.EVOLUCAO);}mostrarAviso("NUCLEO DE CASCO: +2 CASCO MAXIMO ("+inventario.quantidadeNucleos()+"/8)");continue;}
             if(item.getTipo()==Item.Tipo.SUBTANQUE){if(inventario.descobrirTanque(item.origem()))SomJogo.tocar(SomJogo.Efeito.SUBTANQUE);mostrarAviso("SUBTANQUE ENCONTRADO: "+inventario.quantidadeTanques()+"/4");continue;}
             if(item.getTipo()==Item.Tipo.REATOR_CONVERGENCIA){inventario.coletarReator();SomJogo.tocar(SomJogo.Efeito.RELIQUIA);mostrarAviso("REATOR DE CONVERGENCIA ENCONTRADO");continue;}
             if(item.getTipo()==Item.Tipo.ENERGIA){if(energia.recarregar(geloColetado,fogoColetado)==0)item.setVisible(true);else SomJogo.tocar(SomJogo.Efeito.ENERGIA);continue;}

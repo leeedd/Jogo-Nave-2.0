@@ -24,7 +24,7 @@ public class Item {
     private final boolean recuperado;
 
     public boolean podeSerCapturado() {
-        return this.idade >= 2.0 && tipo!=Tipo.ENERGIA && tipo!=Tipo.SUBTANQUE && tipo!=Tipo.REPARO && tipo!=Tipo.REATOR_CONVERGENCIA;
+        return this.idade >= 2.0 && tipo!=Tipo.ENERGIA && tipo!=Tipo.NUCLEO_CASCO && tipo!=Tipo.SUBTANQUE && tipo!=Tipo.REPARO && tipo!=Tipo.REATOR_CONVERGENCIA;
     }
 
     public Item(Tipo tipo, int n, int n2, boolean bl) { this(tipo,n,n2,bl,-1); }
@@ -50,6 +50,7 @@ public class Item {
         int n2 = (int)(this.y + Math.sin(d * 4.0 + this.x * 0.02) * 4.0);
         Color color = this.tipo == Tipo.REPARO ? new Color(98, 255, 153) : (this.tipo == Tipo.MELHORIA ? new Color(255, 214, 91) : (this.tipo == Tipo.ARMA_2 ? new Color(255, 113, 222) : (this.tipo == Tipo.ARMA_GELO ? new Color(90, 222, 255) : (this.tipo == Tipo.ARMA_FOGO ? new Color(255, 104, 53) : (this.tipo == Tipo.PEROLA_ABISSAL ? new Color(47, 234, 229) : (this.tipo == Tipo.OCULOS_OZZY ? new Color(192, 129, 253) : (this.tipo == Tipo.EMBLEMA_HALFORD ? new Color(255, 171, 75) : (this.tipo == Tipo.INSIGNIA_EDDIE ? new Color(109, 235, 214) : (this.tipo == Tipo.CHAPEU_LEMMY ? new Color(255, 166, 77) : (this.tipo == Tipo.PALHETA_JAMES ? new Color(80, 166, 255) : (this.tipo == Tipo.MICROFONE_TOM ? new Color(249, 69, 82) : (this.tipo == Tipo.MEDALHA_TESTAMENT ? new Color(113, 246, 120) : new Color(84, 215, 255)))))))))))));
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
+        if(tipo==Tipo.NUCLEO_CASCO){nucleo(graphics2D2,n+9,n2+10,d);graphics2D2.dispose();return;}
         if(tipo==Tipo.ENERGIA||tipo==Tipo.SUBTANQUE||tipo==Tipo.REPARO||tipo==Tipo.REATOR_CONVERGENCIA){
             Arte098.item(graphics2D2,tipo==Tipo.SUBTANQUE?0:tipo==Tipo.REPARO?4:8,n-9,n2-9,44);
             graphics2D2.dispose();return;
@@ -100,6 +101,24 @@ public class Item {
         this.visivel = bl;
     }
 
+    private static final java.awt.image.BufferedImage ARTE_NUCLEO = arteNucleo();
+    private static java.awt.image.BufferedImage arteNucleo(){java.net.URL u=Item.class.getResource("/ImagemIcon/nucleo_casco.png");if(u==null)return null;try{return javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){return null;}}
+    /** Nucleo de Casco: placa blindada com coracao de energia vermelho pulsando (arte em ImagemIcon/nucleo_casco.png tem prioridade). */
+    static void nucleo(Graphics2D g, int cx, int cy, double t) {
+        int pulso = (int) Math.round(Math.sin(t * 6) * 2);
+        g.setColor(new Color(255, 60, 60, 60)); g.fillOval(cx - 26 - pulso, cy - 26 - pulso, 52 + 2 * pulso, 52 + 2 * pulso);
+        if (ARTE_NUCLEO != null) { g.drawImage(ARTE_NUCLEO, cx - 22, cy - 22, 44, 44, null); return; }
+        int[] xs = {cx - 17, cx + 17, cx + 17, cx, cx - 17}, ys = {cy - 16, cy - 16, cy + 4, cy + 19, cy + 4};
+        g.setColor(new Color(40, 44, 56)); g.fillPolygon(xs, ys, 5);
+        g.setColor(new Color(150, 160, 180)); g.drawPolygon(xs, ys, 5);
+        g.setColor(new Color(90, 98, 115)); g.drawLine(cx - 14, cy - 13, cx + 14, cy - 13);
+        int r = 7 + (pulso > 0 ? 1 : 0);
+        g.setColor(new Color(200, 20, 30)); g.fillOval(cx - r - 3, cy - 6 - r / 2, r + 3, r + 3); g.fillOval(cx, cy - 6 - r / 2, r + 3, r + 3);
+        g.fillPolygon(new int[]{cx - r - 3, cx + r + 3, cx}, new int[]{cy - 2, cy - 2, cy + 10}, 3);
+        g.setColor(new Color(255, 150, 150)); g.fillRect(cx - 6, cy - 7, 3, 3);
+        g.setColor(new Color(220, 225, 235)); for (int[] p : new int[][]{{cx - 13, cy - 10}, {cx + 11, cy - 10}, {cx - 13, cy + 2}, {cx + 11, cy + 2}}) g.fillRect(p[0], p[1], 2, 2);
+    }
+
     public Rectangle getBounds() {
         return new Rectangle((int)this.x - 6, (int)this.y - 8, 36, 40);
     }
@@ -121,7 +140,8 @@ public class Item {
         CHAPEU_LEMMY,
         PALHETA_JAMES,
         MICROFONE_TOM,
-        MEDALHA_TESTAMENT;
+        MEDALHA_TESTAMENT,
+        NUCLEO_CASCO;
 
     }
 }
