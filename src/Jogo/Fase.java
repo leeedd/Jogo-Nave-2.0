@@ -786,7 +786,7 @@ implements ActionListener {
         if (escolhendoSetor || this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
         graphics2D.setColor(Color.CYAN);
         graphics2D.setFont(new Font("Monospaced", Font.BOLD, 12));
-        graphics2D.drawString(partidaTeste ? "TESTE / SEM PLACAR — F8: PAINEL" : "F8: TESTAR SETORES", 420, 591);
+        if(!naBase)graphics2D.drawString(partidaTeste ? "TESTE / SEM PLACAR — F8: PAINEL" : "F8: TESTAR SETORES", 420, 591);
         if (painelTeste) desenharPainelTeste(graphics2D);
         PainelSom.desenhar(graphics2D);
         graphics2D.dispose();

@@ -12,9 +12,9 @@ import java.awt.image.BufferedImage;
  * Atracada, oferece reparo, mercado, hangar (so naves desbloqueadas) e grava o ponto de retomada.
  */
 final class EstacaoAliada {
-    private static final BufferedImage ARTE = ler("base_aliada.png");
-    private static final double PARADA = 640, ESPERA = 14;
-    private double x = 1000, y = 230, tempo, parada;
+    private static final BufferedImage ARTE = ler("base_aliada.png"), INTERIOR = ler("base_interior.png"), LUZES = ler("base_doca_luzes.png");
+    private static final double PARADA = 560, ESPERA = 14;
+    private double x = 1000, y = 200, tempo, parada;
     private boolean saindo;
 
     void atualizar(double dt) {
@@ -28,24 +28,27 @@ final class EstacaoAliada {
     boolean aguardando() { return !saindo && x <= PARADA; }
     double restante() { return Math.max(0, ESPERA - parada); }
     /** Doca: a boca do hangar no lado esquerdo da estacao. */
-    Rectangle doca() { return new Rectangle((int) x - 10, (int) y + 52, 60, 46); }
+    Rectangle doca() { return ARTE != null ? new Rectangle((int) x, (int) y + 78, 130, 70) : new Rectangle((int) x - 10, (int) y + 52, 60, 46); }
 
     void desenhar(Graphics2D original) {
         Graphics2D g = (Graphics2D) original.create();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         int bx = (int) x, by = (int) y + (int) Math.round(Math.sin(tempo * 1.3) * 3);
-        if (ARTE != null) g.drawImage(ARTE, bx - 20, by - 20, 300, 190, null);
+        if (ARTE != null) g.drawImage(ARTE, bx, by, null);
         else casco(g, bx, by);
-        // luzes da doca piscando enquanto espera a nave
+        // luzes da doca: as tres acendem da direita para a esquerda, chamando a nave
         if (aguardando()) {
-            boolean liga = (int) (tempo * 4) % 2 == 0;
-            for (int i = 0; i < 3; i++) {
-                g.setColor(liga ? new Color(90, 255, 140) : new Color(30, 90, 50));
-                g.fillRect(bx - 4 - i * 14, by + 74, 8, 4);
+            if (LUZES != null) {
+                int q = (int) (tempo * 4) % 4, fw = LUZES.getWidth() / 4;
+                int lx = ARTE != null ? bx + 4 : bx - 50, ly = ARTE != null ? by + 56 : by + 66;
+                g.drawImage(LUZES, lx, ly, lx + fw, ly + LUZES.getHeight(), q * fw, 0, q * fw + fw, LUZES.getHeight(), null);
+            } else {
+                boolean liga = (int) (tempo * 4) % 2 == 0;
+                for (int i = 0; i < 3; i++) { g.setColor(liga ? new Color(90, 255, 140) : new Color(30, 90, 50)); g.fillRect(bx - 4 - i * 14, by + 74, 8, 4); }
             }
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13));
             g.setColor(new Color(130, 255, 160));
-            g.drawString("BASE ALIADA - ATRAQUE NA DOCA (" + (int) Math.ceil(restante()) + "s)", bx - 150, by - 14);
+            g.drawString("BASE ALIADA - ATRAQUE NA DOCA (" + (int) Math.ceil(restante()) + "s)", bx - 60, by + 8);
         }
         g.dispose();
     }
@@ -90,38 +93,39 @@ final class EstacaoAliada {
     static final int CUSTO_REPARO = 30;
 
     static void desenharMenu(Graphics2D g, int cursor, Nave nave, ProgressaoNave inv, int modelo, String aviso, double tempo) {
-        g.setColor(new Color(0, 0, 0, 190)); g.fillRect(0, 0, 960, 600);
-        HudMetal.painel(g, 200, 120, 560, 360);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24)); g.setColor(new Color(130, 255, 160));
-        g.drawString("BASE ALIADA", 236, 170);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13)); g.setColor(new Color(170, 190, 210));
-        g.drawString("PONTO DE RETOMADA SALVO", 236, 192);
-        g.setColor(new Color(110, 222, 245)); g.drawString("CR " + inv.saldo(), 640, 170);
+        if (INTERIOR != null) g.drawImage(INTERIOR, 0, 0, null); else { g.setColor(new Color(0, 0, 0, 190)); g.fillRect(0, 0, 960, 600); }
+        // nave estacionada na plataforma do hangar (a do hangar e a escolhida, as outras ainda nao)
+        Graphics2D a = (Graphics2D) g.create();
+        a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        boolean livre = ProgressoJogo.modeloDisponivel(modelo);
+        a.setColor(new Color(0, 0, 0, 90)); a.fillOval(560, 410, 300, 46);
+        a.translate(600, 350 + Math.sin(tempo * 1.6) * 3); a.scale(2.6, 2.6);
+        if (!livre) a.setComposite(java.awt.AlphaComposite.SrcOver.derive(.35f));
+        ArteNaves.desenharJogador(a, nave.getNivel(), modelo, 0, 0, tempo, 0, 0, 0, false);
+        a.dispose();
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16)); g.setColor(livre ? new Color(255, 206, 98) : new Color(255, 120, 100));
+        String nome = Pausa099.NAVES[modelo] + (livre ? "" : "  [BLOQUEADA]");
+        g.drawString(nome, 710 - g.getFontMetrics().stringWidth(nome) / 2, 500);
+        if (cursor == 2) { g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30)); g.drawString("<", 540, 380); g.drawString(">", 860, 380); }
+        // painel de opcoes
+        HudMetal.painel(g, 24, 96, 430, 404);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24)); g.setColor(new Color(130, 255, 160)); g.drawString("BASE ALIADA", 52, 144);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); g.setColor(new Color(170, 190, 210)); g.drawString("PONTO DE RETOMADA SALVO", 52, 164);
+        g.setColor(new Color(110, 222, 245)); g.drawString("CR " + inv.saldo(), 420 - g.getFontMetrics().stringWidth("CR " + inv.saldo()), 144);
         int falta = nave.getVidaMaxima() - nave.getVida();
-        String[] detalhe = {
-            falta == 0 ? "CASCO INTEIRO" : "CR " + falta * CUSTO_REPARO + " (" + falta + " PONTOS)",
-            "PECAS PERMANENTES",
-            Pausa099.NAVES[modelo] + (ProgressoJogo.modeloDisponivel(modelo) ? "" : "  [BLOQUEADA]"),
-            "VOLTAR AO COMBATE"};
+        String[] detalhe = {falta == 0 ? "CASCO INTEIRO " + nave.getVida() + "/" + nave.getVidaMaxima() : "CR " + falta * CUSTO_REPARO + " / " + falta + " PONTOS",
+            "PECAS PERMANENTES", "< > ESCOLHER NAVE", "VOLTAR AO COMBATE"};
         for (int i = 0; i < OPCOES.length; i++) {
-            int oy = 232 + i * 52; boolean sel = i == cursor;
-            g.setColor(sel ? new Color(40, 70, 60) : new Color(14, 22, 34)); g.fillRect(236, oy - 26, 488, 42);
-            g.setColor(sel ? new Color(255, 206, 98) : new Color(48, 76, 101)); g.drawRect(236, oy - 26, 488, 42);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); g.setColor(sel ? new Color(255, 206, 98) : Color.WHITE);
-            g.drawString((sel ? "> " : "  ") + OPCOES[i], 250, oy);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13)); g.setColor(i == 0 && falta * CUSTO_REPARO > inv.saldo() && falta > 0 ? new Color(255, 90, 90) : new Color(170, 190, 210));
-            g.drawString(detalhe[i], 470, oy);
-        }
-        { // previa da nave do hangar, dentro da propria linha, com setas para trocar
-            int oy = 232 + 2 * 52;
-            Graphics2D a = (Graphics2D) g.create(); a.clipRect(236, oy - 26, 488, 42);
-            if (!ProgressoJogo.modeloDisponivel(modelo)) a.setComposite(java.awt.AlphaComposite.SrcOver.derive(.3f));
-            ArteNaves.desenharJogador(a, nave.getNivel(), modelo, 650, oy - 25, tempo);
-            a.dispose();
-            if (cursor == 2) { g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16)); g.setColor(new Color(255, 206, 98)); g.drawString("<", 600, oy); g.drawString(">", 712, oy); }
+            int oy = 214 + i * 64; boolean sel = i == cursor;
+            g.setColor(sel ? new Color(40, 70, 60) : new Color(14, 22, 34)); g.fillRect(48, oy - 28, 382, 52);
+            g.setColor(sel ? new Color(255, 206, 98) : new Color(48, 76, 101)); g.drawRect(48, oy - 28, 382, 52);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); g.setColor(sel ? new Color(255, 206, 98) : Color.WHITE); g.drawString((sel ? "> " : "  ") + OPCOES[i], 60, oy - 4);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12));
+            g.setColor(i == 0 && falta > 0 && falta * CUSTO_REPARO > inv.saldo() ? new Color(255, 90, 90) : new Color(170, 190, 210));
+            g.drawString(detalhe[i], 84, oy + 15);
         }
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); g.setColor(new Color(255, 206, 98));
-        if (aviso != null && !aviso.isEmpty()) g.drawString(aviso, 236, 452);
-        g.setColor(new Color(150, 160, 180)); g.drawString("SETAS: ESCOLHER   ENTER: CONFIRMAR   ESC: PARTIR", 236, 470);
+        if (aviso != null && !aviso.isEmpty()) g.drawString(aviso, 52, 468);
+        g.setColor(new Color(150, 160, 180)); g.drawString("SETAS: ESCOLHER  ENTER: OK  ESC: PARTIR", 52, 488);
     }
 }
