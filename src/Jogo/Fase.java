@@ -134,7 +134,7 @@ implements ActionListener {
     private boolean escolhendoSetor;
     /** Poder (indice de Poderes099) que e o ponto fraco de cada chefe, pelo id do chefe. */
     static final int[] FRAQUEZA = {-1, 3, 4, 1, 2, 6, 0, 5, 7};
-    private double tempoCritico;
+    private double tempoCritico, energiaExibidaPoder;
     private boolean oculosOzzyColetados;
     private boolean emblemaHalfordColetado;
     private boolean insigniaEddieColetada;
@@ -211,7 +211,9 @@ implements ActionListener {
         Color cor = Poderes099.CORES_SIMBOLO[poderes.selecionado];
         for (double[] c : capsulas) {
             if (c[3] > 7 && (int) (c[3] * 10) % 2 == 0) continue; // pisca antes de sumir
-            boolean grande = c[2] >= 50; int w = grande ? 26 : 18, h = grande ? 14 : 10;
+            boolean grande = c[2] >= 50;
+            if (HudEnergia.capsula(g, (int) c[0], (int) (c[1] + Math.sin(c[3] * 4) * 3), grande, cor)) continue;
+            int w = grande ? 26 : 18, h = grande ? 14 : 10;
             int x = (int) c[0] - w / 2, y = (int) (c[1] + Math.sin(c[3] * 4) * 3) - h / 2;
             g.setColor(new Color(cor.getRed(), cor.getGreen(), cor.getBlue(), 70)); g.fillOval(x - 6, y - 6, w + 12, h + 12);
             g.setColor(new Color(30, 34, 48)); g.fillRoundRect(x - 1, y - 1, w + 2, h + 2, h, h);
@@ -674,12 +676,10 @@ implements ActionListener {
         graphics2D.drawString("CR "+inventario.saldo()+"  Q "+energia.carga(0)+"% E "+energia.carga(1)+"%",630,chefe!=null?95:592);
         graphics2D.drawString("R: RESERVAS "+inventario.carga(0)+"/"+inventario.carga(1)+"/"+inventario.carga(2)+"/"+inventario.carga(3),16,572);
         graphics2D.drawString("C: PODER  X: TROCAR  "+Poderes099.NOMES[poderes.selecionado],16,592);
-        // Energia do poder equipado: gasta a cada uso e recarrega aos poucos (ou com relíquias).
-        if(inventario.temChaveIndice(poderes.selecionado)){int sel=poderes.selecionado,bx=16+graphics2D.getFontMetrics().stringWidth("C: PODER  X: TROCAR  "+Poderes099.NOMES[sel])+10;
-            Poderes099.simbolo(graphics2D,sel,bx+9,587,1);graphics2D.setColor(new Color(20,30,44));graphics2D.fillRect(bx+22,582,104,10);
-            graphics2D.setColor(poderes.energia[sel]>=Poderes099.CUSTO[sel]&&poderes.cooldown[sel]<=0?Poderes099.CORES_SIMBOLO[sel]:new Color(110,110,120));
-            graphics2D.fillRect(bx+24,584,poderes.energia[sel],6);graphics2D.setColor(Color.WHITE);graphics2D.drawLine(bx+24+Poderes099.CUSTO[sel],582,bx+24+Poderes099.CUSTO[sel],592);
-            if(poderes.cooldown[sel]>0)graphics2D.drawString((int)Math.ceil(poderes.cooldown[sel])+"s",bx+132,592);}
+        // Energia do poder equipado em gomos (estilo arcade), abaixo do painel superior; cadeado enquanto nao houver poder.
+        {int sel=poderes.selecionado;double alvo=inventario.temChaveIndice(sel)?poderes.energia[sel]:0;
+            if(energiaExibidaPoder<alvo){int antes=(int)(energiaExibidaPoder/100*19);energiaExibidaPoder=Math.min(alvo,energiaExibidaPoder+1.2);if((int)(energiaExibidaPoder/100*19)>antes)SomJogo.tocar(SomJogo.Efeito.COLETA);}else energiaExibidaPoder=alvo;
+            HudEnergia.desenhar(graphics2D,6,Config.HUD+42,poderes,inventario,energiaExibidaPoder,tempoTotal);}
         if (this.chefe != null && this.emJogo) {
             this.chefe.desenharVida(graphics2D);
         }
@@ -706,7 +706,7 @@ implements ActionListener {
         if (escolhendoSetor || this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
         graphics2D.setColor(Color.CYAN);
         graphics2D.setFont(new Font("Monospaced", Font.BOLD, 12));
-        graphics2D.drawString(partidaTeste ? "TESTE / SEM PLACAR — F8: PAINEL" : "F8: TESTAR SETORES", 12, 591);
+        graphics2D.drawString(partidaTeste ? "TESTE / SEM PLACAR — F8: PAINEL" : "F8: TESTAR SETORES", 420, 591);
         if (painelTeste) desenharPainelTeste(graphics2D);
         PainelSom.desenhar(graphics2D);
         graphics2D.dispose();
