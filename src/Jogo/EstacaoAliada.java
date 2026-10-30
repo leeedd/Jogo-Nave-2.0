@@ -90,47 +90,55 @@ final class EstacaoAliada {
 
     // ---- menu da base ----
     private static final BufferedImage[] FRENTE = {ler("nave_0_frente.png"), ler("nave_1_frente.png"), ler("nave_2_frente.png"), ler("nave_3_frente.png"), ler("nave_4_frente.png")};
-    static final String[] OPCOES = {"REPARAR CASCO", "MERCADO", "HANGAR", "PARTIR"};
+    static final String[] OPCOES = {"MISSOES", "REPARAR CASCO", "MERCADO", "PARTIR"};
     static final int CUSTO_REPARO = 30;
 
-    static void desenharMenu(Graphics2D g, int cursor, Nave nave, ProgressaoNave inv, int modelo, String aviso, double tempo) {
+    static void desenharMenu(Graphics2D g, boolean menu, int cursor, Nave nave, ProgressaoNave inv, int modelo, String aviso, double tempo) {
         if (INTERIOR != null) g.drawImage(INTERIOR, 0, 0, null); else { g.setColor(new Color(0, 0, 0, 190)); g.fillRect(0, 0, 960, 600); }
-        // nave estacionada na plataforma do hangar (a do hangar e a escolhida, as outras ainda nao)
+        // nave estacionada no centro da plataforma
         Graphics2D a = (Graphics2D) g.create();
-        a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        boolean livre = ProgressoJogo.modeloDisponivel(modelo);
-        a.setColor(new Color(0, 0, 0, 90)); a.fillOval(560, 410, 300, 46);
+        a.setColor(new Color(0, 0, 0, 100)); a.fillOval(330, 420, 300, 46);
         BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
-        if (!livre) a.setComposite(java.awt.AlphaComposite.SrcOver.derive(.35f));
         if (frente != null) {
-            // nave de frente, estacionada na plataforma, com a placa do nome embaixo
-            int fw = frente.getWidth() * 290 / frente.getHeight(); a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            a.drawImage(frente, 710 - fw / 2, 190, fw, 290, null);
-        } else { a.translate(600, 350 + Math.sin(tempo * 1.6) * 3); a.scale(2.6, 2.6); ArteNaves.desenharJogador(a, nave.getNivel(), modelo, 0, 0, tempo, 0, 0, 0, false); }
+            int fh = 300, fw = frente.getWidth() * fh / frente.getHeight();
+            a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            a.drawImage(frente, 480 - fw / 2, 190, fw, fh, null);
+        } else { a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR); a.translate(370, 350); a.scale(2.6, 2.6); ArteNaves.desenharJogador(a, nave.getNivel(), modelo, 0, 0, tempo, 0, 0, 0, false); }
         a.dispose();
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16)); g.setColor(livre ? new Color(255, 206, 98) : new Color(255, 120, 100));
-        String nome = frente != null ? (livre ? "" : "BLOQUEADA") : Pausa099.NAVES[modelo] + (livre ? "" : "  [BLOQUEADA]");
-        if (!nome.isEmpty()) g.drawString(nome, 710 - g.getFontMetrics().stringWidth(nome) / 2, 510);
-        if (cursor == 2) { g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30)); g.drawString("<", 524, 330); g.drawString(">", 878, 330); }
-        // painel de opcoes
-        HudMetal.painel(g, 24, 96, 430, 404);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24)); g.setColor(new Color(130, 255, 160)); g.drawString("BASE ALIADA", 52, 144);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); g.setColor(new Color(170, 190, 210)); g.drawString("PONTO DE RETOMADA SALVO", 52, 164);
-        g.setColor(new Color(110, 222, 245)); g.drawString("CR " + inv.saldo(), 420 - g.getFontMetrics().stringWidth("CR " + inv.saldo()), 144);
-        int falta = nave.getVidaMaxima() - nave.getVida();
-        String[] detalhe = {falta == 0 ? "CASCO INTEIRO " + nave.getVida() + "/" + nave.getVidaMaxima() : "CR " + falta * CUSTO_REPARO + " / " + falta + " PONTOS",
-            "PECAS PERMANENTES", "< > ESCOLHER NAVE", "VOLTAR AO COMBATE"};
-        for (int i = 0; i < OPCOES.length; i++) {
-            int oy = 214 + i * 64; boolean sel = i == cursor;
-            g.setColor(sel ? new Color(40, 70, 60) : new Color(14, 22, 34)); g.fillRect(48, oy - 28, 382, 52);
-            g.setColor(sel ? new Color(255, 206, 98) : new Color(48, 76, 101)); g.drawRect(48, oy - 28, 382, 52);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); g.setColor(sel ? new Color(255, 206, 98) : Color.WHITE); g.drawString((sel ? "> " : "  ") + OPCOES[i], 60, oy - 4);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12));
-            g.setColor(i == 0 && falta > 0 && falta * CUSTO_REPARO > inv.saldo() ? new Color(255, 90, 90) : new Color(170, 190, 210));
-            g.drawString(detalhe[i], 84, oy + 15);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13)); g.setColor(new Color(110, 222, 245));
+        String cr = "CR " + inv.saldo() + "   CASCO " + nave.getVida() + "/" + nave.getVidaMaxima();
+        faixa(g, 0, 0, 960, 30); g.drawString("BASE ALIADA  /  PONTO DE RETOMADA SALVO", 16, 20); g.drawString(cr, 944 - g.getFontMetrics().stringWidth(cr), 20);
+        if (!menu) {
+            boolean pisca = (int) (tempo * 2) % 2 == 0;
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 34)); g.setColor(new Color(255, 206, 98, pisca ? 255 : 150));
+            g.drawString("<", 250, 345); g.drawString(">", 690, 345);
+            faixa(g, 0, 556, 960, 44);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14)); g.setColor(Color.WHITE);
+            String dica = "< > TROCAR NAVE     ENTER: MENU DA BASE     ESC: PARTIR";
+            g.drawString(dica, 480 - g.getFontMetrics().stringWidth(dica) / 2, 583);
+            if (aviso != null && !aviso.isEmpty()) { g.setColor(new Color(255, 206, 98)); g.drawString(aviso, 480 - g.getFontMetrics().stringWidth(aviso) / 2, 545); }
+            return;
         }
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); g.setColor(new Color(255, 206, 98));
-        if (aviso != null && !aviso.isEmpty()) g.drawString(aviso, 52, 468);
-        g.setColor(new Color(150, 160, 180)); g.drawString("SETAS: ESCOLHER  ENTER: OK  ESC: PARTIR", 52, 488);
+        // menu translucido por cima da nave
+        Graphics2D m = (Graphics2D) g.create();
+        Graphics2D fundo = (Graphics2D) m.create(); fundo.setComposite(java.awt.AlphaComposite.SrcOver.derive(.5f));
+        HudMetal.painel(fundo, 290, 150, 380, 320); fundo.dispose();
+        int falta = nave.getVidaMaxima() - nave.getVida();
+        String[] detalhe = {"CONTRATOS DO SETOR", falta == 0 ? "CASCO INTEIRO" : "CR " + falta * CUSTO_REPARO + " / " + falta + " PONTOS", "PECAS E MELHORIAS", "VOLTAR AO COMBATE"};
+        for (int i = 0; i < OPCOES.length; i++) {
+            int oy = 206 + i * 62; boolean sel = i == cursor;
+            m.setColor(sel ? new Color(40, 90, 60, 150) : new Color(10, 16, 26, 95)); m.fillRect(312, oy - 28, 336, 50);
+            m.setColor(sel ? new Color(255, 206, 98) : new Color(48, 76, 101)); m.drawRect(312, oy - 28, 336, 50);
+            m.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); m.setColor(sel ? new Color(255, 206, 98) : Color.WHITE); m.drawString((sel ? "> " : "  ") + OPCOES[i], 324, oy - 5);
+            m.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12));
+            m.setColor(i == 1 && falta > 0 && falta * CUSTO_REPARO > inv.saldo() ? new Color(255, 90, 90) : new Color(170, 190, 210)); m.drawString(detalhe[i], 348, oy + 13);
+        }
+        m.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); m.setColor(new Color(255, 206, 98));
+        if (aviso != null && !aviso.isEmpty()) m.drawString(aviso, 480 - m.getFontMetrics().stringWidth(aviso) / 2, 452);
+        m.dispose();
+        faixa(g, 0, 556, 960, 44); g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14)); g.setColor(Color.WHITE);
+        String dica = "SETAS: ESCOLHER     ENTER: CONFIRMAR     ESC: FECHAR MENU";
+        g.drawString(dica, 480 - g.getFontMetrics().stringWidth(dica) / 2, 583);
     }
+    private static void faixa(Graphics2D g, int x, int y, int w, int h) { g.setColor(new Color(4, 6, 12, 190)); g.fillRect(x, y, w, h); g.setColor(new Color(110, 90, 50)); g.drawLine(x, y == 0 ? h - 1 : y, x + w, y == 0 ? h - 1 : y); }
 }

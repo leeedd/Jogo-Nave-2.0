@@ -136,7 +136,7 @@ implements ActionListener {
     static final int[] FRAQUEZA = {-1, 3, 4, 1, 2, 6, 0, 5, 7};
     private double tempoCritico, energiaExibidaPoder;
     /** Base aliada do setor e ponto de retomada gravado na ultima atracagem. */
-    private EstacaoAliada base; private boolean naBase; private int cursorBase, modeloBase; private String avisoBase = "";
+    private EstacaoAliada base; private boolean naBase, menuBase; private int cursorBase, modeloBase; private String avisoBase = "";
     private double[] retomada;
     private boolean oculosOzzyColetados;
     private boolean emblemaHalfordColetado;
@@ -283,7 +283,7 @@ implements ActionListener {
         if (base.saiu()) base = null;
     }
     private void atracar() {
-        naBase = true; cursorBase = 0; modeloBase = modeloVisual; avisoBase = "";
+        naBase = true; menuBase = false; cursorBase = 0; modeloBase = modeloVisual; avisoBase = "";
         nave.soltarTeclas(); espacoPressionado = geloPressionado = fogoPressionado = false;
         tirosInimigos.clear(); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
         gravarRetomada();
@@ -316,9 +316,20 @@ implements ActionListener {
         base = null; esperaProximoEsquadrao = 2.5; nave.tornarIntangivel(2);
         mostrarAviso("DE VOLTA A BASE ALIADA"); ultimoQuadroNanos = System.nanoTime();
     }
+    /** Troca de nave no hangar: so entre as desbloqueadas; a nova mantem o nivel e a porcentagem do casco. */
+    private void trocarNaveNaBase(int passo) {
+        int destino = -1;
+        for (int k = 1; k <= 5 && destino < 0; k++) { int m = Math.floorMod(modeloBase + passo * k, 5); if (ProgressoJogo.modeloDisponivel(m)) destino = m; }
+        if (destino < 0 || destino == modeloVisual) { avisoBase = "NENHUMA OUTRA NAVE DESBLOQUEADA"; SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
+        double fracao = nave.getVida() / (double) nave.getVidaMaxima();
+        modeloBase = destino; selecionarModeloNave(destino); aplicarInventario();
+        nave.definirVida((int) Math.ceil(nave.getVidaMaxima() * fracao));
+        avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.TROCA); gravarRetomada();
+    }
     private void confirmarBase() {
         switch (cursorBase) {
-            case 0: {
+            case 0: avisoBase = "MISSOES: EM BREVE NO QUADRO DA BASE"; SomJogo.tocar(SomJogo.Efeito.ERRO); break;
+            case 1: {
                 int falta = nave.getVidaMaxima() - nave.getVida();
                 if (falta == 0) { avisoBase = "O CASCO JA ESTA INTEIRO"; SomJogo.tocar(SomJogo.Efeito.ERRO); break; }
                 int pontosPagos = Math.min(falta, inventario.saldo() / EstacaoAliada.CUSTO_REPARO);
@@ -326,15 +337,7 @@ implements ActionListener {
                 inventario.gastar(pontosPagos * EstacaoAliada.CUSTO_REPARO); nave.curar(pontosPagos);
                 avisoBase = "CASCO REPARADO: +" + pontosPagos; SomJogo.tocar(SomJogo.Efeito.REPARO); gravarRetomada(); break;
             }
-            case 1: pausado = true; abaPausa = 4; cursorPausa = 0; break;
-            case 2: {
-                if (!ProgressoJogo.modeloDisponivel(modeloBase)) { avisoBase = "NAVE BLOQUEADA: VENCA MAIS CHEFES"; SomJogo.tocar(SomJogo.Efeito.ERRO); break; }
-                if (modeloBase == modeloVisual) { avisoBase = "ESTA NAVE JA ESTA EQUIPADA"; break; }
-                int nivel = nave.getNivel(); double fracao = nave.getVida() / (double) nave.getVidaMaxima();
-                selecionarModeloNave(modeloBase); aplicarInventario();
-                nave.definirVida((int) Math.ceil(nave.getVidaMaxima() * fracao));
-                avisoBase = "NAVE TROCADA: " + Pausa099.NAVES[modeloBase] + " (NIVEL " + nivel + ")"; SomJogo.tocar(SomJogo.Efeito.TROCA); gravarRetomada(); break;
-            }
+            case 2: pausado = true; abaPausa = 4; cursorPausa = 0; break;
             default: partirDaBase();
         }
     }
@@ -782,7 +785,7 @@ implements ActionListener {
             graphics2D.setColor(new Color(255, 230, 60, (int) (255 * Math.min(1, tempoCritico / .3))));
             graphics2D.drawString("PONTO FRACO! x2", chefe.getBounds().x - 40, chefe.getBounds().y - 12 - (int) ((.6 - tempoCritico) * 40));
         }
-        if (naBase && !pausado) EstacaoAliada.desenharMenu(graphics2D, cursorBase, nave, inventario, modeloBase, avisoBase, tempoTotal);
+        if (naBase && !pausado) EstacaoAliada.desenharMenu(graphics2D, menuBase, cursorBase, nave, inventario, modeloVisual, avisoBase, tempoTotal);
         if (escolhendoSetor || this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
         graphics2D.setColor(Color.CYAN);
         graphics2D.setFont(new Font("Monospaced", Font.BOLD, 12));
@@ -2234,16 +2237,18 @@ implements ActionListener {
             int codigo = keyEvent.getKeyCode();
             if (naBase && !pausado) {
                 if (!teclasTeste.add(codigo)) return;
-                if (codigo == KeyEvent.VK_UP || codigo == KeyEvent.VK_W) { cursorBase = Math.floorMod(cursorBase - 1, 4); avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
-                else if (codigo == KeyEvent.VK_DOWN || codigo == KeyEvent.VK_S) { cursorBase = (cursorBase + 1) % 4; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
-                else if (cursorBase == 2 && (codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_A || codigo == KeyEvent.VK_D)) {
-                    // percorre so as naves ja desbloqueadas
-                    int passo = codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_A ? -1 : 1;
-                    for (int k = 1; k <= 5; k++) { int m = Math.floorMod(modeloBase + passo * k, 5); if (ProgressoJogo.modeloDisponivel(m)) { modeloBase = m; break; } }
-                    avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU);
+                boolean esq = codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_A, dir = codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_D;
+                if (!menuBase) {
+                    // hangar livre: nave no centro; < > troca de nave, ENTER abre o menu, ESC parte
+                    if (esq || dir) trocarNaveNaBase(esq ? -1 : 1);
+                    else if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) { menuBase = true; cursorBase = 0; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    else if (codigo == KeyEvent.VK_ESCAPE) partirDaBase();
+                } else {
+                    if (codigo == KeyEvent.VK_UP || codigo == KeyEvent.VK_W) { cursorBase = Math.floorMod(cursorBase - 1, 4); avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    else if (codigo == KeyEvent.VK_DOWN || codigo == KeyEvent.VK_S) { cursorBase = (cursorBase + 1) % 4; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    else if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) confirmarBase();
+                    else if (codigo == KeyEvent.VK_ESCAPE) { menuBase = false; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.VOLTAR); }
                 }
-                else if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) confirmarBase();
-                else if (codigo == KeyEvent.VK_ESCAPE) partirDaBase();
                 repaint(); return;
             }
             if (escolhendoSetor) {
