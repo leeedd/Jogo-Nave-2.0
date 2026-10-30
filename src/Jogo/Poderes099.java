@@ -261,6 +261,9 @@ final class Poderes099 {
  }
  private static int brilho(int c){return Math.max(c>>16&255,Math.max(c>>8&255,c&255));}
  private static boolean vizinhoFora(boolean[] f,int i){int x=i%256,y=i/256;return x>0&&f[i-1]||x<255&&f[i+1]||y>0&&f[i-256]||y<255&&f[i+256];}
+ /** Icone do poder no menu: o simbolo novo pulsando (quadros 3 e 4); sem a arte nova, usa o sprite antigo. */
+ static void icone(Graphics2D g,int i,int x,int y,int s,double t){BufferedImage[] q=quadrosSimbolo(Math.max(0,Math.min(7,i)));
+  if(q==null){sprite(g,i,x,y,s,t);return;}Graphics2D a=(Graphics2D)g.create();a.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);a.drawImage(q[2+((int)(t*3))%2],x,y,s,s,null);a.dispose();}
  static void simbolo(Graphics2D tela,int i,int cx,int cy,double p){
   BufferedImage[] q=quadrosSimbolo(Math.max(0,Math.min(7,i)));
   if(q!=null){
