@@ -39,7 +39,17 @@ public final class TiroChefe {
     }
     public void desenhar(Graphics2D g) {
         int px = (int) x, py = (int) y;
-        if (estilo == 1 && movimento == Movimento.ONDA) { desenharMorcego(g, px, py); return; }
+        // Cada artista tem um projetil com forma propria, combinando com o golpe da prancha.
+        switch (estilo) {
+            case 1: desenharMorcego(g, px, py); return;
+            case 2: desenharFogo(g, px, py); return;
+            case 3: desenharRaioCruzado(g, px, py); return;
+            case 4: desenharOndaSom(g, px, py); return;
+            case 5: desenharEsferaEletrica(g, px, py); return;
+            case 6: desenharEstilhaco(g, px, py); return;
+            case 7: desenharCristal(g, px, py); return;
+            default: break;
+        }
         int r = pesado ? 12 : 7;
         Color c = estilo == 8 ? new Color(255,116,12) : estilo == 1 ? new Color(199, 76, 232) : estilo == 2
                 ? new Color(255, 156, 44) : estilo == 3 ? new Color(74, 228, 223)
@@ -123,6 +133,118 @@ public final class TiroChefe {
             }
         }
     }
+    private double direcao() { return Math.atan2(vy, vx); }
+
+    /** Rob: bola de fogo com rastro de chamas tremulando para tras. */
+    private void desenharFogo(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        g.rotate(direcao(), px, py);
+        int r = pesado ? 11 : 7;
+        for (int i = 4; i >= 1; i--) {
+            int comp = r * 2 + i * 6 + (int) (Math.sin(tempo * 31 + i) * 3);
+            g.setColor(i > 2 ? new Color(200, 40, 20, 120) : new Color(255, 120, 30, 170));
+            g.fillPolygon(new int[]{px - comp, px, px}, new int[]{py + (int) (Math.sin(tempo * 23 + i * 2) * 3), py - r + i, py + r - i}, 3);
+        }
+        g.setColor(new Color(255, 140, 30));
+        g.fillOval(px - r, py - r, 2 * r, 2 * r);
+        g.setColor(new Color(255, 226, 90));
+        g.fillOval(px - r + 3, py - r + 3, 2 * r - 6, 2 * r - 6);
+        g.setColor(new Color(255, 255, 220));
+        g.fillOval(px - 2, py - 3, 5, 5);
+        g.dispose();
+    }
+
+    /** Bruce: dois raios ciano em X girando, com nucleo branco. */
+    private void desenharRaioCruzado(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        g.rotate(tempo * 7, px, py);
+        int r = pesado ? 16 : 11;
+        g.setColor(new Color(60, 220, 255, 60));
+        g.fillOval(px - r, py - r, 2 * r, 2 * r);
+        for (int k = 0; k < 2; k++) {
+            g.rotate(Math.PI / 2, px, py);
+            int[] xs = new int[7], ys = new int[7];
+            for (int i = 0; i < 7; i++) {
+                xs[i] = px - r + i * r / 3;
+                ys[i] = py + (i % 2 == 0 ? -2 : 2) * (1 + (int) (Math.sin(tempo * 40 + i) * 1.5));
+            }
+            g.setStroke(new java.awt.BasicStroke(4));
+            g.setColor(new Color(40, 190, 255));
+            g.drawPolyline(xs, ys, 7);
+            g.setStroke(new java.awt.BasicStroke(1.6f));
+            g.setColor(new Color(225, 250, 255));
+            g.drawPolyline(xs, ys, 7);
+        }
+        g.dispose();
+    }
+
+    /** Lemmy: ondas de som em arco, abertas para tras, pulsando. */
+    private void desenharOndaSom(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        g.rotate(direcao(), px, py);
+        int r = pesado ? 16 : 11;
+        g.setStroke(new java.awt.BasicStroke(pesado ? 4 : 3));
+        for (int i = 0; i < 3; i++) {
+            int raio = r - i * 4 + (int) (Math.sin(tempo * 18 - i) * 2);
+            g.setColor(i == 0 ? new Color(255, 230, 130) : i == 1 ? new Color(255, 160, 50) : new Color(220, 90, 30, 190));
+            g.drawArc(px - raio - i * 6, py - raio, raio * 2, raio * 2, -60, 120);
+        }
+        g.dispose();
+    }
+
+    /** James: esfera eletrica azul soltando faiscas em volta. */
+    private void desenharEsferaEletrica(Graphics2D g, int px, int py) {
+        int r = pesado ? 10 : 7;
+        g.setColor(new Color(60, 120, 255, 70));
+        g.fillOval(px - r - 6, py - r - 6, 2 * r + 12, 2 * r + 12);
+        g.setColor(new Color(70, 140, 255));
+        g.fillOval(px - r, py - r, 2 * r, 2 * r);
+        g.setColor(new Color(200, 225, 255));
+        g.fillOval(px - r / 2, py - r / 2, r, r);
+        for (int i = 0; i < 4; i++) {
+            double a = tempo * 9 + i * Math.PI / 2 + Math.sin(tempo * 21 + i);
+            int x1 = px + (int) (Math.cos(a) * r), y1 = py + (int) (Math.sin(a) * r);
+            int x2 = px + (int) (Math.cos(a + .4) * (r + 8)), y2 = py + (int) (Math.sin(a + .4) * (r + 8));
+            int x3 = px + (int) (Math.cos(a - .2) * (r + 14)), y3 = py + (int) (Math.sin(a - .2) * (r + 14));
+            g.setColor(new Color(150, 200, 255));
+            g.drawPolyline(new int[]{x1, x2, x3}, new int[]{y1, y2, y3}, 3);
+        }
+    }
+
+    /** Tom: estilhaco vermelho pontudo, apontando para onde voa. */
+    private void desenharEstilhaco(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        g.rotate(direcao(), px, py);
+        int c = pesado ? 18 : 13, l = pesado ? 6 : 4;
+        g.setColor(new Color(255, 40, 40, 80));
+        g.fillPolygon(new int[]{px - c * 2, px - c / 2, px - c / 2}, new int[]{py, py - l, py + l}, 3);
+        g.setColor(new Color(140, 10, 20));
+        g.fillPolygon(new int[]{px + c, px, px - c, px}, new int[]{py, py - l - 1, py, py + l + 1}, 4);
+        g.setColor(new Color(240, 40, 50));
+        g.fillPolygon(new int[]{px + c - 2, px, px - c + 3, px}, new int[]{py, py - l + 1, py, py + l - 1}, 4);
+        g.setColor(new Color(255, 190, 180));
+        g.drawLine(px - c / 2, py, px + c - 4, py);
+        g.dispose();
+    }
+
+    /** Chuck: cristal verde lapidado, girando devagar. */
+    private void desenharCristal(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        g.rotate(Math.sin(tempo * 3) * .5, px, py);
+        int a = pesado ? 16 : 11, b = pesado ? 11 : 8;
+        g.setColor(new Color(90, 255, 120, 60));
+        g.fillOval(px - a - 4, py - a - 4, 2 * a + 8, 2 * a + 8);
+        g.setColor(new Color(20, 120, 50));
+        g.fillPolygon(new int[]{px, px + b, px, px - b}, new int[]{py - a, py, py + a, py}, 4);
+        g.setColor(new Color(60, 210, 90));
+        g.fillPolygon(new int[]{px, px + b, px}, new int[]{py - a, py, py + a}, 3);
+        g.setColor(new Color(170, 255, 180));
+        g.fillPolygon(new int[]{px, px - b, px}, new int[]{py - a, py, py}, 3);
+        g.setColor(new Color(235, 255, 235));
+        g.drawLine(px - 2, py - a + 4, px - b / 2, py - 2);
+        g.dispose();
+    }
+
     Movimento getMovimentoTeste() { return movimento; }
     int getEstiloTeste() { return estilo; }
     double getVxTeste() { return vx; }
