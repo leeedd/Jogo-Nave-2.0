@@ -129,6 +129,12 @@ implements ActionListener {
     private double duracaoMusicaSetor = 180.0;
     private int secaoMusicalAnterior = -1;
     private int chefesDerrotados;
+    /** Setor em que a nave esta (0..7) e setores ja vencidos; a ordem e escolhida no Mapa Estelar. */
+    private int setorAtual, setoresVencidos;
+    private boolean escolhendoSetor;
+    /** Poder (indice de Poderes099) que e o ponto fraco de cada chefe, pelo id do chefe. */
+    static final int[] FRAQUEZA = {-1, 3, 4, 1, 2, 6, 0, 5, 7};
+    private double tempoCritico;
     private boolean oculosOzzyColetados;
     private boolean emblemaHalfordColetado;
     private boolean insigniaEddieColetada;
@@ -193,7 +199,12 @@ implements ActionListener {
             if(a.receberImpacto(0,dano))eliminarAlien(a,true);
         }
         if(miniChefe!=null&&area.intersects(miniChefe.getBounds())&&miniChefe.receberDano(dano))derrotarMiniChefe();
-        if(chefe!=null&&area.intersects(chefe.getBounds())&&chefe.receberDano(dano))derrotarChefao();
+        if(chefe!=null&&area.intersects(chefe.getBounds())){
+            // Ponto fraco: o poder certo causa dano dobrado, como numa tabela de fraquezas.
+            boolean critico=FRAQUEZA[chefe.getFase()]==poderes.ativo;
+            if(critico){dano*=2;tempoCritico=.6;}
+            if(chefe.receberDano(dano))derrotarChefao();
+        }
     }
     private boolean dispararElemental(boolean gelo){
         if(recargaElemental>0 || !(gelo?geloColetado:fogoColetado))return false;
@@ -216,7 +227,7 @@ implements ActionListener {
     private void usarSubtanque(){int cura=inventario.usar(inventario.primeiroCarregado(),nave.getVida(),nave.getVidaMaxima());if(cura>0){SomJogo.tocar(SomJogo.Efeito.REPARO);nave.curar(cura);mostrarAviso("SUBTANQUE: CASCO REPARADO");}}
     private void atualizarSegredo(double dt){
         if(etapa!=Etapa.COMBATE||intercepcao)return;
-        if(!segredoGerado&&tempoSetor>=18){segredoGerado=true;int setor=chefesDerrotados;
+        if(!segredoGerado&&tempoSetor>=18){segredoGerado=true;int setor=setorAtual;
             if(setor<8&&setor%2==0&&!inventario.temTanque(setor/2))segredo=new Segredo098(setor,false);
             else if(setor==3&&!inventario.reator())segredo=new Segredo098(setor,true);
         }
@@ -396,7 +407,7 @@ implements ActionListener {
             tipo=classe==Alien.Classe.ORGANICO?Alien.Tipo.ALIENIGENA_ORIGINAL:Alien.Tipo.PIRATA;
             n6=n4==0?(int)d6:n4==1?110+aleatorio.nextInt(80):440+aleatorio.nextInt(80);
             Alien novo = new Alien(1045 + i * 54, n6, tipo, classe);
-            novo.definirSetor(chefesDerrotados,aleatorio);
+            novo.definirSetor(setorAtual,aleatorio);
             novo.entrarEmEsquadrao(d5, d6, i, n3, d4);
             this.alien.add(novo);
         }
@@ -479,7 +490,7 @@ implements ActionListener {
             this.avisoMini -= d;
             if (this.avisoMini <= 0.0) {
                 this.miniChefeEnfrentado = true;
-                this.miniChefe = new MiniChefe(this.chefesDerrotados + 1);
+                this.miniChefe = new MiniChefe(this.setorAtual + 1);
                 this.avisoMini = -1.0;
             }
             return;
@@ -634,7 +645,12 @@ implements ActionListener {
         } else if (this.tempoAviso > 0.0 && this.etapa != Etapa.INTERLUDIO && this.etapa != Etapa.DOBRA) {
             this.desenharAviso(graphics2D);
         }
-        if (this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
+        if (tempoCritico > 0 && chefe != null) {
+            graphics2D.setFont(new Font(Font.MONOSPACED, Font.BOLD, 28));
+            graphics2D.setColor(new Color(255, 230, 60, (int) (255 * Math.min(1, tempoCritico / .3))));
+            graphics2D.drawString("PONTO FRACO! x2", chefe.getBounds().x - 40, chefe.getBounds().y - 12 - (int) ((.6 - tempoCritico) * 40));
+        }
+        if (escolhendoSetor || this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
         graphics2D.setColor(Color.CYAN);
         graphics2D.setFont(new Font("Monospaced", Font.BOLD, 12));
         graphics2D.drawString(partidaTeste ? "TESTE / SEM PLACAR — F8: PAINEL" : "F8: TESTAR SETORES", 12, 591);
@@ -668,7 +684,7 @@ implements ActionListener {
         poderes = new Poderes099();
         partidaTeste = true; painelTeste = false; pausado = false;
         setorTeste = Math.max(1, Math.min(8, setor));
-        chefesDerrotados = setorTeste - 1;
+        chefesDerrotados = setorTeste - 1; setorAtual = setorTeste - 1; setoresVencidos = (1 << (setorTeste - 1)) - 1; escolhendoSetor = false;
         eliminados = chefesDerrotados == 0 ? 0 : FINAIS_SETORES[chefesDerrotados - 1];
         alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
         lancadosNoSetor = 0; numeroEsquadrao = 0; miniChefeEnfrentado = false;
@@ -681,7 +697,7 @@ implements ActionListener {
         if (encontro == KeyEvent.VK_S) {
             miniChefeEnfrentado = true; miniChefe = new MiniChefe(setorTeste);
         } else if (encontro == KeyEvent.VK_B) {
-            miniChefeEnfrentado = true; iniciarChefao(ORDEM_CHEFOES[chefesDerrotados]);
+            miniChefeEnfrentado = true; iniciarChefao(ORDEM_CHEFOES[setorAtual]);
         } else if (encontro == KeyEvent.VK_D || encontro == KeyEvent.VK_I) {
             emboscadaPendente = encontro == KeyEvent.VK_I;
             etapa = Etapa.DOBRA; cenaNave = new CinematicaNave(nave, false, chefesDerrotados);
@@ -689,12 +705,12 @@ implements ActionListener {
         ultimoQuadroNanos = System.nanoTime(); requestFocusInWindow();
     }
 
-    private boolean mapaAberto() { return pausado && !painelTeste && abaPausa == 3; }
+    private boolean mapaAberto() { return escolhendoSetor || pausado && !painelTeste && abaPausa == 3; }
 
     private void desenharMenuPausa(Graphics2D graphics2D) {
         if (mapaAberto()) {
-            int setor=Math.max(0,Math.min(7,chefesDerrotados-(etapa==Etapa.INTERLUDIO||etapa==Etapa.DERROTA_CHEFE?1:0)));
-            mapaEstelar.estado(setor,etapa==Etapa.DOBRA,intercepcao||etapa==Etapa.INTERDICAO,cenaNave==null?0:cenaNave.getTempo()/4.2);
+            int setor=setorAtual;
+            mapaEstelar.estado(setor,etapa==Etapa.DOBRA&&!escolhendoSetor,intercepcao||etapa==Etapa.INTERDICAO,cenaNave==null?0:cenaNave.getTempo()/4.2);
             mapaEstelar.desenhar(graphics2D);return;
         }
         Pausa099.desenhar(graphics2D,abaPausa,cursorPausa,inventario,nave,energia,poderes,geloColetado,fogoColetado,tempoTotal,tempoAviso>0?aviso:"");
@@ -868,6 +884,8 @@ implements ActionListener {
         if ((d = Math.min(0.045, Math.max(0.0, d))) == 0.0) {
             return;
         }
+        if (escolhendoSetor) { mapaEstelar.atualizar(d); this.repaint(); return; }
+        tempoCritico = Math.max(0, tempoCritico - d);
         if (this.pausado) {
             if (mapaAberto()) mapaEstelar.atualizar(d);
             this.repaint();
@@ -909,7 +927,7 @@ implements ActionListener {
         }
         if (this.emJogo && !intercepcao) {
             int n = this.chefesDerrotados == 0 ? 0 : FINAIS_SETORES[Math.min(this.chefesDerrotados - 1, 7)];
-            this.fundoEspacial.definirProgresso(Math.min(1.0, Math.max(0.0, (double)(this.eliminados - n) / (double)this.quantidadeSetor())), Math.max(0, this.chefesDerrotados - (this.etapa == Etapa.INTERLUDIO ? 1 : 0)));
+            this.fundoEspacial.definirProgresso(Math.min(1.0, Math.max(0.0, (double)(this.eliminados - n) / (double)this.quantidadeSetor())), this.setorAtual);
             this.fundoEspacial.atualizar(d);
         }
         if (intercepcao && emJogo) fundoEspacial.atualizar(d);
@@ -1013,7 +1031,7 @@ implements ActionListener {
             return;
         }
         this.etapa = Etapa.ALERTA_CHEFE;
-        this.chefePendente = this.chefesDerrotados + 1;
+        this.chefePendente = this.setorAtual + 1;
         this.tempoEtapa = 4.8;
         this.tirosInimigos.clear();
         this.asteroides.clear();
@@ -1047,18 +1065,30 @@ implements ActionListener {
         if(trofeuPendente!=0)return;
         if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal();MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
         this.itens.clear();
-        this.etapa = Etapa.DOBRA;
         this.tempoAviso = 0.0;
-        this.cenaNave = new CinematicaNave(this.nave, false, this.chefesDerrotados);
+        // Ordem livre: o jogador escolhe no Mapa Estelar o proximo setor ainda nao vencido.
+        escolhendoSetor = true;
+        mapaEstelar.iniciarEscolha(setoresVencidos, setorAtual);
+        nave.soltarTeclas(); espacoPressionado = geloPressionado = fogoPressionado = false;
+    }
+
+    private void confirmarSetor() {
+        int destino = mapaEstelar.escolhaValida();
+        if (destino < 0) { SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
+        SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
+        escolhendoSetor = false;
+        setorAtual = destino;
+        this.etapa = Etapa.DOBRA;
+        this.cenaNave = new CinematicaNave(this.nave, false, setorAtual);
         emboscadaPendente = !partidaTeste && !emboscadaUsada && chefesDerrotados >= 2
                 && nave.getVida() > nave.getVidaMaxima()/3 && aleatorio.nextDouble() < .12;
     }
 
     private void finalizarDobra() {SomJogo.tocar(SomJogo.Efeito.SAIDA_DOBRA);
-        this.fundoEspacial.definirProgresso(0, this.chefesDerrotados);
+        this.fundoEspacial.definirProgresso(0, this.setorAtual);
         this.cenaNave = null;
         this.etapa = Etapa.COMBATE;
-        MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(this.chefesDerrotados));
+        MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(this.setorAtual));
         this.iniciarRitmoSetor();
         this.lancadosNoSetor = 0;
         this.numeroEsquadrao = 0;
@@ -1378,7 +1408,7 @@ implements ActionListener {
             return;
         }
         int id=chefe.getFase();cenaDerrota=new CenaDerrotaChefe(chefe);
-        premiar(id*2500);++chefesDerrotados;trofeuPendente=id;chefe=null;
+        premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;chefe=null;
         tirosChefes.clear();tirosInimigos.clear();tirosElementais.clear();nave.getMisseis().clear();itens.clear();asteroides.clear();
         etapa=Etapa.DERROTA_CHEFE;espacoPressionado=false;geloPressionado=false;fogoPressionado=false;tempoAviso=0;
     }
@@ -1724,7 +1754,7 @@ implements ActionListener {
         this.tempoOndaEscudo = 0.0;
         this.chefe = null;
         this.cenaFinal = null;
-        this.chefesDerrotados = 0;
+        this.chefesDerrotados = 0; setorAtual = 0; setoresVencidos = 0; escolhendoSetor = false;
         this.oculosOzzyColetados = false;
         this.emblemaHalfordColetado = false;
         this.insigniaEddieColetada = false;
@@ -2063,6 +2093,13 @@ implements ActionListener {
         @Override
         public void keyPressed(KeyEvent keyEvent) {
             int codigo = keyEvent.getKeyCode();
+            if (escolhendoSetor) {
+                if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) confirmarSetor();
+                else if (codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_UP) mapaEstelar.escolherProximo(-1);
+                else if (codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_DOWN) mapaEstelar.escolherProximo(1);
+                else mapaEstelar.tecla(codigo);
+                repaint(); return;
+            }
             if(codigo==KeyEvent.VK_F9||codigo==KeyEvent.VK_F10){
                 if(!teclasTeste.add(codigo))return;
                 if(codigo==KeyEvent.VK_F9&&emJogo){pausado=true;SomJogo.pausar(true);nave.soltarTeclas();espacoPressionado=geloPressionado=fogoPressionado=false;}

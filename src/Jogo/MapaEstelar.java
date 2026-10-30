@@ -20,6 +20,13 @@ final class MapaEstelar {
  private int atual,selecionado,planeta=-1;
  int selecionado(){return selecionado;}
  private boolean dobra,foraRota,arrastando,arrastou;
+ /** Modo de escolha do proximo setor: setores vencidos ficam bloqueados. */
+ private boolean escolha;private int vencidos;
+ static final String[] CHEFES={"LULA DO ABISMO","ROB HALFORD","BRUCE DICKINSON","LEMMY KILMISTER","JAMES HETFIELD","TOM ARAYA","CHUCK BILLY","OZZY OSBOURNE"};
+ void iniciarEscolha(int setoresVencidos,int atualSetor){escolha=true;vencidos=setoresVencidos;atual=atualSetor;selecionado=atualSetor;escolherProximo(1);visaoGalactica();}
+ boolean vencido(int i){return (vencidos&(1<<i))!=0;}
+ void escolherProximo(int passo){for(int n=1;n<=8;n++){int i=Math.floorMod(selecionado+passo*n,8);if(!vencido(i)){selecionado=i;planeta=-1;alvoX=SISTEMAS[i][0]*.35;alvoY=SISTEMAS[i][1]*.35;return;}}}
+ int escolhaValida(){if(!escolha||vencido(selecionado))return -1;escolha=false;return selecionado;}
  private int ultimoX,ultimoY;
 
  void estado(int setor,boolean emDobra,boolean fora,double fracao){
@@ -31,7 +38,7 @@ final class MapaEstelar {
   cameraX+=(alvoX-cameraX)*f;cameraY+=(alvoY-cameraY)*f;
   zoom+=(alvoZoom-zoom)*f;
  }
- void redefinir(){cameraX=cameraY=alvoX=alvoY=0;zoom=alvoZoom=.19;selecionado=atual=0;planeta=-1;arrastando=false;}
+ void redefinir(){escolha=false;vencidos=0;cameraX=cameraY=alvoX=alvoY=0;zoom=alvoZoom=.19;selecionado=atual=0;planeta=-1;arrastando=false;}
  private double mundoX(int x){return cameraX+(x-VISTA.getCenterX())/zoom;}
  private double mundoY(int y){return cameraY+(y-VISTA.getCenterY())/zoom;}
  private int telaX(double x){return (int)Math.round(VISTA.getCenterX()+(x-cameraX)*zoom);}
@@ -188,18 +195,27 @@ final class MapaEstelar {
   for(int k=3;k>0;k--){g.setColor(new Color(CORES[i].getRed(),CORES[i].getGreen(),CORES[i].getBlue(),35));g.fillOval(x-r*k,y-r*k,r*k*2,r*k*2);}
   g.setColor(CORES[i]);g.fillOval(x-r,y-r,2*r,2*r);g.setColor(Color.WHITE);g.fillOval(x-r/3,y-r/3,Math.max(2,r*2/3),Math.max(2,r*2/3));
   if(i==selecionado&&planeta<0){g.setColor(new Color(255,199,111));g.drawOval(x-r-5,y-r-5,r*2+10,r*2+10);}
-  if(zoom>.09)texto(g,(i+1)+" / "+NOMES[i],x+10+r,y+16,11,i<=atual?Color.WHITE:new Color(153,166,190));
+  if(escolha&&vencido(i)){g.setColor(new Color(110,230,120));g.setStroke(new BasicStroke(3));g.drawLine(x-r-2,y,x-2,y+r);g.drawLine(x-2,y+r,x+r+4,y-r-2);g.setStroke(new BasicStroke(1));}
+  if(zoom>.09)texto(g,(i+1)+" / "+(escolha?CHEFES[i]:NOMES[i]),x+10+r,y+16,11,escolha?(vencido(i)?new Color(110,130,120):Color.WHITE):i<=atual?Color.WHITE:new Color(153,166,190));
  }
  private void desenharPainel(Graphics2D g){
   g.setColor(new Color(9,16,29));g.fillRect(736,82,208,440);
   texto(g,"SISTEMA SELECIONADO",748,109,11,new Color(131,158,180));
   texto(g,NOMES[selecionado],748,137,19,CORES[selecionado]);
   texto(g,"SETOR "+(selecionado+1)+" / 8",748,159,12,Color.WHITE);
+  if(escolha){
+   texto(g,vencido(selecionado)?"CHEFE JA VENCIDO":"CHEFE: "+CHEFES[selecionado],748,181,11,vencido(selecionado)?new Color(120,130,150):new Color(255,199,111));
+   texto(g,"ESCOLHA O PROXIMO SETOR",748,223,13,new Color(255,199,111));
+   texto(g,"SETAS: TROCAR SETOR",748,251,11,Color.WHITE);
+   texto(g,"ENTER: INICIAR DOBRA",748,269,11,Color.WHITE);
+   texto(g,"Cada poder e o ponto fraco",748,300,10,new Color(154,182,205));
+   texto(g,"de outro chefe.",748,316,10,new Color(154,182,205));
+  }else
   texto(g,selecionado<atual?"PERCORRIDO":selecionado==atual?"POSICAO DA CAMPANHA":"AINDA NAO ALCANCADO",748,181,11,new Color(165,190,214));
   if(planeta>=0){
    g.drawImage(PLANETAS[selecionado][planeta],800,207,80,80,null);
    texto(g,"PLANETA "+(planeta+1),748,316,15,Color.WHITE);
-  }else{
+  }else if(!escolha){
    texto(g,"5 PLANETAS CATALOGADOS",748,223,11,Color.WHITE);
    texto(g,"Aproxime para observar",748,251,11,new Color(154,182,205));
    texto(g,"as orbitas e superficies.",748,269,11,new Color(154,182,205));
@@ -207,7 +223,7 @@ final class MapaEstelar {
   texto(g,"Coordenadas locais",748,342,10,new Color(124,150,170));
   texto(g,String.format(java.util.Locale.ROOT,"X %+.0f / Y %+.0f",SISTEMAS[selecionado][0],SISTEMAS[selecionado][1]),748,360,11,Color.LIGHT_GRAY);
   botao(g,386,"Z  APROXIMAR SISTEMA");botao(g,423,"F  LOCALIZAR NAVE");botao(g,460,"G  VISAO GALACTICA");
-  texto(g,"ATLAS DE OBSERVACAO / SEM VIAGEM LIVRE",740,515,9,new Color(125,150,173));
+  texto(g,escolha?"ROTA LIVRE / ESCOLHA SEU DESAFIO":"ATLAS DE OBSERVACAO",740,515,9,new Color(125,150,173));
  }
  private static void botao(Graphics2D g,int y,String texto){g.setColor(new Color(22,48,68));g.fillRect(744,y,192,29);g.setColor(new Color(62,117,148));g.drawRect(744,y,192,29);texto(g,texto,754,y+19,11,Color.WHITE);}
  private static void texto(Graphics2D g,String s,int x,int y,int tamanho,Color cor){g.setFont(new Font("Monospaced",Font.BOLD,tamanho));g.setColor(new Color(0,0,0,180));g.drawString(s,x+1,y+1);g.setColor(cor);g.drawString(s,x,y);}
