@@ -3,39 +3,69 @@ package Jogo;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Epilogo 16 bits: lendas no palco com creditos, transicao para a foto dos criadores,
- * silhueta do Megazord, corte para a cabeca com olhos acesos, dois relampagos e "THE END?".
+ * Epilogo 16 bits: lendas no palco com os creditos de cada chefe, homenagem em preto e branco
+ * a quem ja partiu, silhueta do Megazord com dois relampagos e "THE END?", e por fim a foto
+ * dos criadores com "HEAVY METAL NEVER DIES".
  */
 public final class CenaFinal {
-    private static final double INICIO_CREDITOS = 14.0;
-    private static final double FINAL_CREDITOS = 58.0;
-    private static final double TRANSICAO = 1.2;
-    private static final double FINAL_FOTO = 66.0;
-    private static final double INICIO_SILHUETA = 67.0;
-    private static final double CORTE_CABECA = 72.5;
-    private static final double[][] RELAMPAGOS = {{74.2, 74.36}, {74.72, 74.94}};
-    private static final double TEXTO_FINAL = 76.0;
+    private static final double INICIO_CREDITOS = 14.0, VELOCIDADE = 47, TRANSICAO = 1.5;
+    private static final int TOPO_ROLAGEM = 80;
     private static final Image PALCO = Assets.imagem("show_final_098.png");
+    private static final BufferedImage PALCO_PB = cinza(PALCO);
     private static final Image SILHUETA = olhosAmarelos(Assets.imagem("megazord_relampago_16bits.png"));
     private static final Image REVELACAO = Assets.imagem("megazord_cabeca_099.png");
     private static final BufferedImage FOTO_EQUIPE = pixelar(Assets.imagem("flavio_wenger.jpg"), 100, 8);
     private static final BufferedImage CABECA_NO_ESCURO = cabecaNoEscuro(REVELACAO);
-    private static final String[] CREDITOS = {
-        "METAL SPACE - LEGENDS OF METAL", "", "UMA HOMENAGEM AO HEAVY METAL",
-        "", "OZZY OSBOURNE", "ROB HALFORD", "BRUCE DICKINSON",
-        "LEMMY KILMISTER", "JAMES HETFIELD", "TOM ARAYA", "CHUCK BILLY",
-        "", "A JORNADA COMECOU COM A LULA DO ABISMO",
-        "", "DESENVOLVIDO POR FLAVIO PRADO", "JOGO ORIGINAL - 2019",
-        "", "RONNIE JAMES DIO", "TENACIOUS D / DEEZLEBOSS",
-        "", "DE FAS DE METAL, PARA FAS DE METAL",
-        "", "OBRIGADO POR JOGAR!", "LONG LIVE ROCK N ROLL"
+
+    /** id do sprite (Sprites16Bits, forma 2), nome, banda, contribuicao em duas linhas. */
+    private static final Object[][] CHEFES = {
+        {2, "ROB HALFORD", "JUDAS PRIEST", "O METAL GOD. CONSAGROU O VISUAL DE COURO", "E TACHAS E OS AGUDOS QUE VIRARAM MARCA DO METAL."},
+        {3, "BRUCE DICKINSON", "IRON MAIDEN", "A 'SIRENE ANTIAEREA'. LIDEROU A NOVA ONDA DO", "METAL BRITANICO COM THE NUMBER OF THE BEAST."},
+        {4, "LEMMY KILMISTER", "MOTORHEAD", "UNIU A VELOCIDADE DO PUNK AO PESO DO METAL.", "ACE OF SPADES ABRIU CAMINHO PARA O THRASH."},
+        {5, "JAMES HETFIELD", "METALLICA", "RIFFS DE PALHETADA PRECISA QUE DEFINIRAM", "O THRASH. MASTER OF PUPPETS VIROU CLASSICO."},
+        {6, "TOM ARAYA", "SLAYER", "BAIXO E VOZ DO THRASH MAIS EXTREMO. REIGN IN", "BLOOD INSPIROU O DEATH E O BLACK METAL."},
+        {7, "CHUCK BILLY", "TESTAMENT", "VOZ PODEROSA DO THRASH DA BAY AREA. DESDE", "THE LEGACY, EM 1987, MANTEM O THRASH VIVO."},
+        {1, "OZZY OSBOURNE", "BLACK SABBATH", "O PRINCIPE DAS TREVAS. COM O BLACK SABBATH,", "AJUDOU A CRIAR O HEAVY METAL EM 1970."}
     };
+    /** Lendas que partiram; id 0 = sem retrato, desenha uma vela. O ultimo fecha a homenagem. */
+    private static final Object[][] LENDAS = {
+        {0, "CHESTER BENNINGTON", "LINKIN PARK", "1976 - 2017", "A VOZ DE HYBRID THEORY. SEU GRITO E SUA DOR", "FALARAM POR UMA GERACAO INTEIRA."},
+        {0, "JOEY JORDISON", "SLIPKNOT", "1975 - 2021", "BATERISTA FUNDADOR DO SLIPKNOT. VELOCIDADE E", "TECNICA QUE INSPIRARAM INCONTAVEIS BATERISTAS."},
+        {0, "CLIFF BURTON", "METALLICA", "1962 - 1986", "O BAIXO DE MASTER OF PUPPETS. TROUXE MELODIA", "E HARMONIA AO THRASH, COMO EM ORION."},
+        {4, "LEMMY KILMISTER", "MOTORHEAD", "1945 - 2015", "VIVEU DO JEITO QUE TOCAVA: ALTO, RAPIDO E", "SEM CONCESSOES. BORN TO LOSE, LIVE TO WIN."},
+        {1, "OZZY OSBOURNE", "BLACK SABBATH", "1948 - 2025", "O PRINCIPE DAS TREVAS. ONDE TUDO COMECOU.", "OBRIGADO, OZZY."}
+    };
+    private static final String[] ENCERRAMENTO_CREDITOS = {
+        "A JORNADA COMECOU COM A LULA DO ABISMO", "", "DESENVOLVIDO POR FLAVIO PRADO", "JOGO ORIGINAL - 2019",
+        "", "AGRADECIMENTOS ESPECIAIS", "RONNIE JAMES DIO", "TENACIOUS D / DEEZLEBOSS", "", "DE FAS DE METAL, PARA FAS DE METAL"
+    };
+
+    private static final BufferedImage ROLO_CHEFES = rolo(false);
+    private static final BufferedImage ROLO_LENDAS = rolo(true);
+    private static int centroOzzy;
+
+    // Linha do tempo, calculada a partir da altura dos creditos.
+    private static final double FIM_CHEFES = INICIO_CREDITOS + (Config.ALTURA - TOPO_ROLAGEM + ROLO_CHEFES.getHeight()) / VELOCIDADE;
+    private static final double INICIO_LENDAS = FIM_CHEFES + TRANSICAO;
+    private static final double INICIO_ROLO_LENDAS = INICIO_LENDAS + 5.5;
+    private static final double OZZY_NO_CENTRO = INICIO_ROLO_LENDAS + (Config.ALTURA - Config.ALTURA / 2.0 + centroOzzy) / VELOCIDADE;
+    private static final double FIM_LENDAS = OZZY_NO_CENTRO + 5.0;
+    private static final double INICIO_SILHUETA = FIM_LENDAS + TRANSICAO + 1.0;
+    private static final double CORTE_CABECA = INICIO_SILHUETA + 5.5;
+    private static final double[][] RELAMPAGOS = {{CORTE_CABECA + 1.7, CORTE_CABECA + 1.86}, {CORTE_CABECA + 2.22, CORTE_CABECA + 2.44}};
+    private static final double TEXTO_FINAL = CORTE_CABECA + 3.5;
+    private static final double INICIO_FOTO = TEXTO_FINAL + 4.0;
+    private static final double FOTO_COMPLETA = INICIO_FOTO + TRANSICAO;
+
     private double tempo;
 
     public CenaFinal(){SomJogo.tocar(SomJogo.Efeito.VITORIA);}
@@ -48,7 +78,8 @@ public final class CenaFinal {
     private boolean passou(double antes, double marco) { return antes < marco && tempo >= marco; }
     public double getTempo() { return tempo; }
     public boolean mostrandoMegazord() { return tempo >= INICIO_SILHUETA; }
-    public boolean podeEncerrar() { return tempo >= TEXTO_FINAL; }
+    public boolean podeEncerrar() { return tempo >= FOTO_COMPLETA; }
+    static double duracaoTeste() { return FOTO_COMPLETA; }
 
     public void desenhar(Graphics2D base) {
         Graphics2D g = (Graphics2D) base.create();
@@ -57,25 +88,29 @@ public final class CenaFinal {
         int w = Config.LARGURA, h = Config.ALTURA;
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, w, h);
-        if (tempo < FINAL_CREDITOS) desenharPalco(g, w, h);
-        else if (tempo < FINAL_FOTO) desenharFoto(g, w, h);
+        if (tempo < FIM_CHEFES) desenharPalco(g, w, h);
+        else if (tempo < FIM_LENDAS) desenharLendas(g, w, h);
         else if (tempo < INICIO_SILHUETA) {
-            // Pausa no escuro antes da cutscene.
+            // Tela escura antes do Megazord.
         } else if (tempo < CORTE_CABECA) desenharSilhueta(g, w, h);
-        else desenharCabeca(g, w, h);
+        else if (tempo < INICIO_FOTO) desenharCabeca(g, w, h);
+        else desenharFoto(g, w, h);
         g.dispose();
+    }
+
+    private void desenharFundoPalco(Graphics2D g, int w, int h, Image palco) {
+        int quadro = ((int) (tempo * 6)) % 4;
+        int sw = palco.getWidth(null) / 2, sh = palco.getHeight(null) / 2;
+        int sx = (quadro % 2) * sw, sy = (quadro / 2) * sh;
+        // Preserve aspect ratio: concert artwork is square, never stretch musicians.
+        int lado = Math.min(w, h), margem = (w - lado) / 2;
+        g.drawImage(palco, margem, 0, margem + lado, lado, sx, sy, sx + sw, sy + sh, null);
     }
 
     private void desenharPalco(Graphics2D g, int w, int h) {
         g.setColor(new Color(1, 1, 12));
         g.fillRect(0, 0, w, h);
-        int quadro = ((int) (tempo * 6)) % 4;
-        int sw = PALCO.getWidth(null) / 2, sh = PALCO.getHeight(null) / 2;
-        int sx = (quadro % 2) * sw, sy = (quadro / 2) * sh;
-        // Preserve aspect ratio: concert artwork is square, never stretch musicians.
-        int lado = Math.min(w, h), margem = (w - lado) / 2;
-        g.drawImage(PALCO, margem, 0, margem + lado, lado,
-                sx, sy, sx + sw, sy + sh, null);
+        desenharFundoPalco(g, w, h, PALCO);
         for (int i = 0; i < 6; i++) {
             int x = 45 + i * 170;
             int ponta = x + (int) (Math.sin(tempo * 1.4 + i) * 110);
@@ -93,41 +128,144 @@ public final class CenaFinal {
         g.fillRect(0, 0, w, h);
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 25));
         g.setColor(new Color(253, 214, 120));
-        g.drawString("AS LENDAS SOBEM AO PALCO!", 245, 58);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 21));
-        // Os nomes sobem durante a musica, como nos creditos de um arcade.
-        int yInicial = (int) (h + 100 - (tempo - INICIO_CREDITOS) * 47);
-        for (int i = 0; i < CREDITOS.length; i++) {
-            int y = yInicial + i * 48;
-            if (y < 95 || y > h + 20) continue;
-            String linha = CREDITOS[i];
-            int x = (w - g.getFontMetrics().stringWidth(linha)) / 2;
-            g.setColor(i == 0 || i == 12 ? new Color(255, 210, 94) : Color.WHITE);
-            g.drawString(linha, x, y);
-        }
-        escurecer(g, w, h, (tempo - (FINAL_CREDITOS - TRANSICAO)) / TRANSICAO);
+        centralizar(g, "AS LENDAS SOBEM AO PALCO!", w, 58);
+        // Os creditos sobem durante a musica, como em um arcade.
+        rolar(g, ROLO_CHEFES, (int) (h - (tempo - INICIO_CREDITOS) * VELOCIDADE), w, h);
+        escurecer(g, w, h, (tempo - (FIM_CHEFES - TRANSICAO)) / TRANSICAO);
     }
 
-    private void desenharFoto(Graphics2D g, int w, int h) {
-        // Foto dos criadores em pixel art, moldura do HUD e o lema do jogo.
-        int fw = FOTO_EQUIPE.getWidth() * 3, fh = FOTO_EQUIPE.getHeight() * 3;
-        int fx = (w - fw) / 2, fy = 48;
-        HudMetal.painel(g, fx - 14, fy - 14, fw + 28, fh + 28);
-        g.drawImage(FOTO_EQUIPE, fx, fy, fw, fh, null);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 40));
-        String lema = "HEAVY METAL NEVER DIES";
-        int lx = (w - g.getFontMetrics().stringWidth(lema)) / 2, ly = fy + fh + 68;
-        g.setColor(new Color(60, 8, 14));
-        g.drawString(lema, lx + 3, ly + 3);
-        g.setColor(new Color(238, 72, 83));
-        g.drawString(lema, lx, ly);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14));
-        g.setColor(new Color(255, 213, 98));
-        String nomes = "FLAVIO & WENGER";
-        g.drawString(nomes, (w - g.getFontMetrics().stringWidth(nomes)) / 2, ly + 26);
-        double entrada = 1 - (tempo - FINAL_CREDITOS) / TRANSICAO;
-        double saida = (tempo - (FINAL_FOTO - TRANSICAO)) / TRANSICAO;
-        escurecer(g, w, h, Math.max(entrada, saida));
+    private void desenharLendas(Graphics2D g, int w, int h) {
+        // O palco fica em preto e branco: homenagem a quem partiu.
+        desenharFundoPalco(g, w, h, PALCO_PB);
+        g.setColor(new Color(0, 0, 0, 200));
+        g.fillRect(0, 0, w, h);
+        if (tempo < INICIO_ROLO_LENDAS) {
+            double t = tempo - INICIO_LENDAS;
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30));
+            g.setColor(new Color(230, 230, 230));
+            centralizar(g, "ELES NOS DEIXARAM,", w, 270);
+            centralizar(g, "MAS SUA OBRA PERMANECE VIVA", w, 320);
+            escurecer(g, w, h, Math.max(1 - t / TRANSICAO, (t - 4.0) / TRANSICAO));
+        } else {
+            double rolagem = Math.min(tempo, OZZY_NO_CENTRO) - INICIO_ROLO_LENDAS;
+            rolar(g, ROLO_LENDAS, (int) (h - rolagem * VELOCIDADE), w, h);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22));
+            g.setColor(new Color(205, 205, 205));
+            centralizar(g, "LENDAS ETERNAS", w, 58);
+        }
+        escurecer(g, w, h, (tempo - (FIM_LENDAS - TRANSICAO)) / TRANSICAO);
+    }
+
+    private static void rolar(Graphics2D g, BufferedImage rolo, int y, int w, int h) {
+        Graphics2D a = (Graphics2D) g.create();
+        a.clipRect(0, TOPO_ROLAGEM, w, h - TOPO_ROLAGEM);
+        a.drawImage(rolo, 0, y, null);
+        a.dispose();
+    }
+
+    private static void centralizar(Graphics2D g, String s, int w, int y) {
+        g.drawString(s, (w - g.getFontMetrics().stringWidth(s)) / 2, y);
+    }
+
+    /** Monta a faixa de creditos uma unica vez: retrato em pixel art ao lado do texto. */
+    private static BufferedImage rolo(boolean lendas) {
+        int w = Config.LARGURA;
+        Object[][] itens = lendas ? LENDAS : CHEFES;
+        int altura = 60 + itens.length * 190 + (lendas ? 160 : ENCERRAMENTO_CREDITOS.length * 44 + 40);
+        BufferedImage b = new BufferedImage(w, altura, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = b.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        int y = 20;
+        if (!lendas) {
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24));
+            g.setColor(new Color(255, 210, 94));
+            centralizar(g, "METAL SPACE - LEGENDS OF METAL", w, y + 24);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18));
+            g.setColor(Color.WHITE);
+            centralizar(g, "UMA HOMENAGEM AO HEAVY METAL", w, y + 56);
+            y += 100;
+        }
+        for (int i = 0; i < itens.length; i++) {
+            Object[] it = itens[i];
+            boolean fecho = lendas && i == itens.length - 1;
+            int lado = fecho ? 200 : 140;
+            if (fecho) {
+                y += 30;
+                centroOzzy = y + lado / 2;
+                int x = (w - lado) / 2;
+                retrato(g, (Integer) it[0], x, y, lado);
+                int ty = y + lado + 42;
+                g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 32));
+                g.setColor(Color.WHITE);
+                centralizar(g, (String) it[1], w, ty);
+                g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18));
+                g.setColor(new Color(185, 185, 185));
+                centralizar(g, it[2] + "  /  " + it[3], w, ty + 30);
+                g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 17));
+                g.setColor(new Color(230, 230, 230));
+                centralizar(g, (String) it[4], w, ty + 60);
+                centralizar(g, (String) it[5], w, ty + 84);
+                centroOzzy = y + (lado + 126) / 2;
+                y = ty + 110;
+                continue;
+            }
+            int x = 120;
+            retrato(g, (Integer) it[0], x, y, lado);
+            int tx = x + lado + 30;
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
+            g.setColor(lendas ? Color.WHITE : new Color(255, 210, 94));
+            g.drawString((String) it[1], tx, y + 34);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18));
+            g.setColor(lendas ? new Color(185, 185, 185) : new Color(110, 222, 245));
+            g.drawString(lendas ? it[2] + "  /  " + it[3] : (String) it[2], tx, y + 62);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16));
+            g.setColor(new Color(232, 232, 232));
+            int base = lendas ? 4 : 3;
+            g.drawString((String) it[base], tx, y + 96);
+            g.drawString((String) it[base + 1], tx, y + 120);
+            y += 190;
+        }
+        if (!lendas) {
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 21));
+            y += 20;
+            for (int i = 0; i < ENCERRAMENTO_CREDITOS.length; i++) {
+                String linha = ENCERRAMENTO_CREDITOS[i];
+                g.setColor(i == 0 || linha.startsWith("AGRADECIMENTOS") ? new Color(255, 210, 94) : Color.WHITE);
+                centralizar(g, linha, w, y + i * 44);
+            }
+        }
+        g.dispose();
+        return lendas ? cinza(b) : b;
+    }
+
+    /** Retrato em moldura do HUD: sprite do chefe, ou uma vela quando nao ha retrato. */
+    private static void retrato(Graphics2D g, int id, int x, int y, int lado) {
+        HudMetal.painel(g, x - 8, y - 8, lado + 16, lado + 16);
+        BufferedImage s = id > 0 ? Sprites16Bits.carregar(id, 2) : null;
+        if (s != null) {
+            double e = Math.min(lado / (double) s.getWidth(), lado / (double) s.getHeight());
+            int sw = (int) (s.getWidth() * e), sh = (int) (s.getHeight() * e);
+            g.drawImage(s, x + (lado - sw) / 2, y + (lado - sh) / 2, sw, sh, null);
+            return;
+        }
+        int p = lado / 28, cx = x + lado / 2;
+        g.setColor(new Color(40, 40, 40));
+        g.fillRect(x, y, lado, lado);
+        g.setColor(new Color(255, 255, 255, 30));
+        g.fillOval(cx - 9 * p, y + 3 * p, 18 * p, 18 * p);
+        g.setColor(new Color(220, 220, 220));
+        g.fillRect(cx - 2 * p, y + 11 * p, 4 * p, 12 * p);
+        g.setColor(new Color(150, 150, 150));
+        g.fillRect(cx + p, y + 11 * p, p, 12 * p);
+        g.fillRect(cx - 5 * p, y + 23 * p, 10 * p, 2 * p);
+        g.setColor(new Color(90, 90, 90));
+        g.fillRect(cx - 1, y + 9 * p, 2, 2 * p);
+        g.setColor(new Color(250, 250, 250));
+        g.fillRect(cx - p, y + 5 * p, 2 * p, 4 * p);
+        g.fillRect(cx - p / 2, y + 4 * p, p, p);
+        g.setColor(new Color(200, 200, 200));
+        g.fillRect(cx - p / 2, y + 7 * p, p, 2 * p);
     }
 
     private void desenharSilhueta(Graphics2D g, int w, int h) {
@@ -159,15 +297,52 @@ public final class CenaFinal {
         if (tempo >= TEXTO_FINAL) {
             g.setColor(new Color(238, 72, 83));
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 75));
-            String titulo = "THE END?";
-            g.drawString(titulo, (w - g.getFontMetrics().stringWidth(titulo)) / 2, 540);
-            if (((int) (tempo * 2)) % 2 == 0) {
-                g.setColor(new Color(225, 221, 231));
-                g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
-                String dica = "ENTER - VER O PLACAR";
-                g.drawString(dica, (w - g.getFontMetrics().stringWidth(dica)) / 2, 580);
+            centralizar(g, "THE END?", w, 540);
+        }
+        escurecer(g, w, h, (tempo - (INICIO_FOTO - TRANSICAO)) / TRANSICAO);
+    }
+
+    private void desenharFoto(Graphics2D g, int w, int h) {
+        // Chave de ouro: foto dos criadores em pixel art, o lema e o agradecimento.
+        int fw = FOTO_EQUIPE.getWidth() * 3, fh = FOTO_EQUIPE.getHeight() * 3;
+        int fx = (w - fw) / 2, fy = 34;
+        HudMetal.painel(g, fx - 14, fy - 14, fw + 28, fh + 28);
+        g.drawImage(FOTO_EQUIPE, fx, fy, fw, fh, null);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 40));
+        String lema = "HEAVY METAL NEVER DIES";
+        int ly = fy + fh + 62;
+        FontMetrics fm = g.getFontMetrics();
+        int lx = (w - fm.stringWidth(lema)) / 2;
+        g.setColor(new Color(60, 8, 14));
+        g.drawString(lema, lx + 3, ly + 3);
+        g.setColor(new Color(238, 72, 83));
+        g.drawString(lema, lx, ly);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 20));
+        g.setColor(new Color(255, 213, 98));
+        centralizar(g, "OBRIGADO POR JOGAR!", w, ly + 40);
+        if (podeEncerrar() && ((int) (tempo * 2)) % 2 == 0) {
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13));
+            g.setColor(new Color(225, 221, 231));
+            centralizar(g, "ENTER - VER O PLACAR", w, h - 8);
+        }
+        escurecer(g, w, h, 1 - (tempo - INICIO_FOTO) / TRANSICAO);
+    }
+
+    /** Copia em tons de cinza, mantendo a transparencia. */
+    static BufferedImage cinza(Image img) {
+        int w = img.getWidth(null), h = img.getHeight(null);
+        BufferedImage o = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = o.createGraphics();
+        g.drawImage(img, 0, 0, null);
+        g.dispose();
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int c = o.getRGB(x, y);
+                int l = (int) (.3 * (c >> 16 & 255) + .59 * (c >> 8 & 255) + .11 * (c & 255));
+                o.setRGB(x, y, c & 0xFF000000 | l << 16 | l << 8 | l);
             }
         }
+        return o;
     }
 
     private static void escurecer(Graphics2D g, int w, int h, double quanto) {
