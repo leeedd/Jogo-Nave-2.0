@@ -598,6 +598,7 @@ implements ActionListener {
                 graphics2D2.drawImage(missel.getImagem(), missel.getX(), missel.getY(), null);
             }
             if (this.etapa == Etapa.COMBATE) {
+                poderes.desenharAtras(graphics2D2);
                 for (Alien alien : this.alien) {
                     if (!alien.isVisible()) continue;
                     alien.desenhar(graphics2D2);
