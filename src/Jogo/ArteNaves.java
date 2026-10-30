@@ -43,7 +43,11 @@ public final class ArteNaves {
         n2 = Math.max(0, Math.min(4, n2));
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
         graphics2D2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        graphics2D2.rotate(d2 * 0.135, n3 + 22, n4 + 20);
+        // Nave sempre reta; ao subir ou descer ela inclina as asas (rolagem), sem girar o nariz.
+        double rolagem = Math.max(-1, Math.min(1, d2));
+        graphics2D2.translate(0, n4 + 20);
+        graphics2D2.scale(1, 1 - 0.22 * Math.abs(rolagem));
+        graphics2D2.translate(0, -(n4 + 20) + rolagem * 2);
         int n5 = (int)Math.round(Math.sin(d * 14.0) * 0.8);
         int n6 = 15 + (int)(4.0 * Math.sin(d * 19.0));
         Color color = ArteNaves.corModelo(n2);
