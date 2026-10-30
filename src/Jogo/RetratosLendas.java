@@ -22,12 +22,26 @@ final class RetratosLendas {
 
     private static final String[] ARQUIVOS = {"", "lenda_chester.png", "lenda_joey.png", "lenda_cliff.png", "lenda_dio.png", "lenda_tenacious_d.png"};
 
+    private static final String[] CHEFES = {"", "retrato_ozzy.png", "retrato_rob.png", "retrato_bruce.png",
+            "retrato_lemmy.png", "retrato_james.png", "retrato_tom.png", "retrato_chuck.png"};
+    private static final BufferedImage[] CACHE_CHEFES = new BufferedImage[8];
+    private static final boolean[] CONSULTADO_CHEFES = new boolean[8];
+
+    /** Retrato dos creditos para um chefe (id do Sprites16Bits); null mantem o sprite do jogo. */
+    static synchronized BufferedImage chefe(int id) {
+        if (id < 1 || id > 7) return null;
+        if (!CONSULTADO_CHEFES[id]) { CONSULTADO_CHEFES[id] = true; CACHE_CHEFES[id] = ler(CHEFES[id]); }
+        return CACHE_CHEFES[id];
+    }
+
     /** Arte final em ImagemIcon tem prioridade; o desenho em codigo e so o provisorio. */
-    private static BufferedImage arteFinal(int qual) {
-        java.net.URL u = RetratosLendas.class.getResource("/ImagemIcon/" + ARQUIVOS[qual]);
+    private static BufferedImage arteFinal(int qual) { return ler(ARQUIVOS[qual]); }
+
+    private static BufferedImage ler(String arquivo) {
+        java.net.URL u = RetratosLendas.class.getResource("/ImagemIcon/" + arquivo);
         if (u == null) return null;
         try { return javax.imageio.ImageIO.read(u); }
-        catch (java.io.IOException e) { System.err.println("Retrato ilegivel: " + ARQUIVOS[qual]); return null; }
+        catch (java.io.IOException e) { System.err.println("Retrato ilegivel: " + arquivo); return null; }
     }
 
     private static BufferedImage desenhar(int qual) {

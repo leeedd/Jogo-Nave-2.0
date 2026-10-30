@@ -244,7 +244,8 @@ public final class CenaFinal {
     /** Retrato em moldura do HUD: sprite do chefe, retrato desenhado, ou uma vela quando nao ha nenhum. */
     private static void retrato(Graphics2D g, int id, int x, int y, int lado) {
         HudMetal.painel(g, x - 8, y - 8, lado + 16, lado + 16);
-        BufferedImage s = id > 0 ? Sprites16Bits.carregar(id, 2) : id < 0 ? RetratosLendas.obter(-id) : null;
+        BufferedImage s = id < 0 ? RetratosLendas.obter(-id) : RetratosLendas.chefe(id);
+        if (s == null && id > 0) s = Sprites16Bits.carregar(id, 2);
         if (s != null) {
             double e = Math.min(lado / (double) s.getWidth(), lado / (double) s.getHeight());
             int sw = (int) (s.getWidth() * e), sh = (int) (s.getHeight() * e);
