@@ -132,7 +132,7 @@ final class Poderes099 {
  }
  /** Uma lamina de energia em meia-lua: fina, afiada, inclinada; desenhada em (cx,cy) com rotacao rot. */
  private static void lamina(Graphics2D g,double cx,double cy,double R,double abre,double rot,float alfa,double espessura){
-  int n=34;double[][] camadas={{1.0,1.0,.35},{.97,.62,.8},{.95,.28,1}};Color[] cores={new Color(20,150,255),new Color(110,215,255),new Color(245,254,255)};
+  int n=34;double[][] camadas={{1.0,1.0,.35},{.97,.62,.8},{.95,.28,1}};Color[] cores={new Color(20,170,60),new Color(110,255,140),new Color(240,255,240)};
   for(int c=0;c<3;c++){int[] xs=new int[2*n+2],ys=new int[2*n+2];double Rc=R*camadas[c][0];
    for(int i=0;i<=n;i++){double t=-abre+2*abre*i/n;double esp=R*espessura*camadas[c][1]*Math.pow(Math.cos(Math.PI/2*t/abre),1.6);
     double ox=Math.cos(t)*Rc,oy=Math.sin(t)*Rc,ix=Math.cos(t)*(Rc-esp),iy=Math.sin(t)*(Rc-esp);
@@ -148,7 +148,7 @@ final class Poderes099 {
    int n=30;for(int c=0;c<3;c++){int[] xs=new int[2*n+2],ys=new int[2*n+2];double larg=(c==0?30:c==1?18:8)*(k==2?1.3:1);
     for(int i=0;i<=n;i++){double u=i/(double)n,t=dir*(-1.35+2.7*f*u);double esp=larg*Math.pow(u,1.4);
      xs[i]=(int)(naveX+20+Math.cos(t)*R);ys[i]=(int)(naveY+Math.sin(t)*R);xs[2*n+1-i]=(int)(naveX+20+Math.cos(t)*(R-esp));ys[2*n+1-i]=(int)(naveY+Math.sin(t)*(R-esp));}
-    g.setComposite(AlphaComposite.SrcOver.derive((float)((1-sumir)*(c==0?.4:c==1?.8:1))));g.setColor(c==0?new Color(20,150,255):c==1?new Color(110,215,255):new Color(245,254,255));g.fillPolygon(xs,ys,2*n+2);}
+    g.setComposite(AlphaComposite.SrcOver.derive((float)((1-sumir)*(c==0?.4:c==1?.8:1))));g.setColor(c==0?new Color(20,170,60):c==1?new Color(110,255,140):new Color(240,255,240));g.fillPolygon(xs,ys,2*n+2);}
    g.setComposite(AlphaComposite.SrcOver);
    BufferedImage[] q=quadrosSimbolo(2);if(q!=null&&sumir<.5){double t=dir*(-1.35+2.7*f);Graphics2D e=(Graphics2D)g.create();e.translate(naveX+20+Math.cos(t)*R*.5,naveY+Math.sin(t)*R*.5);e.rotate(t+Math.PI/2);e.drawImage(q[2],-24,-R*.62>-200?(int)(-R*.62):-90,48,(int)(R*.72),null);e.dispose();}
   }
@@ -157,7 +157,7 @@ final class Poderes099 {
    double cx=o[0],cy=o[1],R=72*o[4],rot=(j==1?-1:1)*.42;float alfa=(float)(1-o[3]);
    for(int r=4;r>=1;r--)lamina(g,cx-r*22,cy,R,1.15,rot,alfa*(.12f*(5-r)/4f),.22);
    lamina(g,cx,cy,R,1.15,rot,alfa,.26);
-   g.setComposite(AlphaComposite.SrcOver.derive(alfa*.7f));g.setColor(new Color(170,235,255));
+   g.setComposite(AlphaComposite.SrcOver.derive(alfa*.7f));g.setColor(new Color(170,255,190));
    for(int i=0;i<7;i++){int ly=(int)(cy-R*.9+i*R*.3),lx=(int)(cx-R*.1-(i%3)*18);g.fillRect(lx-60-(i%2)*30,ly,60+(i%2)*30,2);}
    g.setComposite(AlphaComposite.SrcOver);
   }
