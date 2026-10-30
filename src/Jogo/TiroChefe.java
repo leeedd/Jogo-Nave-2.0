@@ -1,0 +1,101 @@
+package Jogo;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+
+/** Disparo em leque com animacao de pulso e rastro de energia. */
+public final class TiroChefe {
+    public enum Movimento { RETO, ONDA, ACELERADO, PULSANTE }
+    private final Movimento movimento;
+    private double x, y, tempo;
+    private final double vx, vy;
+    private final boolean pesado;
+    private final int estilo;
+    private boolean visivel = true;
+
+    public TiroChefe(double x, double y, double vx, double vy, boolean pesado) {
+        this(x, y, vx, vy, pesado, 0);
+    }
+    public TiroChefe(double x, double y, double vx, double vy, boolean pesado, int estilo) {
+        this(x, y, vx, vy, pesado, estilo, Movimento.RETO);
+    }
+    public TiroChefe(double x, double y, double vx, double vy, boolean pesado,
+                     int estilo, Movimento movimento) {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.pesado = pesado;
+        this.estilo = estilo; this.movimento = movimento;
+    }
+    public void mexer(double dt) {
+        double velocidade = movimento == Movimento.ACELERADO ? 1 + Math.min(1.1, tempo * .47) : 1;
+        double perpx = -vy / Math.max(1, Math.hypot(vx, vy));
+        double perpy = vx / Math.max(1, Math.hypot(vx, vy));
+        double curva = movimento == Movimento.ONDA ? Math.sin(tempo * 8) * 110 * dt
+                : movimento == Movimento.PULSANTE ? Math.sin(tempo * 14) * 70 * dt : 0;
+        x += vx * dt * velocidade + perpx * curva;
+        y += vy * dt * velocidade + perpy * curva;
+        tempo += dt;
+        if (x < -40 || x > Config.LARGURA + 40 || y < Config.HUD - 40 || y > Config.ALTURA + 40)
+            visivel = false;
+    }
+    public void desenhar(Graphics2D g) {
+        int px = (int) x, py = (int) y;
+        int r = pesado ? 12 : 7;
+        Color c = estilo == 8 ? new Color(255,116,12) : estilo == 1 ? new Color(199, 76, 232) : estilo == 2
+                ? new Color(255, 156, 44) : estilo == 3 ? new Color(74, 228, 223)
+                : estilo == 4 ? new Color(244, 128, 52) : estilo == 5 ? new Color(81, 166, 255)
+                : estilo == 6 ? new Color(244, 64, 75) : estilo == 7 ? new Color(125, 239, 110)
+                : pesado ? new Color(255, 91, 61) : new Color(190, 94, 255);
+        double direcao = Math.atan2(vy, vx);
+        for (int i = 1; i <= 3; i++) {
+            int tx = px - (int) (Math.cos(direcao) * i * 9);
+            int ty = py - (int) (Math.sin(direcao) * i * 9);
+            int alpha = 35 + (3 - i) * 30;
+            g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha));
+            g.fillOval(tx - r + i, ty - r + i, 2 * (r - i), 2 * (r - i));
+        }
+        int pulso = (int) (3 * Math.sin(tempo * 17));
+        g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 55));
+        g.fillOval(px - r - 7 - pulso, py - r - 7 - pulso, 2 * (r + 7 + pulso), 2 * (r + 7 + pulso));
+        g.setColor(c); g.fillOval(px - r, py - r, 2 * r, 2 * r);
+        if (estilo == 8) {
+            g.setColor(new Color(255,220,35));g.fillOval(px-r+2,py-r+2,r*2-4,r*2-4);
+            g.setColor(new Color(255,245,172));g.drawOval(px-r,py-r,r*2,r*2);
+        } else if (estilo == 4) {
+            g.setColor(new Color(255, 215, 118, 185));
+            g.drawOval(px - r - 5, py - r - 5, 2*r + 10, 2*r + 10);
+            g.drawOval(px - r - 11, py - r - 11, 2*r + 22, 2*r + 22);
+        } else if (estilo == 5) {
+            g.setColor(new Color(177, 232, 255));
+            g.drawPolyline(new int[]{px-14,px-5,px-12,px+7,px+14},
+                    new int[]{py-10,py-2,py+5,py+1,py+13},5);
+        } else if (estilo == 6) {
+            g.setColor(new Color(255, 215, 82));
+            g.fillPolygon(new int[]{px,px-5,px+5},new int[]{py+12,py-7,py-7},3);
+        } else if (estilo == 7) {
+            g.setColor(new Color(196, 255, 221));
+            g.fillPolygon(new int[]{px,px+r+6,px,px-r-6},
+                    new int[]{py-r-8,py,py+r+8,py},4);
+        } else if (estilo == 1) {
+            g.setColor(new Color(224, 140, 255));
+            g.drawArc(px - r * 2, py - r * 2, 4 * r, 4 * r, -75, 150);
+        } else if (estilo == 2) {
+            g.setColor(new Color(255, 222, 106));
+            g.drawLine(px - r - 5, py, px + 1, py - r);
+        } else if (estilo == 3) {
+            g.setColor(new Color(170, 252, 253));
+            g.drawArc(px - r * 2, py - r * 2, 4 * r, 4 * r, -75, 150);
+        }
+        g.setColor(Color.WHITE); g.fillOval(px - 3, py - 3, 6, 6);
+    }
+    Movimento getMovimentoTeste() { return movimento; }
+    int getEstiloTeste() { return estilo; }
+    double getVxTeste() { return vx; }
+    double getVyTeste() { return vy; }
+    public Rectangle getBounds() {
+        int r = pesado ? 11 : 6;
+        return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2);
+    }
+    public int dano() { return pesado ? 3 : 2; }
+    public boolean isVisible() { return visivel; }
+    public void setVisible(boolean v) { visivel = v; }
+}
