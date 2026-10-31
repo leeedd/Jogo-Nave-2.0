@@ -6,10 +6,12 @@ import java.awt.Rectangle;
 
 /** Disparo em leque com animacao de pulso e rastro de energia. */
 public final class TiroChefe {
-    public enum Movimento { RETO, ONDA, ACELERADO, PULSANTE }
+    public enum Movimento { RETO, ONDA, ACELERADO, PULSANTE, ARCO }
     private final Movimento movimento;
     private double x, y, tempo;
     private final double vx, vy;
+    /** Queda acumulada do movimento em ARCO (barris arremessados). */
+    private double queda;
     private final boolean pesado;
     private final int estilo;
     private boolean visivel = true;
@@ -31,9 +33,11 @@ public final class TiroChefe {
         double perpy = vx / Math.max(1, Math.hypot(vx, vy));
         double curva = movimento == Movimento.ONDA ? Math.sin(tempo * 8) * 110 * dt
                 : movimento == Movimento.PULSANTE ? Math.sin(tempo * 14) * 70 * dt : 0;
+        if (movimento == Movimento.ARCO) queda += 560 * dt;
         x += vx * dt * velocidade + perpx * curva;
-        y += vy * dt * velocidade + perpy * curva;
+        y += (vy + queda) * dt * velocidade + perpy * curva;
         tempo += dt;
+        if (estilo == RASTRO && tempo > 1.4) visivel = false;
         int margem = estilo == VAGAO ? 130 : 40;
         if (x < -margem || x > Config.LARGURA + margem || y < Config.HUD - margem || y > Config.ALTURA + margem)
             visivel = false;
@@ -45,6 +49,8 @@ public final class TiroChefe {
             case FUMACA: desenharFumaca(g, px, py); return;
             case VAGAO: desenharVagao(g, px, py); return;
             case FOGO_ROXO: desenharFogoRoxo(g, px, py); return;
+            case BARRIL: desenharBarril(g, px, py); return;
+            case RASTRO: desenharRastro(g, px, py); return;
             case 1: desenharMorcego(g, px, py); return;
             case 2: desenharFogo(g, px, py); return;
             case 3: desenharRaioCruzado(g, px, py); return;
@@ -255,13 +261,38 @@ public final class TiroChefe {
     double getVyTeste() { return vy; }
     public Rectangle getBounds() {
         if (estilo == VAGAO) return new Rectangle((int) x - 70, (int) y - 26, 150, 52);
-        int r = estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
+        int r = estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
         return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2);
     }
     public int dano() { return estilo == VAGAO ? 5 : estilo == FOGO_ROXO ? 3 : pesado ? 3 : 2; }
 
     // ---- Ozzy (Crazy Train e dragao) ----
-    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22;
+    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24;
+    double getX() { return x; }
+    double getY() { return y; }
+    double idade() { return tempo; }
+    int estilo() { return estilo; }
+    /** Barril de Jack arremessado pela janela da van: gira no ar e pisca antes de estourar. */
+    private void desenharBarril(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create(); g.rotate(tempo * 7, px, py);
+        g.setColor(new Color(70, 40, 20)); g.fillRect(px - 11, py - 14, 22, 28);
+        g.setColor(new Color(120, 72, 34)); g.fillRect(px - 9, py - 14, 6, 28);
+        g.setColor(new Color(40, 40, 46)); g.fillRect(px - 11, py - 9, 22, 3); g.fillRect(px - 11, py + 6, 22, 3);
+        g.setColor(Color.BLACK); g.fillRect(px - 6, py - 4, 12, 8); g.setColor(Color.WHITE); g.fillRect(px - 4, py - 2, 8, 1); g.fillRect(px - 4, py + 1, 6, 1);
+        if (tempo > .7 && (int) (tempo * 14) % 2 == 0) { g.setColor(new Color(255, 80, 40, 170)); g.fillOval(px - 16, py - 16, 32, 32); }
+        g.dispose();
+    }
+    /** Pneu em chamas deixa fogo na pista: some sozinho em 1,4 s. */
+    private void desenharRastro(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        double vida = 1 - tempo / 1.4; int a = (int) (230 * Math.max(0, Math.min(1, vida * 2)));
+        for (int k = 0; k < 3; k++) {
+            int h = 10 + (int) ((Math.sin(tempo * 22 + px * .1 + k * 2) + 1) * 7), lx = px - 9 + k * 6;
+            g.setColor(new Color(255, 90 + k * 40, 20, a)); g.fillPolygon(new int[]{lx - 5, lx, lx + 5}, new int[]{py + 6, py + 6 - h, py + 6}, 3);
+        }
+        g.setColor(new Color(255, 230, 140, a)); g.fillRect(px - 6, py + 2, 12, 4);
+        g.dispose();
+    }
     private static final java.awt.image.BufferedImage ARTE_VAGAO = ler("ozzy_trem_vagao.png");
     private static java.awt.image.BufferedImage ler(String n) { java.net.URL u = TiroChefe.class.getResource("/ImagemIcon/" + n); if (u == null) return null; try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; } }
     /** Baforada da chamine: nuvem roxa que cresce e se desfaz enquanto anda. */

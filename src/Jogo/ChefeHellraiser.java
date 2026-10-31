@@ -31,8 +31,14 @@ final class ChefeHellraiser {
 
     // van
     private final int vanH = 200, vanW;
-    private double vx = W + 40, vy, vAlvoY, aviso, proximaInvestida = 4.2;
+    private double vx = W + 40, vy, vAlvoY, aviso, proximaInvestida = 3.2, faixaTravada, percorrido, ultimoRastro;
     private boolean investindo, voltando;
+    /** Manobras da van: rasante reto com pista em chamas, zigue-zague, volta por tras e chuva de barris. */
+    private static final int RASANTE = 0, ZIGUE = 1, POR_TRAS = 2, BARRIS = 3;
+    private static final int[] ROTEIRO = {RASANTE, BARRIS, ZIGUE, BARRIS, RASANTE, POR_TRAS, BARRIS, ZIGUE};
+    private int manobra = RASANTE, passoRoteiro, barrisFaltando;
+    private double sentido = -1, proximoBarril;
+    private final java.util.List<TiroChefe> barris = new java.util.ArrayList<>();
     // dupla: cada um com posicao propria; trocam de lugar em arco
     private final double[] px = new double[2], py = new double[2];
     private double troca = 6, trocando, gesto;
@@ -74,14 +80,25 @@ final class ChefeHellraiser {
     private double faixaVan(double naveY) { return Math.max(TOPO + 12, Math.min(H - vanH - 8, naveY - vanH * .5)); }
     private void van(double dt, int naveX, int naveY, double cad, List<TiroChefe> tiros) {
         boolean furia = vida < vidaVan * .4;
+        estourarBarris(tiros);
         if (investindo) {
-            vx -= (furia ? 1250 : 1080) * dt;
-            if (vx < -vanW - 30) { investindo = false; voltando = true; vx = W + 40; vy = vAlvoY = faixaVan(naveY); }
+            double vel = (furia ? 1150 : 980) * (manobra == ZIGUE ? .72 : 1);
+            vx += sentido * vel * dt; percorrido += vel * dt;
+            if (manobra == ZIGUE) vy = Math.max(TOPO + 6, Math.min(H - vanH - 6, faixaTravada + Math.sin(percorrido / (W + vanW) * Math.PI * 3) * 150));
+            // pneus em chamas: a pista fica pegando fogo atras da van
+            if (manobra != ZIGUE && percorrido - ultimoRastro > 34) { ultimoRastro = percorrido;
+                for (int r = 0; r < 2; r++) tiros.add(new TiroChefe(vx + vanW * (sentido < 0 ? .3 + r * .45 : .7 - r * .45), vy + vanH * .86, 0, 0, false, TiroChefe.RASTRO, TiroChefe.Movimento.RETO)); }
+            boolean saiu = sentido < 0 ? vx < -vanW - 30 : vx > W + 30;
+            if (!saiu) return;
+            investindo = false;
+            // na furia o rasante emenda direto na volta por tras
+            if (furia && manobra == RASANTE) { iniciarManobra(POR_TRAS, naveY); return; }
+            sentido = -1; voltando = true; vx = W + 40; vy = vAlvoY = faixaVan(naveY);
             return;
         }
         if (aviso > 0) {
             aviso = Math.max(0, aviso - dt); vx += Math.sin(tempo * 60) * 1.5;
-            if (aviso == 0) { investindo = true; SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA); }
+            if (aviso == 0) { investindo = true; percorrido = ultimoRastro = 0; SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA); }
             return;
         }
         if (vx > baseVan()) vx = Math.max(baseVan(), vx - (voltando ? 700 : 520) * dt);
@@ -90,8 +107,26 @@ final class ChefeHellraiser {
         vAlvoY += (faixaVan(naveY) - vAlvoY) * Math.min(1, dt * .9);
         vy += (vAlvoY + Math.sin(tempo * 2.2) * 40 - vy) * Math.min(1, dt * 2.5);
         if (entrada < 1 || voltando) return;
+        if (barrisFaltando > 0) {
+            // Lemmy joga os barris pela janela, um atras do outro, em arco
+            proximoBarril -= dt;
+            if (proximoBarril <= 0) {
+                barrisFaltando--; proximoBarril = furia ? .3 : .42; gesto = .4;
+                double ox = vx + vanW * .35, oy = vy + vanH * .3, alcance = Math.max(80, ox - naveX - 22 + (barrisFaltando - 1) * 90);
+                double sobe = (naveY + 18 - oy) / 1.05 - .5 * 560 * 1.05; // cai em cima da nave quando estoura
+                TiroChefe b = new TiroChefe(ox, oy, -alcance / 1.05, sobe, true, TiroChefe.BARRIL, TiroChefe.Movimento.ARCO);
+                tiros.add(b); barris.add(b);
+            }
+            return;
+        }
         proximaInvestida -= dt * cad * (furia ? 1.35 : 1);
-        if (proximaInvestida <= 0) { proximaInvestida = 4.6; aviso = .85; vy = vAlvoY = faixaVan(naveY); return; }
+        if (proximaInvestida <= 0) {
+            int m = ROTEIRO[passoRoteiro++ % ROTEIRO.length];
+            proximaInvestida = m == BARRIS ? 2.6 : 3.6;
+            if (m == BARRIS) { barrisFaltando = furia ? 4 : 3; proximoBarril = .2; }
+            else iniciarManobra(m, naveY);
+            return;
+        }
         intervalo -= dt * cad * (furia ? 1.3 : 1);
         if (intervalo > 0 || tiros.size() > 46) return;
         rajadas++; gesto = .4;
@@ -99,6 +134,22 @@ final class ChefeHellraiser {
         if (rajadas % 2 == 0) for (int i = -2; i <= 2; i++) tiro(tiros, ox, oy, mira + i * .2, 240, i == 0, 1, TiroChefe.Movimento.PULSANTE);
         else for (int i = -3; i <= 3; i++) tiro(tiros, ox + vanW * .2, oy, Math.PI + i * .17, 190, i % 3 == 0, 4, TiroChefe.Movimento.ONDA);
         intervalo = 1.45;
+    }
+    private void iniciarManobra(int m, int naveY) {
+        manobra = m; aviso = m == POR_TRAS ? 1.0 : .85;
+        faixaTravada = faixaVan(naveY); vy = vAlvoY = faixaTravada;
+        if (m == POR_TRAS) { sentido = 1; vx = -vanW - 30; }
+        else sentido = -1;
+    }
+    /** Barril estoura no ar ou ao cair: oito labaredas para todos os lados. */
+    private void estourarBarris(List<TiroChefe> tiros) {
+        for (java.util.Iterator<TiroChefe> it = barris.iterator(); it.hasNext();) {
+            TiroChefe b = it.next();
+            if (!b.isVisible()) { it.remove(); continue; }
+            if (b.idade() < 1.05 && b.getY() < H - 24) continue;
+            b.setVisible(false); it.remove();
+            for (int k = 0; k < 8; k++) tiros.add(new TiroChefe(b.getX(), b.getY(), Math.cos(k * Math.PI / 4) * 210, Math.sin(k * Math.PI / 4) * 210, false, 2, TiroChefe.Movimento.RETO));
+        }
     }
 
     // ---------------- ato II: Ozzy e Lemmy juntos ----------------
@@ -139,7 +190,8 @@ final class ChefeHellraiser {
 
     // ---------------- ato III: o dragao ----------------
     private double bocaX() { return dx + dragW * .18; }
-    private double bocaY() { return dy + dragH * .36; }
+    private double bocaY() { return dy + dragH * .41; }
+    private static final double ALCANCE_SOPRO = 1000;
     private void dragao(double dt, int naveX, int naveY, double cad, List<TiroChefe> tiros) {
         boolean furia = vida < vidaDragao * .35;
         double baseX = W - dragW - 10, baseY = Math.max(TOPO, Math.min(H - dragH, naveY - dragH * .4));
@@ -154,14 +206,16 @@ final class ChefeHellraiser {
         if (carga <= 0 && sopro <= 0) dy += (baseY + Math.sin(tempo * 1.3) * 34 - dy) * Math.min(1, dt * 1.2);
         if (carga > 0) {
             carga = Math.max(0, carga - dt);
-            if (carga == 0) { sopro = furia ? 1.6 : 1.25; direcaoSopro = Math.atan2(naveY + 18 - bocaY(), naveX + 22 - bocaX()) - .35; }
+            if (carga == 0) { sopro = furia ? 2.0 : 1.6; direcaoSopro = Math.atan2(naveY + 18 - bocaY(), naveX + 22 - bocaX()); }
+            else direcaoSopro = Math.atan2(naveY + 18 - bocaY(), naveX + 22 - bocaX());
             return;
         }
         if (sopro > 0) {
-            // labareda: um jorro de fogo roxo varrendo de cima para baixo
-            sopro = Math.max(0, sopro - dt); direcaoSopro += dt * .55;
-            intervalo -= dt;
-            if (intervalo <= 0) { intervalo = .045; tiro(tiros, bocaX(), bocaY(), direcaoSopro + (Math.random() - .5) * .08, 420, false, TiroChefe.FOGO_ROXO, TiroChefe.Movimento.RETO); }
+            // lanca-chamas: o jato sai da boca direto na nave e vai virando atras dela, mais devagar que a nave
+            sopro = Math.max(0, sopro - dt);
+            double alvo = Math.atan2(naveY + 18 - bocaY(), naveX + 22 - bocaX()), dif = Math.atan2(Math.sin(alvo - direcaoSopro), Math.cos(alvo - direcaoSopro));
+            double giro = (furia ? .62 : .45) * dt;
+            direcaoSopro += Math.max(-giro, Math.min(giro, dif));
             if (sopro == 0) intervalo = .8;
             return;
         }
@@ -226,6 +280,7 @@ final class ChefeHellraiser {
     }
     /** Contato com o corpo: no ato II so conta quem esta de pe. */
     boolean tocaNave(Rectangle nave) {
+        if (ato == DRAGAO && sopro > 0 && naChama(nave.getCenterX(), nave.getCenterY())) return true;
         if (ato != DUO) return nave.intersects(getBounds());
         for (int k = 0; k < 2; k++) if ((k == 0 ? vidaOzzy : vidaLemmy) > 0 && nave.intersects(corpoDuo(k))) return true;
         return false;
@@ -262,26 +317,71 @@ final class ChefeHellraiser {
         int x = (int) vx, y = (int) vy + ((int) (tempo * 16) % 2);
         if (aviso > 0) {
             boolean pisca = (int) (aviso * 10) % 2 == 0;
-            g.setColor(new Color(255, 120, 30, pisca ? 70 : 30)); g.fillRect(0, y + vanH / 4, W, vanH * 3 / 5);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22)); g.setColor(new Color(255, 200, 120, pisca ? 255 : 130));
-            g.drawString("BORN TO RAISE HELL!", 30, y + vanH / 2 + 8);
+            int fy = (int) faixaTravada;
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22)); 
+            if (manobra == ZIGUE) {
+                // mostra a trilha que a van vai fazer
+                g.setColor(new Color(255, 150, 50, pisca ? 200 : 90));
+                for (int k = 0; k < 60; k++) { double p = k / 60.0; int cx = (int) (W - p * (W + vanW)), cy = fy + vanH / 2 + (int) (Math.sin(p * Math.PI * 3) * 150); g.fillRect(cx, cy - 3, 8, 6); }
+                g.setColor(new Color(255, 200, 120, pisca ? 255 : 130)); g.drawString("ACE OF SPADES!", 30, TOPO + 90);
+            } else {
+                g.setColor(new Color(255, 120, 30, pisca ? 70 : 30)); g.fillRect(0, fy + vanH / 4, W, vanH * 3 / 5);
+                g.setColor(new Color(255, 200, 120, pisca ? 255 : 130));
+                if (manobra == POR_TRAS) {
+                    g.drawString(">> OLHA ATRAS! >>", 30, fy + vanH / 2 + 8);
+                    for (int k = 0; k < 3; k++) g.fillPolygon(new int[]{6 + k * 22, 22 + k * 22, 6 + k * 22}, new int[]{fy + vanH / 2 - 30, fy + vanH / 2 - 18, fy + vanH / 2 - 6}, 3);
+                } else g.drawString("BORN TO RAISE HELL!", 30, fy + vanH / 2 + 8);
+            }
         }
         int q = investindo ? 2 : aviso > 0 ? 1 : vida < vidaVan * .4 ? 3 : (int) (tempo * 6) % 4 == 0 ? 1 : 0;
+        boolean virada = sentido > 0;
         if (ARTE_VAN != null) {
             int fw = ARTE_VAN.getWidth() / 4;
-            g.drawImage(ARTE_VAN, x, y, x + vanW, y + vanH, q * fw, 0, q * fw + fw, ARTE_VAN.getHeight(), null);
+            if (virada) g.drawImage(ARTE_VAN, x + vanW, y, x, y + vanH, q * fw, 0, q * fw + fw, ARTE_VAN.getHeight(), null);
+            else g.drawImage(ARTE_VAN, x, y, x + vanW, y + vanH, q * fw, 0, q * fw + fw, ARTE_VAN.getHeight(), null);
         } else { g.setColor(new Color(30, 30, 34)); g.fillRoundRect(x, y + 40, vanW, vanH - 70, 20, 20); }
-        if (investindo) for (int k = 0; k < 10; k++) { g.setColor(new Color(255, 150, 40, 160 - k * 14)); g.fillRect(x + vanW + k * 20, y + vanH / 3 + (k % 3) * 30, 44, 3); }
+        if (investindo) for (int k = 0; k < 10; k++) { g.setColor(new Color(255, 150, 40, 160 - k * 14)); int lx = virada ? x - 44 - k * 20 : x + vanW + k * 20; g.fillRect(lx, y + vanH / 3 + (k % 3) * 30, 44, 3); }
+    }
+    /** O jato engrossa com a distancia: pega a nave se o centro dela cair dentro do cone. */
+    private boolean naChama(double cx, double cy) {
+        double ax = cx - bocaX(), ay = cy - bocaY(), ux = Math.cos(direcaoSopro), uy = Math.sin(direcaoSopro);
+        double ao_longo = ax * ux + ay * uy; if (ao_longo < 0 || ao_longo > ALCANCE_SOPRO) return false;
+        return Math.abs(ax * uy - ay * ux) < 14 + ao_longo * .06 + 14;
+    }
+    private void desenharSopro(Graphics2D tela) {
+        Graphics2D g = (Graphics2D) tela.create();
+        double bx = bocaX(), by = bocaY(), ux = Math.cos(direcaoSopro), uy = Math.sin(direcaoSopro);
+        double entra = Math.min(1, (sopro > 0 ? 1 : 0) * 1), fim = Math.min(1, sopro / .25);
+        java.util.Random r = new java.util.Random((long) (tempo * 30));
+        // camadas: borda violeta larga, meio rosa, miolo branco; bolhas de fogo tremendo ao longo do jato
+        for (int camada = 0; camada < 3; camada++) {
+            Color c = camada == 0 ? new Color(120, 30, 200, (int) (150 * fim)) : camada == 1 ? new Color(220, 100, 255, (int) (200 * fim)) : new Color(255, 235, 255, (int) (230 * fim));
+            g.setColor(c);
+            for (double d = 0; d < ALCANCE_SOPRO; d += 14) {
+                double larg = (14 + d * .06) * (camada == 0 ? 1.25 : camada == 1 ? .8 : .35) * entra;
+                double tremor = (r.nextDouble() - .5) * larg * .5;
+                int cx = (int) (bx + ux * d - uy * tremor), cy = (int) (by + uy * d + ux * tremor), rr = (int) (larg * (.8 + r.nextDouble() * .4));
+                g.fillOval(cx - rr, cy - rr, rr * 2, rr * 2);
+            }
+        }
+        for (int k = 0; k < 30; k++) {
+            double d = r.nextDouble() * ALCANCE_SOPRO, lado = (r.nextDouble() - .5) * (40 + d * .14);
+            g.setColor(new Color(255, 180, 255, (int) (200 * fim))); g.fillRect((int) (bx + ux * d - uy * lado), (int) (by + uy * d + ux * lado), 4, 4);
+        }
+        g.dispose();
     }
     private void desenharDragao(Graphics2D g) {
         int x = (int) dx, y = (int) dy;
-        int q = carga > 0 ? 1 : sopro > 0 ? 2 : garra > 0 ? 3 : 0;
+        int q = carga > 0 || sopro > 0 ? 1 : garra > 0 ? 3 : 0;
         if (ARTE_DRAGAO != null) {
             int fw = ARTE_DRAGAO.getWidth() / 4;
             g.drawImage(ARTE_DRAGAO, x, y, x + dragW, y + dragH, q * fw, 0, q * fw + fw, ARTE_DRAGAO.getHeight(), null);
         } else { g.setColor(new Color(60, 20, 80)); g.fillOval(x + 40, y + 40, dragW - 80, dragH - 80); }
+        if (sopro > 0) desenharSopro(g);
         if (carga > 0) {
-            // aviso do sopro: a boca brilha e cresce
+            // aviso do sopro: a boca brilha e uma linha fina marca a mira travando na nave
+            g.setColor(new Color(230, 140, 255, (int) (40 + (.9 - carga) * 180)));
+            g.drawLine((int) bocaX(), (int) bocaY(), (int) (bocaX() + Math.cos(direcaoSopro) * ALCANCE_SOPRO), (int) (bocaY() + Math.sin(direcaoSopro) * ALCANCE_SOPRO));
             int r = (int) (10 + (.9 - carga) * 30 + Math.sin(tempo * 40) * 3);
             g.setColor(new Color(220, 120, 255, 150)); g.fillOval((int) bocaX() - r, (int) bocaY() - r, r * 2, r * 2);
         }
