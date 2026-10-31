@@ -1823,7 +1823,7 @@ implements ActionListener {
             } else {
                 int n3 = this.aleatorio.nextInt(bl ? 200 : 120);
                 if (this.eliminados == 24 || this.eliminados == 100 || n3 == 0 && this.eliminados > 45) {
-                    this.itens.add(new Item(Item.Tipo.MELHORIA, n, n2, false));
+                    // a evolucao da nave agora e comprada no mercado: inimigo nao solta mais o item de melhoria
                 } else if (n3 == 1) {
                     this.itens.add(new Item(Item.Tipo.REPARO, n, n2, false));
                 } else if (n3 < 5) {
@@ -2424,8 +2424,8 @@ implements ActionListener {
                 if(codigo==KeyEvent.VK_M){voltarAoMenuInicial();return;}
                 if(codigo==KeyEvent.VK_TAB){if(teclasTeste.add(codigo)){abaPausa=(abaPausa+1)%6;cursorPausa=0;}repaint();return;}
                 if(codigo>=KeyEvent.VK_1&&codigo<=KeyEvent.VK_6){abaPausa=codigo-KeyEvent.VK_1;cursorPausa=0;repaint();return;}
-                if(abaPausa==4&&(codigo==KeyEvent.VK_LEFT||codigo==KeyEvent.VK_RIGHT)){if(teclasTeste.add(codigo)){Pausa099.encaixeMercado=Math.floorMod(Pausa099.encaixeMercado+(codigo==KeyEvent.VK_LEFT?-1:1),5);cursorPausa=0;SomJogo.tocar(SomJogo.Efeito.MENU);}repaint();return;}
-                int total=abaPausa==4?(Pausa099.encaixeMercado==4?4:Math.max(1,Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual()).size())):abaPausa==0||abaPausa==2?8:4;
+                if(abaPausa==4&&(codigo==KeyEvent.VK_LEFT||codigo==KeyEvent.VK_RIGHT)){if(teclasTeste.add(codigo)){Pausa099.encaixeMercado=Math.floorMod(Pausa099.encaixeMercado+(codigo==KeyEvent.VK_LEFT?-1:1),6);cursorPausa=0;SomJogo.tocar(SomJogo.Efeito.MENU);}repaint();return;}
+                int total=abaPausa==4?(Pausa099.encaixeMercado==5?1:Pausa099.encaixeMercado==4?4:Math.max(1,Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual()).size())):abaPausa==0||abaPausa==2?8:4;
                 if(codigo==KeyEvent.VK_UP||codigo==KeyEvent.VK_LEFT)cursorPausa=(cursorPausa+total-1)%total;
                 if(codigo==KeyEvent.VK_DOWN||codigo==KeyEvent.VK_RIGHT)cursorPausa=(cursorPausa+1)%total;
                 if(codigo==KeyEvent.VK_O){abaPausa=4;cursorPausa=0;}
@@ -2433,6 +2433,10 @@ implements ActionListener {
                 if(codigo==KeyEvent.VK_SPACE && teclasTeste.add(codigo)){
                     if(abaPausa==0){poderes.selecionar(cursorPausa,inventario);mostrarAviso("PODER EQUIPADO: "+Poderes099.NOMES[poderes.selecionado]);}
                     if(abaPausa==4){
+                        if(Pausa099.encaixeMercado==5){int mv=nave.getModeloVisual(),antes=ArteNaves.estagio(inventario.peca(mv,0));
+                            if(inventario.comprarMercado(mv,0)){SomJogo.tocar(SomJogo.Efeito.EVOLUCAO);aplicarInventario();int nv=inventario.peca(mv,0);mostrarAviso(ArteNaves.estagio(nv)>antes?"NOVO ESTAGIO! NAVE NIVEL "+nv:"NAVE EVOLUIU: NIVEL "+nv);}
+                            else{SomJogo.tocar(SomJogo.Efeito.ERRO);mostrarAviso(inventario.precoMercado(mv,0)==0?"EVOLUCAO MAXIMA":"CREDITOS INSUFICIENTES");}
+                            repaint();return;}
                         if(Pausa099.encaixeMercado==4){int prod=new int[]{1,2,0,4}[Math.min(3,cursorPausa)];
                             if(inventario.comprar(prod)){SomJogo.tocar(SomJogo.Efeito.COMPRA);aplicarInventario();mostrarAviso("COMPRADO: "+new String[]{"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"}[Math.min(3,cursorPausa)]);}
                             else{SomJogo.tocar(SomJogo.Efeito.ERRO);mostrarAviso(inventario.preco(prod)==0?"JA ADQUIRIDO":"CREDITOS INSUFICIENTES");}

@@ -34,10 +34,21 @@ final class Pausa099 {
   }else if(aba==4){
    // Mercado em encaixes: < > escolhe o encaixe, cima/baixo a peca, ESPACO compra / equipa / desequipa
    int e=encaixeMercado;Color VERDE=new Color(110,230,130),VERM=new Color(240,100,100);
-   for(int k=0;k<5;k++){int bx=12+k*91;box(g,bx,56,87,40,k==e);txt(g,k<4?Pecas.ENCAIXES[k]:"ESPECIAIS",bx+5,69,k==e?OURO:k==4?new Color(255,150,90):CINZA);
-    if(k<4){Pecas q=Pecas.obter(inv.equipada(m,k));if(q!=null&&Pecas.temIcone(q.id))Pecas.icone(g,q.id,bx+61,59,22);txtCabe(g,q==null?"VAZIO":q.nome,bx+5,86,78,q==null?CINZA:Color.WHITE);}
-    else txtCabe(g,"ARMAS E ITENS",bx+5,86,78,Color.WHITE);}
-   if(e==4){
+   for(int k=0;k<6;k++){int bx=12+k*76,bw=73;box(g,bx,56,bw,40,k==e);txtCabe(g,k<4?Pecas.ENCAIXES[k]:k==4?"ESPECIAIS":"EVOLUCAO",bx+5,69,bw-8,k==e?OURO:k>=4?new Color(255,150,90):CINZA);
+    if(k<4){Pecas q=Pecas.obter(inv.equipada(m,k));if(q!=null&&Pecas.temIcone(q.id))Pecas.icone(g,q.id,bx+bw-24,59,20);txtCabe(g,q==null?"VAZIO":q.nome,bx+5,86,bw-8,q==null?CINZA:Color.WHITE);}
+    else txtCabe(g,k==4?"ARMAS E ITENS":"NIVEL "+inv.peca(m,0)+"/8",bx+5,86,bw-8,Color.WHITE);}
+   if(e==5){
+    // Evolucao: compra o proximo nivel da nave atual; o estagio (arte) muda nos niveis 3 e 6
+    int nv=inv.peca(m,0),preco=inv.precoMercado(m,0);String[] est={"ESTAGIO I","ESTAGIO II","ESTAGIO III"};
+    box(g,12,102,282,137,false);txt(g,NAVES[m],24,118,OURO);txtDir(g,"NIVEL "+nv+"/8",282,118,AZUL);
+    Graphics2D a=(Graphics2D)g.create();a.translate(62,150);ArteNaves.desenharJogador(a,nv,m,0,0,tempo);a.dispose();txt(g,est[ArteNaves.estagio(nv)],50,212,CINZA);
+    if(nv<8){txt(g,"PROXIMO >",136,140,OURO);Graphics2D b2=(Graphics2D)g.create();b2.translate(196,150);ArteNaves.desenharJogador(b2,nv+1,m,0,0,tempo);b2.dispose();txt(g,est[ArteNaves.estagio(nv+1)],186,212,ArteNaves.estagio(nv+1)>ArteNaves.estagio(nv)?OURO:CINZA);}
+    for(int k=0;k<8;k++){g.setColor(k<nv?OURO:new Color(40,50,64));g.fillRect(24+k*33,222,29,6);if(k==2||k==5){g.setColor(Color.WHITE);g.fillRect(24+k*33+28,220,2,10);}}
+    box(g,302,102,164,137,false);txt(g,nv>=8?"EVOLUCAO MAXIMA":"NIVEL "+(nv+1),310,118,OURO);
+    if(nv<8){boolean troca=ArteNaves.estagio(nv+1)>ArteNaves.estagio(nv);txt(g,troca?"+ NOVO ESTAGIO DA NAVE":"+ MOTOR E TIRO MAIS FORTES",310,138,new Color(110,230,130));
+     txt(g,(nv+1)%2==0?"+1 CASCO":nv+1==6?"+1 DANO":"+ VELOCIDADE",310,151,new Color(110,230,130));txt(g,"CR "+preco,310,174,preco>inv.saldo()?new Color(240,100,100):OURO);txt(g,"ESPACO: COMPRAR",310,190,AZUL);}
+    txt(g,"CADA NAVE EVOLUI SEPARADA",310,217,CINZA);txt(g,"NAO SE PERDE COM DANO",310,232,AZUL);
+   }else if(e==4){
     String[] nomes={"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"};int[] prod={1,2,0,4},ic={6,7,5,8};
     String[] bom={"Arma de gelo (Q): congela","Arma de fogo (E): queima","Protege gelo e fogo","Gelo + fogo = LASER (V)"};
     String[] info={"Nivel "+inv.gelo()+"/3: superaquece","Nivel "+inv.fogo()+"/3: superaquece",inv.retencao()?"Cargas: "+inv.cargasAmuleto()+"/3":"Segura 3 golpes e quebra","Com poder equipado: FUSAO"};
