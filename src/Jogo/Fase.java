@@ -155,6 +155,8 @@ implements ActionListener {
     /** Radio pirata: o capitao inimigo comenta a luta numa janela no canto. */
     private final RadioPirata radio = new RadioPirata();
     private int abatesSeguidos; private boolean avisouSangrando;
+    /** Emboscada do enxame: primeiro as ondas atravessam a tela, depois chega a rainha (ou a nave comandante). */
+    private boolean rainhaChegou;
     private static final String[] RADIO_SETOR = {
         "Intruso no Abismo. Acordem a coisa la embaixo... ou matem ele antes.",
         "Ele entrou na Fornalha. Esquentem os canhoes.",
@@ -678,6 +680,17 @@ implements ActionListener {
         }
         this.dispararRajadaEsquadrao(d);
         this.esperaProximoEsquadrao -= d;
+        if (intercepcao && miniChefe == null && !rainhaChegou) {
+            // fase 1 da emboscada: so o enxame passando; quando a ultima onda some, chega quem manda nele
+            esperaEnxame -= d;
+            if (esperaEnxame <= 0 && reforcosEnxame > 0) lancarEnxame();
+            if (reforcosEnxame <= 0 && alien.stream().noneMatch(Alien::isVisible)) {
+                miniChefe = new MiniChefe(Math.max(1, chefesDerrotados + 1), true, rainhaInterdicao); miniChefe.posicionarInterdicao();
+                rainhaChegou = true; reforcosEnxame = 20; esperaEnxame = 3.5;
+                mostrarAviso("ALERTA: " + miniChefe.nome() + "!");
+            }
+            return;
+        }
         if (this.miniChefe != null) {
             this.miniChefe.atualizar(d, this.nave.getY());
             if(this.miniChefe.derrotado()){derrotarMiniChefe();return;}
@@ -722,7 +735,7 @@ implements ActionListener {
             graphics2D2.setColor(Color.CYAN);
             graphics2D2.drawString("FORA DA ROTA / INTERDICAO HOSTIL",14,85);
             graphics2D2.drawString("ENXAME: " + alien.stream().filter(Alien::isVisible).count() +
-                    " / " + (miniChefe != null ? miniChefe.nome() : "COMANDANTE DESTRUIDO"),375,85);
+                    " / " + (miniChefe != null ? miniChefe.nome() : rainhaChegou ? "COMANDANTE DESTRUIDO" : (rainhaInterdicao ? "RAINHA A CAMINHO" : "COMANDANTE A CAMINHO")),375,85);
             graphics2D2.drawString("ELIMINE AS AMEACAS PARA RETOMAR A DOBRA",375,100);
             graphics2D2.dispose();return;
         }
@@ -1131,7 +1144,7 @@ implements ActionListener {
             if (cenaInterdicao.terminou()) iniciarCombateIntercepcao();
             repaint(); return;
         }
-        if (intercepcao && emJogo && miniChefe == null && alien.stream().noneMatch(Alien::isVisible)) {
+        if (intercepcao && rainhaChegou && emJogo && miniChefe == null && alien.stream().noneMatch(Alien::isVisible)) {
             saidaIntercepcao += d;
             if (saidaIntercepcao >= 2.0) {
                 intercepcao = false; eliminados = eliminadosAntesIntercepcao;
@@ -1959,31 +1972,42 @@ implements ActionListener {
         tirosInimigos.clear();tirosChefes.clear();tirosElementais.clear();nave.getMisseis().clear();
         espacoPressionado=geloPressionado=fogoPressionado=false;nave.soltarTeclas();
         fundoEspacial.definirProgresso(0,6);miniChefeEnfrentado=true;
-        miniChefe=new MiniChefe(Math.max(1,chefesDerrotados+1),true,rainhaInterdicao);miniChefe.posicionarInterdicao();
-        reforcosEnxame=60;esperaEnxame=0;ultimaFormacaoEnxame=-1;
+        miniChefe=null;rainhaChegou=false;
+        reforcosEnxame=56;esperaEnxame=0;ultimaFormacaoEnxame=-1;
         lancarEnxame();
-        mostrarAviso("ALERTA: "+miniChefe.nome()+" E ENXAME!");
+        mostrarAviso("ENXAME A FRENTE! SOBREVIVA A REVOADA");
     }
 
+    /**
+     * Uma revoada do enxame que atravessa a tela: trem na altura da nave, cobra, tesoura (cima e baixo
+     * cruzando), V e parede com um buraco. Todas passam pelo lugar da nave para obrigar a desviar.
+     */
     private void lancarEnxame(){
         int vivos=(int)alien.stream().filter(Alien::isVisible).count();
-        int quantidade=Math.min(reforcosEnxame,Math.min(10,18-vivos));
+        int estagio=miniChefe!=null?miniChefe.estagio():0;
+        int quantidade=Math.min(reforcosEnxame,Math.min(miniChefe!=null?6:9,18-vivos));
         if(quantidade<=0){esperaEnxame=.5;return;}
-        int padrao;do{padrao=aleatorio.nextInt(8);}while(padrao==ultimaFormacaoEnxame);
+        int padrao;do{padrao=aleatorio.nextInt(5);}while(padrao==ultimaFormacaoEnxame);
         ultimaFormacaoEnxame=padrao;
         Alien.Classe[] classes={Alien.Classe.INTERCEPTADOR,Alien.Classe.TANQUE,Alien.Classe.KAMIKAZE,Alien.Classe.KAMIKAZE,Alien.Classe.LASER,Alien.Classe.ESQUADRAO};
         int especieBase=aleatorio.nextInt(6);
-        double centro=265+aleatorio.nextInt(110);
+        double ny=Math.max(110,Math.min(510,nave.getY()+18)),vel=270+estagio*25+aleatorio.nextInt(40);
+        int buraco=aleatorio.nextInt(6);
         for(int i=0;i<quantidade;i++){
             int especie=(especieBase+i+aleatorio.nextInt(3))%6;
-            Alien a=new Alien(1020+i*45,125+aleatorio.nextInt(370),Alien.Tipo.PIRATA,classes[especie]);
+            Alien a=new Alien(1020,300,Alien.Tipo.PIRATA,classes[especie]);
             a.definirEnxame(especie);
-            double ang=i*Math.PI*2/quantidade;
-            double ax=padrao%3==0?625+Math.cos(ang)*145:480+(i%4)*85;
-            double ay=padrao%3==0?centro+Math.sin(ang)*145:145+(i/4)*125+aleatorio.nextInt(35);
-            a.entrarEmEsquadrao(ax,Math.max(130,Math.min(495,ay)),i,padrao,1.1+miniChefe.estagio()*.15);alien.add(a);
+            double meio=(quantidade-1)/2.0;
+            switch(padrao){
+                case 0: a.iniciarPassagem(1000+i*62,ny,vel,18,3,i*.7,0); break;                                   // trem na altura da nave
+                case 1: a.iniciarPassagem(1000+i*48,310,vel*.9,150,2.4,-i*.55,0); break;                          // cobra
+                case 2: {boolean cima=i%2==0;a.iniciarPassagem(1000+(i/2)*70,cima?120:500,vel,10,4,i,cima?95:-95);break;} // tesoura
+                case 3: a.iniciarPassagem(1000+Math.abs(i-meio)*55,ny+(i-meio)*48,vel,8,3,i,0); break;            // V
+                default: {int slot=i>=buraco?i+2:i;a.iniciarPassagem(1010+(i%2)*14,118+slot*40,vel*.8,6,2,i,0);break;} // parede com buraco
+            }
+            alien.add(a);
         }
-        reforcosEnxame-=quantidade;esperaEnxame=4.2-miniChefe.estagio()*.6;
+        reforcosEnxame-=quantidade;esperaEnxame=Math.max(1.6,(miniChefe!=null?4.6:3.0)-estagio*.4);
     }
 
     private void voltarAoMenuInicial() {SomJogo.pausar(false);SomJogo.limpar();SomJogo.tocar(SomJogo.Efeito.VOLTAR);

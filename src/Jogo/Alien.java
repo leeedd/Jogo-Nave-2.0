@@ -39,6 +39,15 @@ public class Alien {
     private double alvoY;
     private double esperaEntrada;
     private boolean emFormacao;
+    /** Enxame de passagem: cruza a tela da direita para a esquerda atirando e some do outro lado. */
+    private boolean passagem;
+    private double velPassagem, baseYPassagem, ampPassagem, freqPassagem, fasePassagem, derivaPassagem;
+    void iniciarPassagem(double x0, double baseY, double vel, double amp, double freq, double fase, double deriva) {
+        passagem = true; emFormacao = false; posicionado = true; x = x0; baseYPassagem = baseY; velPassagem = vel;
+        ampPassagem = amp; freqPassagem = freq; fasePassagem = fase; derivaPassagem = deriva;
+        y = Math.max(80, Math.min(540, baseY + Math.sin(fase) * amp)); recarga = .5 + (x0 % 7) * .12;
+    }
+    boolean emPassagem() { return passagem; }
     private boolean posicionado;
     private double tempoAnimacao;
     private double tempoDesvio;
@@ -222,6 +231,14 @@ public class Alien {
         if (this.congelado > 0.0) {
             this.congelado = Math.max(0.0, this.congelado - d);
             if (this.congelado == 0) enrolado = false;
+            return;
+        }
+        if (passagem) {
+            // atravessa reto para o outro lado, ondulando; quem sai pela esquerda vai embora
+            x -= velPassagem * d; baseYPassagem += derivaPassagem * d;
+            y = Math.max(80, Math.min(540, baseYPassagem + Math.sin(tempoAnimacao * freqPassagem + fasePassagem) * ampPassagem));
+            if (x < -90) visivel = false;
+            recarga -= d;
             return;
         }
         if (this.emFormacao) {
