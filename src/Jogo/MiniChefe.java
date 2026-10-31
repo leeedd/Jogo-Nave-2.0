@@ -134,7 +134,8 @@ public final class MiniChefe {
     public void desenhar(Graphics2D graphics2D) {
         if(comandante!=null){comandante.desenhar(graphics2D);return;}
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
-        if (this.carregando || this.disparando) {
+        // sem linha de aviso: enquanto carrega, o aviso e o proprio olho arregalado; o raio so aparece no disparo
+        if (this.disparando) {
             graphics2D2.setColor(new Color(250, 70, 72, this.disparando ? 190 : 75));
             graphics2D2.fillRect(0, this.raioAlvo - (this.disparando ? 10 : 2), (int)this.x - 65, this.disparando ? 20 : 4);
             graphics2D2.setColor(new Color(255, 216, 149, this.disparando ? 220 : 120));
@@ -147,6 +148,8 @@ public final class MiniChefe {
             Graphics2D monstro = (Graphics2D)graphics2D2.create();
             monstro.translate(n-64,n2-56);monstro.scale(2,2);
             InimigosUniversos.desenhar(monstro,6,Alien.Classe.ORGANICO,0,0,tempo,false);monstro.dispose();
+        } else if (AtlasInimigos.temSentinelaOlho()) {
+            AtlasInimigos.sentinelaOlho(graphics2D2, n, n2, this.disparando ? 2 : this.carregando ? 1 : vida < vidaMaxima * .35 ? 3 : 0);
         } else AtlasInimigos.sentinela(graphics2D2, n, n2, n3);
         graphics2D2.setColor(new Color(255, 205, 115));
         graphics2D2.setFont(new Font("Monospaced", 1, 12));
