@@ -127,7 +127,7 @@ final class ChefeHellraiser {
         if (intervalo > 0 || tiros.size() > 46) return;
         rajadas++; gesto = .4;
         double ox = vx + 155 * E, oy = vy + 105 * E, mira = Math.atan2(naveY + 18 - oy, naveX + 22 - ox);
-        for (int i = -2; i <= 2; i++) tiro(tiros, ox, oy, mira + i * .2, 240, i == 0, 1, TiroChefe.Movimento.PULSANTE);
+        for (int i = -2; i <= 2; i++) tiro(tiros, ox, oy, mira + i * .2, 240, false, TiroChefe.MORCEGO_OZZY, TiroChefe.Movimento.PULSANTE);
         intervalo = 1.6;
     }
     /** Paredao: o teto abre, as Marshall sobem e o Lemmy toca; cada nota e uma onda que empurra a nave. */
@@ -211,12 +211,14 @@ final class ChefeHellraiser {
         int quem = vidaOzzy <= 0 ? 1 : vidaLemmy <= 0 ? 0 : rajadas % 2;
         double ox = px[quem] + 40, oy = py[quem] + DUO_H * .45, mira = Math.atan2(naveY + 18 - oy, naveX + 22 - ox);
         if (quem == 0) {
-            // Ozzy: leque de ondas sonoras com morcegos
-            for (int i = -3; i <= 3; i++) tiro(tiros, ox, oy, mira + i * .15, 270, i == 0, 1, TiroChefe.Movimento.PULSANTE);
+            // Ozzy: revoada de morcegos ondulando ate a nave, em duas levas
+            for (int i = -2; i <= 2; i++) { tiro(tiros, ox, oy, mira + i * .17, 250, false, TiroChefe.MORCEGO_OZZY, TiroChefe.Movimento.ONDA); tiro(tiros, ox + 30, oy, mira + i * .17 + .08, 200, false, TiroChefe.MORCEGO_OZZY, TiroChefe.Movimento.ONDA); }
         } else {
             // Lemmy: graves ondulando e, sozinho, uma parede de baixo com um buraco
-            for (int i = -3; i <= 3; i++) tiro(tiros, ox, oy, Math.PI + i * .16, 200, i % 3 == 0, 4, TiroChefe.Movimento.ONDA);
-            if (sozinho) { int buraco = (naveY - TOPO) / 60; for (int j = 0; j < 9; j++) if (Math.abs(j - buraco) > 1) tiro(tiros, W + 10, TOPO + 30 + j * 60, Math.PI, 230, false, 4, TiroChefe.Movimento.RETO); }
+            // Lemmy: leque de ases de espadas girando direto na nave
+            for (int i = -2; i <= 2; i++) tiro(tiros, ox, oy, mira + i * .14, 310, false, TiroChefe.AS_ESPADAS, TiroChefe.Movimento.RETO);
+            // sozinho, joga o baralho inteiro: uma parede de ases com um buraco so
+            if (sozinho) { int buraco = (naveY - TOPO) / 60; for (int j = 0; j < 9; j++) if (Math.abs(j - buraco) > 1) tiro(tiros, W + 10, TOPO + 30 + j * 60, Math.PI, 230, false, TiroChefe.AS_ESPADAS, TiroChefe.Movimento.RETO); }
         }
         intervalo = 1.15;
     }

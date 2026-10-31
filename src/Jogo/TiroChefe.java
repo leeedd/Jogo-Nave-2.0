@@ -52,6 +52,8 @@ public final class TiroChefe {
             case BARRIL: desenharBarril(g, px, py); return;
             case RASTRO: desenharRastro(g, px, py); return;
             case ONDA_SOM: desenharOndaLemmy(g, px, py); return;
+            case AS_ESPADAS: desenharAs(g, px, py); return;
+            case MORCEGO_OZZY: desenharMorcegoOzzy(g, px, py); return;
             case 1: desenharMorcego(g, px, py); return;
             case 2: desenharFogo(g, px, py); return;
             case 3: desenharRaioCruzado(g, px, py); return;
@@ -263,13 +265,31 @@ public final class TiroChefe {
     public Rectangle getBounds() {
         if (estilo == VAGAO) return new Rectangle((int) x - 70, (int) y - 26, 150, 52);
         if (estilo == ONDA_SOM) { int h = alturaOnda() * 3 / 4; return new Rectangle((int) x - 16, (int) y - h / 2, 32, h); }
-        int r = estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
+        int r = estilo == AS_ESPADAS ? 14 : estilo == MORCEGO_OZZY ? 13 : estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
         return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2);
     }
     public int dano() { return estilo == ONDA_SOM ? 1 : estilo == VAGAO ? 5 : estilo == FOGO_ROXO ? 3 : pesado ? 3 : 2; }
 
     // ---- Ozzy (Crazy Train e dragao) ----
-    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24, ONDA_SOM = 25;
+    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24, ONDA_SOM = 25, AS_ESPADAS = 26, MORCEGO_OZZY = 27;
+    private static final java.awt.image.BufferedImage ARTE_AS = ler("tiro_as_espadas.png"), ARTE_MORCEGO = ler("tiro_morcego_ozzy.png");
+    /** As de espadas em chamas do Lemmy: gira como estrela ninja. */
+    private void desenharAs(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create(); g.rotate(tempo * 13, px, py);
+        if (ARTE_AS != null) { g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR); g.drawImage(ARTE_AS, px - 25, py - 22, 50, 44, null); }
+        else { g.setColor(new Color(240, 225, 190)); g.fillRect(px - 9, py - 12, 18, 24); g.setColor(Color.BLACK); g.fillOval(px - 4, py - 4, 8, 8); }
+        g.dispose();
+    }
+    /** Morcego do Ozzy: bate as asas (achata e abre) e olha para onde voa. */
+    private void desenharMorcegoOzzy(Graphics2D tela, int px, int py) {
+        if (ARTE_MORCEGO == null) { desenharMorcego(tela, px, py); return; }
+        Graphics2D g = (Graphics2D) tela.create();
+        g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        double asa = .55 + .45 * Math.abs(Math.sin(tempo * 16)); int w = (int) (44 * (.85 + .15 * asa)), h = (int) (38 * asa);
+        g.translate(px, py); g.rotate(Math.atan2(vy, Math.abs(vx)) * (vx > 0 ? 1 : -1) * .5);
+        if (vx > 0) g.drawImage(ARTE_MORCEGO, w / 2, -h / 2, -w, h, null); else g.drawImage(ARTE_MORCEGO, -w / 2, -h / 2, w, h, null);
+        g.dispose();
+    }
     private static final java.awt.image.BufferedImage ARTE_ONDA = ler("onda_som_lemmy.png");
     /** A onda do paredao de caixas empurra a nave em vez de so ferir. */
     boolean empurra() { return estilo == ONDA_SOM; }
