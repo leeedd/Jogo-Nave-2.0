@@ -19,6 +19,33 @@ final class LaserConvergencia {
     /** Dano no chefe/mini-chefe por tipo (-1 = laser base). */
     static int danoChefe(int tipo) { return tipo < 0 ? 40 : new int[]{40, 80, 50, 60, 50, 50, 65, 45}[tipo]; }
 
+    /** Arte em pixel art de cada disparo (tira de 4 quadros): fusao_base.png e fusao_0..7.png. */
+    private static final java.awt.image.BufferedImage[] ARTE = new java.awt.image.BufferedImage[9];
+    static { for (int i = -1; i < 8; i++) { java.net.URL u = LaserConvergencia.class.getResource("/ImagemIcon/fusao_" + (i < 0 ? "base" : String.valueOf(i)) + ".png");
+        if (u != null) try { ARTE[i + 1] = javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { System.err.println("Fusao ilegivel: " + i); } } }
+    /** Feixes esticam ate a borda; os demais sao projeteis que atravessam a tela. */
+    private static boolean feixe(int tipo) { return tipo < 0 || tipo == 0 || tipo == 1 || tipo == 4; }
+
+    private boolean desenharArte(Graphics2D g, int ox, int cy, double t, double forca) {
+        java.awt.image.BufferedImage a = ARTE[tipo + 1]; if (a == null) return false;
+        int fw = a.getWidth() / 4, fh = a.getHeight();
+        int k = t < .14 ? 0 : t < .2 ? 1 : 2 + (int) (tempo * 12) % 2;
+        Graphics2D q = (Graphics2D) g.create();
+        q.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        q.setComposite(AlphaComposite.SrcOver.derive((float) Math.max(.15, forca)));
+        if (feixe(tipo)) {
+            int h = (int) (150 * (tipo == 4 ? 1.4 : 1)), x0 = ox - h / 5;
+            int w = k == 0 ? fw * h / fh : Config.LARGURA + 40 - x0;
+            q.drawImage(a, x0, cy - h / 2, x0 + w, cy + h / 2, k * fw, 0, k * fw + fw, fh, null);
+        } else {
+            int h = tipo == 7 ? 300 : tipo == 3 ? 260 : 230, w = fw * h / fh;
+            double voo = Math.max(0, (t - .14) / .66);
+            int x = ox - w / 4 + (int) (voo * (Config.LARGURA + w));
+            q.drawImage(a, x - w / 2, cy - h / 2, x + w / 2, cy + h / 2, k * fw, 0, k * fw + fw, fh, null);
+        }
+        q.dispose(); return true;
+    }
+
     final int tipo; private double tempo; private final int vaporizados;
     private final Random acaso = new Random(9);
     private final double[][] alvos;
@@ -50,7 +77,7 @@ final class LaserConvergencia {
         double t = tempo / DURACAO, forca = t < .15 ? t / .15 : t < .75 ? 1 : 1 - (t - .75) / .25;
         int ox = naveX + 46, cy = naveY + 20, W = Config.LARGURA;
         if (t >= .12 && t < .3) { g.setColor(c(255, 255, 255, .5 * (1 - (t - .12) / .18))); g.fillRect(0, 0, W, Config.ALTURA); }
-        if (t >= .12) switch (tipo) {
+        if (t >= .12 && !desenharArte(g, ox, cy, t, forca)) switch (tipo) {
             case 0: feixe(g, ox, cy, forca, new Color(20, 120, 200), new Color(90, 230, 255)); bolhas(g, ox, cy, forca); break;
             case 1: feixeFino(g, ox, cy, forca); break;
             case 2: laminas(g, forca); break;

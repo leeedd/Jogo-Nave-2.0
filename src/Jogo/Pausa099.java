@@ -15,6 +15,10 @@ final class Pausa099 {
  static void bar(Graphics2D g,int x,int y,int w,int carga,Color c){for(int i=0;i<w/4;i++){g.setColor(i*100<Math.max(0,carga)*(w/4)?c:new Color(32,47,62));g.fillRect(x+i*4,y,3,5);}}
  /** Encaixe selecionado no mercado (0 arma, 1 motor, 2 blindagem, 3 modulo). */
  static int encaixeMercado;
+ private static final java.awt.image.BufferedImage[] ESPECIAIS=new java.awt.image.BufferedImage[4];private static boolean especiaisLidos;
+ /** Icones da aba Especiais (especial_0..3.png): canhao criogenico, lanca-chamas, amuleto, reator. */
+ static boolean especial(Graphics2D g,int i,int x,int y,int s){if(!especiaisLidos){especiaisLidos=true;for(int k=0;k<4;k++){java.net.URL u=Pausa099.class.getResource("/ImagemIcon/especial_"+k+".png");if(u!=null)try{ESPECIAIS[k]=javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){}}}
+  if(ESPECIAIS[i]==null)return false;Graphics2D a=(Graphics2D)g.create();a.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);a.drawImage(ESPECIAIS[i],x,y,s,s,null);a.dispose();return true;}
  static int CUSTO_I(int i){return Poderes099.CUSTO[i];}
  static int icone(int i){return new int[]{9,6,8,6,7,10}[i];}
  static void desenhar(Graphics2D tela,int aba,int cursor,ProgressaoNave inv,Nave nave,Energia098 energia,Poderes099 powers,boolean gelo,boolean fogo,double tempo,String aviso){
@@ -37,9 +41,9 @@ final class Pausa099 {
     String[] nomes={"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"};int[] prod={1,2,0,4},ic={6,7,5,8};
     String[] bom={"Arma de gelo (Q): congela","Arma de fogo (E): queima","Protege gelo e fogo","Gelo + fogo = LASER (V)"};
     String[] info={"Nivel "+inv.gelo()+"/3: superaquece","Nivel "+inv.fogo()+"/3: superaquece",inv.retencao()?"Cargas: "+inv.cargasAmuleto()+"/3":"Segura 3 golpes e quebra","Com poder equipado: FUSAO"};
-    for(int i=0;i<4;i++){int y=102+i*28,preco=inv.preco(prod[i]);box(g,12,y,282,25,cursor==i);Arte098.item(g,ic[i],15,y+1,23);
+    for(int i=0;i<4;i++){int y=102+i*28,preco=inv.preco(prod[i]);box(g,12,y,282,25,cursor==i);if(!especial(g,i,15,y+1,23))Arte098.item(g,ic[i],15,y+1,23);
      txtCabe(g,nomes[i]+(prod[i]<3&&prod[i]>0?" NV "+(prod[i]==1?inv.gelo():inv.fogo()):""),42,y+11,240,Color.WHITE);txt(g,preco==0?(i==2?"ATIVO: "+inv.cargasAmuleto()+"/3 CARGAS":"ADQUIRIDO / MAXIMO"):"CR "+preco,42,y+21,preco==0?VERDE:preco>inv.saldo()?VERM:OURO);}
-    box(g,302,102,164,137,false);int c=Math.min(3,cursor);Arte098.item(g,ic[c],310,108,40);txtCabe(g,nomes[c],356,118,104,OURO);txt(g,"SERVE EM TODAS",356,131,CINZA);
+    box(g,302,102,164,137,false);int c=Math.min(3,cursor);if(!especial(g,c,310,108,40))Arte098.item(g,ic[c],310,108,40);txtCabe(g,nomes[c],356,118,104,OURO);txt(g,"SERVE EM TODAS",356,131,CINZA);
     txt(g,"+ "+bom[c],310,161,VERDE);txt(g,info[c],310,174,CINZA);txt(g,inv.preco(prod[c])==0?"JA ADQUIRIDO":"ESPACO: COMPRAR",310,190,AZUL);
     txt(g,c==3?"CADA CHEFE MUDA O DISPARO":c==2?"QUEBRA: COMPRE DE NOVO":"ATIRE EM RAJADAS CURTAS",310,217,c==2?VERM:CINZA);txt(g,"COMPRAS SAO PERMANENTES",310,232,AZUL);
    }else{
