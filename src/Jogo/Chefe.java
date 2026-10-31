@@ -419,6 +419,8 @@ public final class Chefe {
     String consumirCena() { return artista != null ? artista.consumirCena() : hell != null ? hell.consumirCena() : null; }
     /** Ponto para onde o gancho da van esta arrastando a nave (null se ninguem esta puxando). */
     double[] puxaoNave() { return hell != null ? hell.puxaoNave() : null; }
+    int consumirDanoGancho() { return hell != null ? hell.consumirDanoGancho() : 0; }
+    boolean naveAgarrada() { return hell != null && hell.naveAgarrada(); }
     int getAtoHellraiserTeste() { return hell == null ? 0 : hell.ato(); }
     int getTotalQuadros() { return quadros.length; }
     int getFormaMetalTeste() { return artista == null ? 0 : artista.getForma(); }

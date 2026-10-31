@@ -45,6 +45,9 @@ final class ChefeHellraiser {
     private double hx, hy, hvx, hvy, tempoPreso, faiscaCorrente;
     private int vidaCorrente;
     private boolean acertouCorrente;
+    /** Golpe do gancho para a Fase aplicar na nave (espinhos do para-choque) e brilho do impacto. */
+    private int danoGancho;
+    private double impactoGancho, batidaX, batidaY, batida;
     // dupla: cada um com posicao propria; trocam de lugar em arco
     private final double[] px = new double[2], py = new double[2];
     private double troca = 6, trocando, gesto;
@@ -87,7 +90,7 @@ final class ChefeHellraiser {
     private double bocaArpaoY() { return vy + 248 * E; }
     private void van(double dt, int naveX, int naveY, double cad, List<TiroChefe> tiros) {
         boolean furia = vida < vidaVan * .4;
-        faiscaCorrente = Math.max(0, faiscaCorrente - dt);
+        faiscaCorrente = Math.max(0, faiscaCorrente - dt); impactoGancho = Math.max(0, impactoGancho - dt); batida = Math.max(0, batida - dt);
         atualizarGancho(dt, naveX, naveY);
         if (investindo) {
             // rasante da furia: atravessa a tela e os pneus deixam a pista pegando fogo
@@ -155,18 +158,24 @@ final class ChefeHellraiser {
             }
         } else if (gancho == 2) {
             fase += dt; hx += hvx * dt; hy += hvy * dt;
-            if (Math.hypot(hx - nx, hy - ny) < 30) { gancho = 3; tempoPreso = 0; SomJogo.tocar(SomJogo.Efeito.IMPACTO); }
+            if (Math.hypot(hx - nx, hy - ny) < 30) { gancho = 3; tempoPreso = 0; impactoGancho = .3; SomJogo.tocar(SomJogo.Efeito.IMPACTO); }
             else if (fase > 1.4 || hx < -20 || hy < TOPO - 20 || hy > H + 20) gancho = 4;
         } else if (gancho == 3) {
             hx = nx; hy = ny; tempoPreso += dt;
             // chegou nos espinhos do para-choque ou cansou de puxar: solta
-            if (Math.hypot(nx - bx, ny - by) < 70 || tempoPreso > 4.5) gancho = 4;
+            if (Math.hypot(nx - bx, ny - by) < 70) {
+                // bateu nos espinhos: dano, faiscas e a nave e cuspida para tras
+                gancho = 4; danoGancho = 4; batida = .45; batidaX = nx; batidaY = ny; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO);
+            } else if (tempoPreso > 4.5) gancho = 4;
         } else {
             double d = Math.hypot(bx - hx, by - hy);
             if (d < 30) { gancho = 0; return; }
             hx += (bx - hx) / d * 900 * dt; hy += (by - hy) / d * 900 * dt;
         }
     }
+    /** Dano dos espinhos do para-choque, lido uma vez pela Fase. */
+    int consumirDanoGancho() { int d = danoGancho; danoGancho = 0; return d; }
+    boolean naveAgarrada() { return ato == VAN && gancho == 3; }
     /** Para onde a nave esta sendo arrastada (ou null): a Fase move a nave ate la. */
     double[] puxaoNave() { return ato == VAN && gancho == 3 ? new double[]{bocaArpaoX(), bocaArpaoY()} : null; }
     /** Tiro na corrente: distancia do ponto ao segmento boca-gancho. */
@@ -364,6 +373,14 @@ final class ChefeHellraiser {
         } else { g.setColor(new Color(30, 30, 34)); g.fillRoundRect(x + 90, y + 70, 200, 120, 20, 20); }
         if (investindo) for (int k = 0; k < 10; k++) { g.setColor(new Color(255, 150, 40, 160 - k * 14)); g.fillRect(x + (int) (470 * E) + k * 20, y + (int) (150 * E) + (k % 3) * 30, 44, 3); }
         if (gancho >= 2) desenharCorrente(g);
+        if (batida > 0) {
+            // estilhacos e faiscas no ponto em que a nave bateu nos espinhos
+            java.util.Random r = new java.util.Random(11); double t = 1 - batida / .45;
+            for (int k = 0; k < 16; k++) { double a = r.nextDouble() * Math.PI * 2, d = 10 + t * (40 + r.nextInt(50));
+                g.setColor(k % 3 == 0 ? new Color(255, 255, 200, (int) (255 * (1 - t))) : new Color(255, 140 + r.nextInt(80), 40, (int) (230 * (1 - t))));
+                int sx = (int) (batidaX + Math.cos(a) * d), sy = (int) (batidaY + Math.sin(a) * d); g.fillRect(sx, sy, 5, 5); }
+            g.setColor(new Color(255, 230, 160, (int) (180 * (1 - t)))); int rr = (int) (16 + t * 40); g.fillOval((int) batidaX - rr, (int) batidaY - rr, rr * 2, rr * 2);
+        }
     }
     private void desenharCorrente(Graphics2D tela) {
         Graphics2D g = (Graphics2D) tela.create();
@@ -376,6 +393,12 @@ final class ChefeHellraiser {
             c.dispose();
         } else { g.setColor(new Color(90, 80, 70)); g.setStroke(new java.awt.BasicStroke(4)); g.drawLine((int) ax, (int) ay, (int) hx, (int) hy); }
         if (faiscaCorrente > 0) { g.setColor(new Color(255, 220, 120)); for (int k = 0; k < 6; k++) g.fillRect((int) (ax + (hx - ax) * (.3 + k * .1)) + (k % 2) * 6 - 3, (int) (ay + (hy - ay) * (.3 + k * .1)) - 3, 4, 4); }
+        if (gancho == 3) {
+            // agarrou: clarao no fechamento e faiscas do metal raspando enquanto puxa
+            if (impactoGancho > 0) { int rr = (int) (20 + (.3 - impactoGancho) * 120); g.setColor(new Color(255, 240, 200, (int) (impactoGancho / .3 * 220))); g.fillOval((int) hx - rr, (int) hy - rr, rr * 2, rr * 2); }
+            java.util.Random r = new java.util.Random((long) (tempo * 20));
+            for (int k = 0; k < 5; k++) { g.setColor(new Color(255, 200 - k * 20, 80)); g.fillRect((int) hx - 8 + r.nextInt(30), (int) hy - 14 + r.nextInt(28), 3, 3); }
+        }
         BufferedImage gc = gancho == 3 ? GANCHO_FECHADO : GANCHO_ABERTO;
         if (gc != null) {
             // a arte aponta para a esquerda: gira para seguir a corrente

@@ -1180,7 +1180,11 @@ implements ActionListener {
                 // empurrao das caixas de som e puxao do gancho da van
                 if(empurraoNave>0){nave.teleportar(nave.getX()-empurraoNave*d,nave.getY());empurraoNave=Math.max(0,empurraoNave-1300*d);}
                 double[] puxao=chefe!=null?chefe.puxaoNave():null;
-                if(puxao!=null){double ddx=puxao[0]-(nave.getX()+22),ddy=puxao[1]-(nave.getY()+18),dist=Math.max(1,Math.hypot(ddx,ddy));nave.teleportar(nave.getX()+ddx/dist*330*d,nave.getY()+ddy/dist*330*d);}
+                if(puxao!=null){double ddx=puxao[0]-(nave.getX()+22),ddy=puxao[1]-(nave.getY()+18),dist=Math.max(1,Math.hypot(ddx,ddy));
+                    // presa no gancho a nave treme enquanto e arrastada
+                    nave.teleportar(nave.getX()+ddx/dist*330*d+(aleatorio.nextInt(5)-2),nave.getY()+ddy/dist*330*d+(aleatorio.nextInt(5)-2));}
+                int danoGancho=chefe!=null?chefe.consumirDanoGancho():0;
+                if(danoGancho>0){processarDano(dificuldade.ajustarDano(danoGancho),null);empurraoNave=620;gerarParticulas(nave.getX()+40,nave.getY()+18,30);if(!emJogo)return;}
                 for (TiroChefe tiroChefe2 : this.tirosChefes) {
                     if (!tiroChefe2.isVisible()) continue;
                     tiroChefe2.mexer(d);
