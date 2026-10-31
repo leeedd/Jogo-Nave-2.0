@@ -444,7 +444,10 @@ public class Alien {
         else if (universo > 0 && classe != Classe.INTERCEPTADOR && classe != Classe.ESQUADRAO) {
             InimigosUniversos.desenhar(graphics2D, universo, classe, (int)x, (int)y, tempoAnimacao, congelado > 0);
         } else if (this.tipo == Tipo.PIRATA) {
-            Piratas094.desenhar(graphics2D,classe,(int)x,(int)y,evoluido(),tempoAnimacao);
+            // versao da nave: elite com escudo (procurado ou piloto que desvia), blindada (evoluida ou casco adaptado), normal
+            if(Piratas094.temEvo()){int versao=procurado||adaptado(ComandoInimigo.DESVIO)?2:evoluido()||adaptacao!=0?1:0;
+                Piratas094.desenhar(graphics2D,classe,(int)x,(int)y,nivelEvolucao>=2?5:-1,versao,tempoAnimacao);}
+            else Piratas094.desenhar(graphics2D,classe,(int)x,(int)y,evoluido(),tempoAnimacao);
         } else {
             ArteNaves.desenharOrganico(graphics2D, this.variante, (int)this.x, (int)this.y, this.tempoAnimacao, this.congelado > 0.0);
         }

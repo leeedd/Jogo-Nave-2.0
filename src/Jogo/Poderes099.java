@@ -81,6 +81,8 @@ final class Poderes099 {
    }
   }
  }
+ /** Moto do Painkiller (poder_painkiller.png, 4 quadros: andando, serras em fogo, investida, freio). */
+ private static final java.awt.image.BufferedImage MOTO=lerArte("poder_painkiller.png");private int xMotoAnterior;
  /** Tentaculo roxo do poder (tentaculo_roxo_elo/ponta.png); sem a arte, usa o elo vermelho da Lula chefe. */
  private static final java.awt.image.BufferedImage ELO_ROXO=lerArte("tentaculo_roxo_elo.png"),PONTA_ROXA=lerArte("tentaculo_roxo_ponta.png");
  private static java.awt.image.BufferedImage lerArte(String n){java.net.URL u=Poderes099.class.getResource("/ImagemIcon/"+n);if(u==null)return null;try{return javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){return null;}}
@@ -225,8 +227,10 @@ final class Poderes099 {
   switch(ativo){
    case 0:desenharTentaculos(a,px,py);break;
    case 1:{ // moto com rastro de fogo
-    for(int k=0;k<10;k++){double f=k/10.0;int fx=px-40-(int)(k*9+Math.sin(tempo*30+k)*3),fy=py+12+(int)(Math.sin(tempo*25+k*1.3)*4);a.setColor(new Color(255,(int)(200-150*f),40,(int)(200*(1-f))));a.fillOval(fx-6,fy-6,12-k/2,12-k/2);}
-    sprite(a,1,px-55,py-55,110,tempo);a.setColor(Color.DARK_GRAY);a.fillRect(px-28,py+40,56,4);a.setColor(new Color(255,150,40));a.fillRect(px-28,py+40,7*vidaMoto,4);break;}
+    if(MOTO==null)for(int k=0;k<10;k++){double f=k/10.0;int fx=px-40-(int)(k*9+Math.sin(tempo*30+k)*3),fy=py+12+(int)(Math.sin(tempo*25+k*1.3)*4);a.setColor(new Color(255,(int)(200-150*f),40,(int)(200*(1-f))));a.fillOval(fx-6,fy-6,12-k/2,12-k/2);}
+    if(MOTO!=null){int dx=px-xMotoAnterior;xMotoAnterior=px;int q=dx>3?2:dx<-3?3:(int)(tempo*8)%2,fw=MOTO.getWidth()/4,w=140,h=w*MOTO.getHeight()/fw;
+     a.drawImage(MOTO,px-w/2-10,py-h/2-4,px+w/2-10,py+h/2-4,q*fw,0,q*fw+fw,MOTO.getHeight(),null);}
+    else sprite(a,1,px-55,py-55,110,tempo);a.setColor(Color.DARK_GRAY);a.fillRect(px-28,py+40,56,4);a.setColor(new Color(255,150,40));a.fillRect(px-28,py+40,7*vidaMoto,4);break;}
    case 2:desenharCorte(a);break;
    case 3:{ // carta girando com rastro de cartas fantasma
     BufferedImage[] q=quadrosSimbolo(3);
