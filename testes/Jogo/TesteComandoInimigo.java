@@ -19,4 +19,8 @@ public class TesteComandoInimigo{static void ok(boolean b,String m){if(!b)throw 
   ok(al.danoElemental(true,6)==3&&al.danoElemental(false,6)==6,"casco contra fogo corta o fogo pela metade e nao o gelo");
   ComandoInimigo nov=new ComandoInimigo();ok((nov.adaptacoes(r)&ComandoInimigo.CASCO_FOGO)==0,"sem historico nao adapta");
   ComandoInimigo cp=c.copia();ok(cp.nivel()==c.nivel()&&!Double.isNaN(cp.faixaFavorita()),"retomada guarda o que ele aprendeu");
+  RadioPirata rp=new RadioPirata();rp.falar("um");rp.falar("dois");rp.falar("um");rp.atualizar(.01);ok("um".equals(rp.atualTeste()),"radio fala o primeiro da fila");
+  for(int i=0;i<300;i++)rp.atualizar(1/60.0);ok(!rp.falando(),"fala termina sozinha");
+  rp.atualizar(1);ok(!rp.falando(),"intervalo entre falas");rp.urgente("socorro");rp.atualizar(.01);ok("socorro".equals(rp.atualTeste()),"urgente fura a fila e o intervalo");
+  for(int i=0;i<300;i++)rp.atualizar(1/60.0);for(int i=0;i<480;i++)rp.atualizar(1/60.0);ok("dois".equals(rp.atualTeste()),"repetida na fila foi ignorada e o resto sai depois");
   System.out.println("OK comando inimigo");}}

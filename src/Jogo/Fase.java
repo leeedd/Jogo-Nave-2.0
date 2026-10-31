@@ -152,6 +152,18 @@ implements ActionListener {
     private double empurraoNave;
     /** Comando inimigo: aprende com o piloto e adapta os esquadroes (sem mostrar numero na tela). */
     private ComandoInimigo comando = new ComandoInimigo(), comandoSalvo;
+    /** Radio pirata: o capitao inimigo comenta a luta numa janela no canto. */
+    private final RadioPirata radio = new RadioPirata();
+    private int abatesSeguidos; private boolean avisouSangrando;
+    private static final String[] RADIO_SETOR = {
+        "Intruso no Abismo. Acordem a coisa la embaixo... ou matem ele antes.",
+        "Ele entrou na Fornalha. Esquentem os canhoes.",
+        "Contato nos Cristais. Nao deixem ele sair inteiro.",
+        "Ele ta na Sucata. Aqui quem manda somos nos.",
+        "Alvo na Geada. Congelem esse desgracado.",
+        "Ele chegou na Colmeia. Soltem os enxames.",
+        "Intruso no Vortice. Fechem o cerco.",
+        "Ele ousou vir a Citadela. Todas as naves, agora!"};
     static final int HELLRAISER = 9;
     private boolean novoJogoMais;
     private boolean usarLendaria;
@@ -639,7 +651,8 @@ implements ActionListener {
         if(!intercepcao){comando.observar(d,nave.getX(),nave.getY());
             comando.atualizarNivel(chefesDerrotados,nave.getNivel(),inventario.reator(),inventario.blindagem(),nave.getVida()/(double)Math.max(1,nave.getVidaMaxima()));
             if(comando.pedirKamikaze())for(Alien k:alien)if(k.isVisible()&&k.getClasse()==Alien.Classe.KAMIKAZE&&k.estaNaFormacao()&&!k.kamikazeArmado()){k.prepararKamikaze(nave.getY()+18);break;}
-            String radio=comando.radio();if(radio!=null&&!partidaTeste)mostrarAviso("RADIO PIRATA: "+radio);}
+            String pista=comando.radio();if(pista!=null&&!partidaTeste)radio.falar(pista);}
+        radio.atualizar(d);
         block0: for (Alien alien : this.alien) {
             if (!alien.isVisible()) continue;
             alien.verificarKamikaze(this.nave.getY() + 18);
@@ -860,6 +873,7 @@ implements ActionListener {
             graphics2D.setColor(new Color(255, 230, 60, (int) (255 * Math.min(1, tempoCritico / .3))));
             graphics2D.drawString("PONTO FRACO! x2", chefe.getBounds().x - 40, chefe.getBounds().y - 12 - (int) ((.6 - tempoCritico) * 40));
         }
+        if (etapa == Etapa.COMBATE && !naBase) radio.desenhar(graphics2D);
         if (cenaChefe != null) cenaChefe.desenhar(graphics2D);
         if (naBase && !pausado) EstacaoAliada.desenharMenu(graphics2D, menuBase, cursorBase, nave, inventario, modeloVisual, avisoBase, tempoTotal);
         if (escolhendoSetor || this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
@@ -1325,6 +1339,8 @@ implements ActionListener {
         this.alien.clear();
         this.lancarProximoEsquadrao();
         this.mostrarAviso("SETOR " + Math.min(TOTAL_SETORES, this.chefesDerrotados + 1) + " - NOVOS ESQUADROES!");
+        abatesSeguidos = 0; avisouSangrando = false;
+        if (!partidaTeste) radio.falar(RADIO_SETOR[Math.max(0, Math.min(7, setorAtual))]);
     }
 
     private void iniciarRitmoSetor() {
@@ -1621,7 +1637,7 @@ implements ActionListener {
         }
         this.esperaProximoEsquadrao = 1.5;
         this.mostrarAviso(intercepcao?"COMANDANTE DESTRUIDO! ELIMINE O ENXAME RESTANTE":"SENTINELA DESTRUIDA! +1500 PONTOS");
-        if (!intercepcao && etapa == Etapa.COMBATE) { base = new EstacaoAliada(); mostrarAviso("SENTINELA DESTRUIDA! BASE ALIADA SE APROXIMANDO"); }
+        if (!intercepcao && etapa == Etapa.COMBATE) { base = new EstacaoAliada(); mostrarAviso("SENTINELA DESTRUIDA! BASE ALIADA SE APROXIMANDO"); if (!partidaTeste) radio.urgente("A sentinela caiu! E tem base aliada vindo ai. Derrubem ela!"); }
     }
 
     private void abrirCenaChefe(String nome) {
@@ -1747,6 +1763,8 @@ implements ActionListener {
         }
         this.gerarParticulas(this.nave.getX() + 25, this.nave.getY() + 20, 24);
         this.explosoes.add(new ExplosaoCurta(this.nave.getX() + 25, this.nave.getY() + 18, 11));
+        abatesSeguidos = 0;
+        if (!avisouSangrando && !partidaTeste && etapa == Etapa.COMBATE && nave.getVida() > 0 && nave.getVida() * 4 <= nave.getVidaMaxima()) { avisouSangrando = true; radio.urgente("Ele ta sangrando! Todos em cima dele, AGORA!"); }
         Item.Tipo perdido=null;
         // O amuleto segura a arma, mas se desgasta a cada golpe e acaba se despedacando.
         if(inventario.retencao()&&(fogoColetado||geloColetado)){if(inventario.desgastarAmuleto()){SomJogo.tocar(SomJogo.Efeito.ESCUDO_QUEBRA);mostrarAviso("AMULETO DO METAL GOD DESPEDACADO!");}else mostrarAviso("AMULETO PROTEGEU A ARMA ("+inventario.cargasAmuleto()+" RESTANTES)");}
@@ -1790,6 +1808,8 @@ implements ActionListener {
         if (!alien.isVisible()) {
             return;
         }
+        if (++abatesSeguidos == 12 && !partidaTeste) radio.falar("Doze dos nossos e ele nem arranhou. Quem e esse piloto?");
+        else if (abatesSeguidos == 30 && !partidaTeste) radio.falar("Trinta! Chamem reforcos, isso nao e um piloto comum.");
         Rectangle rectangle = alien.getBounds();
         int n = rectangle.x + rectangle.width / 2;
         int n2 = rectangle.y + rectangle.height / 2;
@@ -1975,7 +1995,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;comando=new ComandoInimigo();emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
