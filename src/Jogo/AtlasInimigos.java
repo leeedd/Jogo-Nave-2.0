@@ -77,6 +77,20 @@ public final class AtlasInimigos {
     /** Sentinela de olho mecanico (sentinela_olho.png, 4 quadros: repouso, olho aberto, raio, danificada). */
     static final BufferedImage OLHO = imagemOpcional("sentinela_olho.png");
     static boolean temSentinelaOlho() { return OLHO != null; }
+    /** Arte do integrante (integrante_nome_sobrenome.png, 4 quadros: tocando, carregando, golpe, bate-cabeca). */
+    private static final java.util.Map<String, BufferedImage> INTEGRANTES = new java.util.HashMap<>();
+    static BufferedImage integrante(String nome) {
+        if (nome == null || nome.isEmpty()) return null;
+        return INTEGRANTES.computeIfAbsent(nome, n -> imagemOpcional("integrante_" + n.toLowerCase().replace(' ', '_') + ".png"));
+    }
+    /** Desenha o integrante com o corpo centrado em (x, y); o golpe sai para a esquerda, fora do corpo. */
+    static void integrante(Graphics2D g, BufferedImage arte, int x, int y, int quadro) {
+        int fw = arte.getWidth() / 4, h = 200; double e = h / (double) arte.getHeight(); int w = (int) (fw * e);
+        int x0 = x - (int) (fw * .67 * e), y0 = y - h / 2;
+        Graphics2D a = (Graphics2D) g.create();
+        a.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        a.drawImage(arte, x0, y0, x0 + w, y0 + h, quadro * fw, 0, quadro * fw + fw, arte.getHeight(), null); a.dispose();
+    }
     static void sentinelaOlho(Graphics2D g, int x, int y, int quadro) {
         int fw = OLHO.getWidth() / 4, h = 175, w = fw * h / OLHO.getHeight();
         Graphics2D a = (Graphics2D) g.create();

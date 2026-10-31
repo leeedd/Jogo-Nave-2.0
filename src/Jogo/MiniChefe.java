@@ -136,9 +136,10 @@ public final class MiniChefe {
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
         // sem linha de aviso: enquanto carrega, o aviso e o proprio olho arregalado; o raio so aparece no disparo
         if (this.disparando) {
-            graphics2D2.setColor(new Color(250, 70, 72, this.disparando ? 190 : 75));
+            boolean roxo = AtlasInimigos.integrante(integrante) != null; // o golpe do Kirk e roxo, como na arte
+            graphics2D2.setColor(roxo ? new Color(170, 60, 255, 190) : new Color(250, 70, 72, this.disparando ? 190 : 75));
             graphics2D2.fillRect(0, this.raioAlvo - (this.disparando ? 10 : 2), (int)this.x - 65, this.disparando ? 20 : 4);
-            graphics2D2.setColor(new Color(255, 216, 149, this.disparando ? 220 : 120));
+            graphics2D2.setColor(roxo ? new Color(235, 200, 255, 220) : new Color(255, 216, 149, this.disparando ? 220 : 120));
             graphics2D2.fillRect(0, this.raioAlvo - (this.disparando ? 3 : 1), (int)this.x - 65, this.disparando ? 6 : 2);
         }
         int n = (int)this.x;
@@ -148,14 +149,18 @@ public final class MiniChefe {
             Graphics2D monstro = (Graphics2D)graphics2D2.create();
             monstro.translate(n-64,n2-56);monstro.scale(2,2);
             InimigosUniversos.desenhar(monstro,6,Alien.Classe.ORGANICO,0,0,tempo,false);monstro.dispose();
+        } else if (AtlasInimigos.integrante(integrante) != null) {
+            // o integrante toca o tempo todo: alterna tocar e bate-cabeca; arregala no preparo e solta o golpe
+            int q = this.disparando ? 2 : this.carregando ? 1 : (int) (this.tempo * 2.2) % 2 == 0 ? 0 : 3;
+            AtlasInimigos.integrante(graphics2D2, AtlasInimigos.integrante(integrante), n, n2, q);
         } else if (AtlasInimigos.temSentinelaOlho()) {
             AtlasInimigos.sentinelaOlho(graphics2D2, n, n2, this.disparando ? 2 : this.carregando ? 1 : vida < vidaMaxima * .35 ? 3 : 0);
         } else AtlasInimigos.sentinela(graphics2D2, n, n2, n3);
         graphics2D2.setColor(new Color(255, 205, 115));
         graphics2D2.setFont(new Font("Monospaced", 1, 12));
-        {String rot=invasor ? "DEVORADOR DO VAZIO" : nome();graphics2D2.drawString(rot, n - graphics2D2.getFontMetrics().stringWidth(rot) / 2 + 2, n2 - (AtlasInimigos.temSentinelaOlho() && !invasor ? 92 : 65));}
+        {String rot=invasor ? "DEVORADOR DO VAZIO" : nome();graphics2D2.drawString(rot, n - graphics2D2.getFontMetrics().stringWidth(rot) / 2 + 2, n2 - (!invasor && AtlasInimigos.integrante(integrante) != null ? 108 : AtlasInimigos.temSentinelaOlho() && !invasor ? 92 : 65));}
         int bx = Math.max(8, Math.min(824, n - 64));
-        int by = Math.min(564, n2 + (AtlasInimigos.temSentinelaOlho() && !invasor ? 90 : 66));
+        int by = Math.min(564, n2 + (!invasor && AtlasInimigos.integrante(integrante) != null ? 104 : AtlasInimigos.temSentinelaOlho() && !invasor ? 90 : 66));
         HudMetal.painel(graphics2D2, bx, by, 128, 27);
         for (int i = 0; i < 16; i++) {
             int px = bx + 10 + i * 7;
