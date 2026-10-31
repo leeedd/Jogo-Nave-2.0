@@ -376,8 +376,16 @@ implements ActionListener {
         gravarRetomada();
     }
     private void aceitarContrato() {
-        if (contrato != null || cursorQuadro >= ofertasContrato.size()) { SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
-        contrato = ofertasContrato.get(cursorQuadro); ofertasContrato.clear(); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
+        if (cursorQuadro >= ofertasContrato.size()) { SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
+        Contrato escolhido = ofertasContrato.get(cursorQuadro);
+        if (escolhido.tipo == Contrato.Tipo.TROCA) {
+            // entrega da reliquia: a nave e liberada no hangar na hora
+            ofertasContrato.remove(cursorQuadro); cursorQuadro = 0;
+            if (!partidaTeste) ProgressoJogo.trocarReliquia(escolhido.nave);
+            SomJogo.tocar(SomJogo.Efeito.RELIQUIA); avisoBase = Pausa099.nomeNave(escolhido.nave) + " LIBERADA NO HANGAR!"; return;
+        }
+        if (contrato != null) { SomJogo.tocar(SomJogo.Efeito.ERRO); avisoBase = "TERMINE O CONTRATO ATIVO PRIMEIRO"; return; }
+        contrato = escolhido; ofertasContrato = Contrato.trocas(); cursorQuadro = 0; SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
         avisoBase = "CONTRATO ACEITO: " + contrato.titulo;
     }
     /** Paga ou encerra o contrato quando ele termina. */
@@ -387,7 +395,7 @@ implements ActionListener {
         if (c.falhou) { SomJogo.tocar(SomJogo.Efeito.ERRO); mostrarAviso("CONTRATO " + c.titulo + " FALHOU"); return; }
         inventario.creditar(c.premioCR); SomJogo.tocar(SomJogo.Efeito.VITORIA);
         boolean subiu = !partidaTeste && ProgressoJogo.ganharXP(c.premioXP);
-        if (c.nave >= 0 && !partidaTeste) { ProgressoJogo.liberarNave(c.nave); mostrarAviso("CONTRATO " + c.titulo + " CUMPRIDO! " + Pausa099.nomeNave(c.nave) + " LIBERADA NO HANGAR"); }
+        if (c.tipo == Contrato.Tipo.CACADA) mostrarAviso(Contrato.RELIQUIA_NAVE[c.nave] + " RECUPERADO! ENTREGUE NA BASE PARA LIBERAR A " + Pausa099.nomeNave(c.nave));
         else mostrarAviso("CONTRATO " + c.titulo + " CUMPRIDO: +" + c.premioCR + " CR  +" + c.premioXP + " XP");
         if (subiu) radio.urgente("O cacador subiu de patente: " + Contrato.PATENTES[ProgressoJogo.patente()] + ". Dobrem a recompensa pela cabeca dele.");
     }
@@ -594,7 +602,10 @@ implements ActionListener {
         this.padraoEsquadrao = n3;
         double d4 = 1.0 + (double)this.chefesDerrotados * 0.075 + (double)this.faseMusical() * 0.065;
         // o setor nao para: parte dos esquadroes atravessa a tela; os outros estacionam por pouco tempo e depois vao embora
-        boolean passa = numeroEsquadrao > 0 && aleatorio.nextDouble() < .55;
+        // cacada ativa sem o procurado em campo: este esquadrao traz o alvo, e ele fica para lutar
+        boolean trazAlvo = !intercepcao && contrato != null && contrato.tipo == Contrato.Tipo.CACADA && !contrato.terminado()
+                && alien.stream().noneMatch(x -> x.isVisible() && x.procurado()) && itens.stream().noneMatch(x -> x.isVisible() && x.getTipo() == Item.Tipo.RELIQUIA_NAVE);
+        boolean passa = !trazAlvo && numeroEsquadrao > 0 && aleatorio.nextDouble() < .55;
         int padraoPassagem; do { padraoPassagem = aleatorio.nextInt(5); } while (padraoPassagem == ultimaPassagemSetor); if (passa) ultimaPassagemSetor = padraoPassagem;
         ladoRota = aleatorio.nextBoolean() ? 1 : -1;
         double velPassagem = 205 + chefesDerrotados * 12 + aleatorio.nextInt(40), permanencia = 6 + aleatorio.nextDouble() * 5;
@@ -648,6 +659,8 @@ implements ActionListener {
             if(!partidaTeste)novo.adaptar(comando.adaptacoes(aleatorio));
             if (passa) configurarRota(novo, padraoPassagem, i, n2, velPassagem);
             else { novo.entrarEmEsquadrao(d5, d6, i, n3, d4); novo.definirPermanencia(permanencia + i * .15); }
+            if (trazAlvo && novo.getClasse() != Alien.Classe.KAMIKAZE) { trazAlvo = false; novo.marcarProcurado(Contrato.ALVO_NAVE[contrato.nave], contrato.nave, Contrato.FORCA_ALVO[contrato.nave]);
+                mostrarAviso("ALVO PROCURADO NO SETOR: " + Contrato.ALVO_NAVE[contrato.nave]); }
             this.alien.add(novo);
         }
         this.lancadosNoSetor += n2;
@@ -857,6 +870,7 @@ implements ActionListener {
                     if (!alien.isVisible()) continue;
                     alien.desenhar(graphics2D2);
                 }
+                for (Alien alien : this.alien) alien.desenharMarcaProcurado(graphics2D2);
                 for (ProjetilInimigo projetilInimigo : this.tirosInimigos) {
                     if (!projetilInimigo.isVisible()) continue;
                     projetilInimigo.desenhar(graphics2D2);
@@ -1489,6 +1503,8 @@ implements ActionListener {
                 if(!recolherReparo()){item.setVisible(true);continue;}
                 continue;
             }
+            if(item.getTipo()==Item.Tipo.RELIQUIA_NAVE){if(!partidaTeste)ProgressoJogo.guardarReliquia(item.origem());SomJogo.tocar(SomJogo.Efeito.RELIQUIA);
+                if(contrato!=null){contrato.recuperou();resolverContrato();}else mostrarAviso(Contrato.RELIQUIA_NAVE[item.origem()]+" RECUPERADO!");continue;}
             if(item.getTipo()==Item.Tipo.NUCLEO_CASCO){if(inventario.coletarNucleo(item.origem())){nave.aplicarNucleos(inventario.quantidadeNucleos());SomJogo.tocar(SomJogo.Efeito.EVOLUCAO);}mostrarAviso("NUCLEO DE CASCO: +2 CASCO MAXIMO ("+inventario.quantidadeNucleos()+"/8)");continue;}
             if(item.getTipo()==Item.Tipo.SUBTANQUE){if(inventario.descobrirTanque(item.origem()))SomJogo.tocar(SomJogo.Efeito.SUBTANQUE);mostrarAviso("SUBTANQUE ENCONTRADO: "+inventario.quantidadeTanques()+"/4");continue;}
             if(item.getTipo()==Item.Tipo.REATOR_CONVERGENCIA){inventario.coletarReator();SomJogo.tocar(SomJogo.Efeito.RELIQUIA);mostrarAviso("REATOR DE CONVERGENCIA ENCONTRADO");continue;}
@@ -1875,6 +1891,11 @@ implements ActionListener {
     private void eliminarAlien(Alien alien, boolean bl) {SomJogo.tocar(SomJogo.Efeito.EXPLOSAO,alien.getX());
         if (!alien.isVisible()) {
             return;
+        }
+        if (alien.procurado() && alien.reliquia() > 0) {
+            itens.add(new Item(Item.Tipo.RELIQUIA_NAVE, alien.getX() + 10, alien.getY() + 10, false, alien.reliquia()));
+            mostrarAviso("ALVO PROCURADO ABATIDO! PEGUE O " + Contrato.RELIQUIA_NAVE[alien.reliquia()]);
+            if (!partidaTeste) radio.urgente("Pegaram " + Contrato.ALVO_NAVE[alien.reliquia()] + "! Esse cacador nao e brincadeira.");
         }
         if (contrato != null) { contrato.abate(); resolverContrato(); }
         if (++abatesSeguidos == 12 && !partidaTeste) radio.falar("Doze dos nossos e ele nem arranhou. Quem e esse piloto?");

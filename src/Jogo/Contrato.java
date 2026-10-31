@@ -13,7 +13,7 @@ import java.util.Random;
  * Os contratos especiais de nave (Fantasma, Escudo de Ouro, Furia Verde, Forja Final) liberam a nave.
  */
 final class Contrato {
-    enum Tipo { ABATES, SEM_DANO_CHEFE, CHEFE_RAPIDO, VAPORIZAR }
+    enum Tipo { ABATES, SEM_DANO_CHEFE, CHEFE_RAPIDO, VAPORIZAR, CACADA, TROCA }
 
     final Tipo tipo;
     final int alvo, premioCR, premioXP, nave;
@@ -32,6 +32,8 @@ final class Contrato {
             case ABATES: return "Abater " + alvo + " antes do chefe, levando no maximo " + GOLPES_MAX + " golpes";
             case SEM_DANO_CHEFE: return "Vencer o chefe sem levar dano";
             case CHEFE_RAPIDO: return "Vencer o chefe em ate " + alvo + " s";
+            case CACADA: return "Cacar " + ALVO_NAVE[nave] + " e recuperar o " + RELIQUIA_NAVE[nave];
+            case TROCA: return "Entregar o " + RELIQUIA_NAVE[nave] + " e liberar a nave";
             default: return "Vaporizar " + alvo + " com o laser, levando no maximo " + GOLPES_MAX + " golpes";
         }
     }
@@ -41,6 +43,8 @@ final class Contrato {
             case ABATES: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " ABATES  GOLPES " + golpes + "/" + GOLPES_MAX;
             case SEM_DANO_CHEFE: return titulo + ": CHEFE SEM DANO";
             case CHEFE_RAPIDO: return titulo + ": CHEFE EM " + alvo + "s";
+            case CACADA: return "CACAR " + ALVO_NAVE[nave];
+            case TROCA: return "";
             default: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " VAPORIZADOS  GOLPES " + golpes + "/" + GOLPES_MAX;
         }
     }
@@ -51,6 +55,8 @@ final class Contrato {
     void vaporizou(int n) { if (tipo == Tipo.VAPORIZAR && !terminado() && (progresso += n) >= alvo) cumprido = true; }
     /** Piloto levou um golpe em qualquer momento do contrato. */
     void golpe() { if ((tipo == Tipo.ABATES || tipo == Tipo.VAPORIZAR) && !terminado() && ++golpes > GOLPES_MAX) falhou = true; }
+    /** Reliquia do alvo procurado foi recolhida. */
+    void recuperou() { if (tipo == Tipo.CACADA && !terminado()) cumprido = true; }
     void danoNoChefe() { if (tipo == Tipo.SEM_DANO_CHEFE && !terminado()) falhou = true; }
     /** Chefe caiu: resolve quem depende dele; quem nao chegou no alvo expira. */
     void chefeDerrotado(double segundos) {
@@ -68,15 +74,18 @@ final class Contrato {
     // ---- requisitos das naves bloqueadas (indice = modelo) ----
     static final int[] TROFEUS_NAVE = {0, 1, 3, 5, 8}, PATENTE_NAVE = {0, 1, 2, 3, 5};
     static final String[] CONTRATO_NAVE = {"", "FANTASMA", "ESCUDO DE OURO", "FURIA VERDE", "FORJA FINAL"};
+    /** Cacada da nave: um alvo procurado aparece no setor e solta a reliquia que libera a nave. */
+    static final String[] ALVO_NAVE = {"", "O ESPECTRO", "A HARPIA DOURADA", "O CARNICEIRO VERDE", "O FERREIRO"};
+    static final String[] RELIQUIA_NAVE = {"", "VEU FANTASMA", "PENA DE OURO", "PRESA VERDE", "CORACAO DA FORJA"};
+    /** Resistencia do alvo: quanto melhor a nave, mais duro o procurado. */
+    static final int[] FORCA_ALVO = {1, 5, 6, 7, 9};
+    static Color corReliquia(int nave) { switch (nave) { case 1: return new Color(150, 120, 255); case 2: return new Color(255, 210, 80); case 3: return new Color(110, 240, 120); default: return new Color(255, 120, 60); } }
     static Contrato daNave(int modelo) {
-        switch (modelo) {
-            case 1: return new Contrato(Tipo.SEM_DANO_CHEFE, 0, 1500, 400, 1, "FANTASMA");
-            case 2: return new Contrato(Tipo.ABATES, 60, 1800, 500, 2, "ESCUDO DE OURO");
-            case 3: return new Contrato(Tipo.CHEFE_RAPIDO, 45, 2500, 700, 3, "FURIA VERDE");
-            case 4: return new Contrato(Tipo.VAPORIZAR, 35, 5000, 1200, 4, "FORJA FINAL");
-            default: return null;
-        }
+        if (modelo < 1 || modelo > 4) return null;
+        int[] cr = {0, 1500, 1800, 2500, 5000}, xp = {0, 400, 500, 700, 1200};
+        return new Contrato(Tipo.CACADA, 0, cr[modelo], xp[modelo], modelo, CONTRATO_NAVE[modelo]);
     }
+    static Contrato troca(int modelo) { return new Contrato(Tipo.TROCA, 0, 0, 0, modelo, "ENTREGA: " + RELIQUIA_NAVE[modelo]); }
 
     /** Tres contratos comuns sorteados para o setor, mais o contrato de nave que estiver liberado. */
     static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r) {
@@ -86,7 +95,14 @@ final class Contrato {
         l.add(new Contrato(Tipo.SEM_DANO_CHEFE, 0, 900 + chefes * 150, 220 + chefes * 30, -1, "INTOCAVEL"));
         if (reator && r.nextBoolean()) { int v = 15 + chefes * 3; l.add(new Contrato(Tipo.VAPORIZAR, v, 700 + v * 30, 160 + v * 6, -1, "DESINTEGRADOR")); }
         else { int t = Math.max(35, 75 - chefes * 5); l.add(new Contrato(Tipo.CHEFE_RAPIDO, t, 700 + chefes * 120, 180 + chefes * 25, -1, "RELAMPAGO")); }
-        for (int m = 1; m <= 4; m++) if (ProgressoJogo.podeTentarNave(m)) { l.add(daNave(m)); break; }
+        for (int m = 1; m <= 4; m++) if (ProgressoJogo.podeTentarNave(m) && !ProgressoJogo.temReliquia(m)) { l.add(daNave(m)); break; }
+        l.addAll(0, trocas());
+        return l;
+    }
+    /** Reliquias guardadas que ainda nao viraram nave: podem ser entregues no quadro. */
+    static List<Contrato> trocas() {
+        List<Contrato> l = new ArrayList<>();
+        for (int m = 1; m <= 4; m++) if (ProgressoJogo.temReliquia(m) && !ProgressoJogo.naveLiberada(m)) l.add(troca(m));
         return l;
     }
 
@@ -99,18 +115,22 @@ final class Contrato {
         texto(g, "QUADRO DE CONTRATOS", 170, 100, 18, new Color(255, 206, 98));
         String pat = "PATENTE: " + PATENTES[p] + (p < PATENTES.length - 1 ? "  (XP " + xp + "/" + XP_PATENTE[p + 1] + ")" : "  (XP " + xp + ")");
         texto(g, pat, 790 - largura(g, pat, 12), 100, 12, new Color(110, 222, 245));
+        int y0 = 128;
         if (ativo != null) {
             texto(g, "CONTRATO ATIVO: " + ativo.titulo, 170, 140, 15, Color.WHITE);
             texto(g, ativo.descricao(), 170, 162, 13, new Color(190, 205, 220));
             texto(g, "PREMIO: CR " + ativo.premioCR + "  /  XP " + ativo.premioXP, 170, 184, 13, new Color(255, 206, 98));
-            texto(g, "Termine este antes de pegar outro. Ele vale ate o chefe do setor cair.", 170, 220, 12, new Color(150, 160, 175));
-        } else for (int i = 0; i < ofertas.size(); i++) {
-            Contrato c = ofertas.get(i); int y = 128 + i * 82; boolean sel = i == cursor, especial = c.nave >= 0;
+            texto(g, "Termine este antes de pegar outro. Ele vale ate o chefe do setor cair.", 170, 210, 12, new Color(150, 160, 175));
+            y0 = 228;
+        }
+        for (int i = 0; i < ofertas.size(); i++) {
+            Contrato c = ofertas.get(i); int y = y0 + i * 82; boolean sel = i == cursor, especial = c.nave >= 0;
             g.setColor(sel ? new Color(40, 90, 60, 170) : new Color(12, 20, 32, 200)); g.fillRect(168, y, 624, 72);
             g.setColor(sel ? new Color(255, 206, 98) : especial ? new Color(200, 120, 255) : new Color(48, 76, 101)); g.drawRect(168, y, 624, 72);
+            if (c.tipo == Tipo.TROCA || c.tipo == Tipo.CACADA) Item.reliquia(g, 770, y + 36, System.nanoTime() / 1e9, c.nave);
             texto(g, (sel ? "> " : "  ") + c.titulo + (especial ? "   [LIBERA " + Pausa099.nomeNave(c.nave) + "]" : ""), 180, y + 22, 15, especial ? new Color(220, 160, 255) : Color.WHITE);
             texto(g, c.descricao(), 196, y + 44, 13, new Color(190, 205, 220));
-            texto(g, "CR " + c.premioCR + "   XP " + c.premioXP, 196, y + 63, 12, new Color(255, 206, 98));
+            texto(g, c.tipo == Tipo.TROCA ? "ENTER: ENTREGAR" : "CR " + c.premioCR + "   XP " + c.premioXP + (c.tipo == Tipo.CACADA ? "   + RELIQUIA" : ""), 196, y + 63, 12, new Color(255, 206, 98));
         }
         if (aviso != null && !aviso.isEmpty()) texto(g, aviso, 480 - largura(g, aviso, 13) / 2, 470, 13, new Color(255, 206, 98));
         texto(g, ativo != null ? "ESC: VOLTAR" : "SETAS: ESCOLHER    ENTER: ACEITAR    ESC: VOLTAR", 170, 496, 12, new Color(150, 160, 175));

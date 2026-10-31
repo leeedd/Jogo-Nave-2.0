@@ -6,6 +6,7 @@ package Jogo;
 
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.List;
@@ -98,6 +99,18 @@ public class Alien {
     /** Adaptacoes vindas do ComandoInimigo (casco contra fogo/gelo, desvio, recuo). */
     private int adaptacao;
     void adaptar(int a){adaptacao=a;}
+    /** Alvo procurado de uma cacada: mais forte, desvia, fica mais tempo e solta a reliquia. */
+    private boolean procurado; private String nomeProcurado=""; private int reliquia=-1;
+    void marcarProcurado(String nome,int nave,int forca){procurado=true;nomeProcurado=nome;reliquia=nave;resistencia*=forca;adaptacao|=ComandoInimigo.DESVIO;permanencia=Math.max(permanencia,22);}
+    boolean procurado(){return procurado;}
+    /** Mira vermelha e etiqueta do procurado, desenhadas depois de todos os inimigos para ficar por cima. */
+    void desenharMarcaProcurado(Graphics2D graphics2D){if(!procurado||!visivel)return;
+        {int pul=(int)(Math.sin(tempoAnimacao*8)*3);graphics2D.setColor(new Color(255,60,60,200));graphics2D.drawOval((int)x-8-pul,(int)y-8-pul,76+pul*2,72+pul*2);
+            graphics2D.drawLine((int)x+30,(int)y-14,(int)x+30,(int)y-2);graphics2D.drawLine((int)x+30,(int)y+58,(int)x+30,(int)y+70);
+            graphics2D.setFont(new Font(Font.MONOSPACED,Font.BOLD,11));graphics2D.setColor(new Color(0,0,0,170));graphics2D.fillRect((int)x-14,(int)y-30,graphics2D.getFontMetrics().stringWidth("PROCURADO: "+nomeProcurado)+6,14);
+            graphics2D.setColor(new Color(255,90,80));graphics2D.drawString("PROCURADO: "+nomeProcurado,(int)x-11,(int)y-19);}
+    }
+    int reliquia(){return reliquia;}
     boolean adaptado(int f){return (adaptacao&f)!=0;}
     /** Casco adaptado: a arma que o piloto mais usa faz metade do dano. */
     int danoElemental(boolean fogo,int dano){return adaptado(fogo?ComandoInimigo.CASCO_FOGO:ComandoInimigo.CASCO_GELO)?Math.max(1,dano/2):dano;}

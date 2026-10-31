@@ -51,6 +51,11 @@ public final class ProgressoJogo {
             return f;
         } catch (SecurityException ex) { return 1; }
     }
+    private static final String RELIQUIAS = "metalspace_reliquias";
+    static boolean temReliquia(int m) { try { return (dados().getInt(RELIQUIAS, 0) & (1 << m)) != 0; } catch (SecurityException ex) { return false; } }
+    static void guardarReliquia(int m) { try { dados().putInt(RELIQUIAS, dados().getInt(RELIQUIAS, 0) | (1 << m)); } catch (SecurityException ex) { System.err.println("Reliquia nao gravada"); } }
+    /** Entrega a reliquia no quadro da base: a nave e liberada. */
+    static boolean trocarReliquia(int m) { if (!temReliquia(m) || naveLiberada(m)) return false; liberarNave(m); return true; }
     static boolean naveLiberada(int m) { return m == 0 || (frota() & (1 << m)) != 0; }
     static void liberarNave(int m) {
         if (m < 0 || m > 4) return;
@@ -67,7 +72,7 @@ public final class ProgressoJogo {
         StringBuilder b = new StringBuilder();
         if (totalTrofeus() < Contrato.TROFEUS_NAVE[m]) b.append(Contrato.TROFEUS_NAVE[m]).append(" TROFEUS  ");
         if (patente() < Contrato.PATENTE_NAVE[m]) b.append("PATENTE ").append(Contrato.PATENTES[Contrato.PATENTE_NAVE[m]]).append("  ");
-        b.append("CONTRATO ").append(Contrato.CONTRATO_NAVE[m]);
+        b.append(temReliquia(m) ? "ENTREGAR " + Contrato.RELIQUIA_NAVE[m] + " NA BASE" : "CACAR " + Contrato.ALVO_NAVE[m]);
         return b.toString().trim();
     }
     public static boolean modeloDisponivel(int modelo) { return modelo >= 0 && modelo <= 4 && naveLiberada(modelo); }

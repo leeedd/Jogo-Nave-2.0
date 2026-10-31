@@ -24,7 +24,7 @@ public class Item {
     private final boolean recuperado;
 
     public boolean podeSerCapturado() {
-        return this.idade >= 2.0 && tipo!=Tipo.ENERGIA && tipo!=Tipo.NUCLEO_CASCO && tipo!=Tipo.SUBTANQUE && tipo!=Tipo.REPARO && tipo!=Tipo.REATOR_CONVERGENCIA;
+        return this.idade >= 2.0 && tipo!=Tipo.ENERGIA && tipo!=Tipo.NUCLEO_CASCO && tipo!=Tipo.SUBTANQUE && tipo!=Tipo.REPARO && tipo!=Tipo.REATOR_CONVERGENCIA && tipo!=Tipo.RELIQUIA_NAVE;
     }
 
     public Item(Tipo tipo, int n, int n2, boolean bl) { this(tipo,n,n2,bl,-1); }
@@ -38,7 +38,7 @@ public class Item {
 
     public void mexer(double d) {
         this.idade += d;
-        if(Recompensas.identificador(tipo)==0)this.x -= (double)(this.recuperado ? 35 : 48) * d;
+        if(Recompensas.identificador(tipo)==0&&tipo!=Tipo.RELIQUIA_NAVE)this.x -= (double)(this.recuperado ? 35 : 48) * d;
         if (this.x < -30.0) {
             this.visivel = false;
         }
@@ -51,6 +51,7 @@ public class Item {
         Color color = this.tipo == Tipo.REPARO ? new Color(98, 255, 153) : (this.tipo == Tipo.MELHORIA ? new Color(255, 214, 91) : (this.tipo == Tipo.ARMA_2 ? new Color(255, 113, 222) : (this.tipo == Tipo.ARMA_GELO ? new Color(90, 222, 255) : (this.tipo == Tipo.ARMA_FOGO ? new Color(255, 104, 53) : (this.tipo == Tipo.PEROLA_ABISSAL ? new Color(47, 234, 229) : (this.tipo == Tipo.OCULOS_OZZY ? new Color(192, 129, 253) : (this.tipo == Tipo.EMBLEMA_HALFORD ? new Color(255, 171, 75) : (this.tipo == Tipo.INSIGNIA_EDDIE ? new Color(109, 235, 214) : (this.tipo == Tipo.CHAPEU_LEMMY ? new Color(255, 166, 77) : (this.tipo == Tipo.PALHETA_JAMES ? new Color(80, 166, 255) : (this.tipo == Tipo.MICROFONE_TOM ? new Color(249, 69, 82) : (this.tipo == Tipo.MEDALHA_TESTAMENT ? new Color(113, 246, 120) : new Color(84, 215, 255)))))))))))));
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
         if(tipo==Tipo.NUCLEO_CASCO){nucleo(graphics2D2,n+9,n2+10,d);graphics2D2.dispose();return;}
+        if(tipo==Tipo.RELIQUIA_NAVE){reliquia(graphics2D2,n+12,n2+12,d,origem);graphics2D2.dispose();return;}
         if(tipo==Tipo.ENERGIA||tipo==Tipo.SUBTANQUE||tipo==Tipo.REPARO||tipo==Tipo.REATOR_CONVERGENCIA){
             Arte098.item(graphics2D2,tipo==Tipo.SUBTANQUE?0:tipo==Tipo.REPARO?4:8,n-9,n2-9,44);
             graphics2D2.dispose();return;
@@ -119,6 +120,16 @@ public class Item {
         g.setColor(new Color(220, 225, 235)); for (int[] p : new int[][]{{cx - 13, cy - 10}, {cx + 11, cy - 10}, {cx - 13, cy + 2}, {cx + 11, cy + 2}}) g.fillRect(p[0], p[1], 2, 2);
     }
 
+    /** Reliquia em pixel art provisorio: cristal na cor da nave, com aura girando. */
+    static void reliquia(Graphics2D g,int cx,int cy,double t,int nave){
+        Color c=Contrato.corReliquia(nave);
+        for(int k=0;k<8;k++){double a=t*2.4+k*Math.PI/4;int r=20+(int)(Math.sin(t*6+k)*3);g.setColor(new Color(c.getRed(),c.getGreen(),c.getBlue(),120));g.fillRect(cx+(int)(Math.cos(a)*r)-2,cy+(int)(Math.sin(a)*r)-2,4,4);}
+        int p=3,h=(int)(Math.sin(t*5)*2);
+        g.setColor(c.darker());g.fillPolygon(new int[]{cx,cx+p*4,cx,cx-p*4},new int[]{cy-p*6+h,cy+h,cy+p*6+h,cy+h},4);
+        g.setColor(c);g.fillPolygon(new int[]{cx,cx+p*3,cx,cx-p*3},new int[]{cy-p*5+h,cy+h,cy+p*5+h,cy+h},4);
+        g.setColor(Color.WHITE);g.fillRect(cx-p,cy-p*3+h,p,p*2);
+    }
+
     public Rectangle getBounds() {
         return new Rectangle((int)this.x - 6, (int)this.y - 8, 36, 40);
     }
@@ -141,7 +152,9 @@ public class Item {
         PALHETA_JAMES,
         MICROFONE_TOM,
         MEDALHA_TESTAMENT,
-        NUCLEO_CASCO;
+        NUCLEO_CASCO,
+        /** Reliquia de caca: solta pelo alvo procurado; origem = nave que ela libera. */
+        RELIQUIA_NAVE;
 
     }
 }
