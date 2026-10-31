@@ -3,11 +3,13 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 final class Poderes099 {
- static final String[] NOMES={"TENTACULOS ABISSAIS","PAINKILLER","ESPADA DO EDDIE","AS DE ESPADAS","RIDE THE LIGHTNING","ESCUDO DE FOGO","CLONE DE CRISTAL","REVOADA"};
- static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta; pegue de volta p/ recuperar energia","Raio salta entre inimigos e paralisa","Fogo orbita a nave e queima","3 iscas de cristal; C troca de lugar","Vira morcegos: intocavel e fere"};
+ static final String[] NOMES={"TENTACULOS ABISSAIS","PAINKILLER","ESPADA DO EDDIE","AS DE ESPADAS","RIDE THE LIGHTNING","ESCUDO DE FOGO","ESPIRITOS ANCESTRAIS","REVOADA"};
+ static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta; pegue de volta p/ recuperar energia","Raio salta entre inimigos e paralisa","Fogo orbita a nave e queima","3 aguias-isca; C troca de lugar","Vira morcegos: intocavel e fere"};
  static final int[] CUSTO={25,40,30,25,40,35,30,30};
  static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={3.2,10,2.0,4.0,1.2,8,6,2.5};
  private static final BufferedImage[][] ARTE=new BufferedImage[8][4];
+ private static final BufferedImage AGUIA=lerImg("aguia_espirito.png");
+ private static BufferedImage lerImg(String n){java.net.URL u=Poderes099.class.getResource("/ImagemIcon/"+n);if(u==null)return null;try{return ImageIO.read(u);}catch(java.io.IOException e){return null;}}
  static{try{BufferedImage a=ImageIO.read(Poderes099.class.getResource("/ImagemIcon/poderes_099.png"));for(int r=0;r<8;r++)for(int c=0;c<4;c++){int x=c*a.getWidth()/4,y=r*a.getHeight()/8;ARTE[r][c]=a.getSubimage(x,y,a.getWidth()/4,a.getHeight()/8);}}catch(java.io.IOException e){throw new ExceptionInInitializerError(e);}}
  final int[] energia={100,100,100,100,100,100,100,100};final double[] cooldown=new double[8];int selecionado,ativo=-1,vidaMoto,pendente=-1;double tempo,restante,pulso,x,y,recargaPassiva,preparo,naveX,naveY;
  /** Simbolo do chefe acende em volta da nave antes do disparo: o jogador se compromete com o golpe. */
@@ -225,14 +227,14 @@ final class Poderes099 {
     if(q!=null){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(.35f));c.translate(px,py);c.rotate(tempo*.8);c.drawImage(q[2],-80,-80,160,160,null);c.dispose();}
     for(double[] o:orbes()){int ox=(int)o[0],oy=(int)o[1];for(int k=0;k<4;k++){a.setColor(new Color(255,90+k*30,30,200-k*40));int r2=14-k*3;a.fillOval(ox-r2-k*4,oy-r2+(int)(Math.sin(tempo*20+k)*2),r2*2,r2*2);}a.setColor(new Color(255,240,160));a.fillOval(ox-5,oy-5,10,10);}
     break;}
-   case 6:{ // tres iscas de cristal
-    for(int ic=0;ic<3;ic++){if(vidaClones[ic]<=0)continue;double cx=clones[ic][0],cy=clones[ic][1];
-    if(nave!=null){BufferedImage cam=new BufferedImage(200,120,BufferedImage.TYPE_INT_ARGB);Graphics2D c=cam.createGraphics();ArteNaves.desenharJogador(c,nave.getNivel(),nave.getModeloVisual(),60,40,tempo);
-     c.setComposite(AlphaComposite.SrcAtop.derive(.6f));c.setColor(new Color(80,255,140));c.fillRect(0,0,200,120);c.dispose();
-     a.setComposite(AlphaComposite.SrcOver.derive((float)(.75+.2*Math.sin(tempo*8))));a.drawImage(cam,(int)cx-60,(int)cy-40,null);a.setComposite(AlphaComposite.SrcOver);}
-    for(int k=0;k<5;k++){double an=tempo*2+k*1.26;int sx=(int)cx+22+(int)(Math.cos(an)*40),sy=(int)cy+20+(int)(Math.sin(an)*26);a.setColor(new Color(180,255,200));a.fillPolygon(new int[]{sx,sx+3,sx,sx-3},new int[]{sy-6,sy,sy+6,sy},4);}
-    a.setColor(new Color(90,240,120));for(int k=0;k<vidaClones[ic];k++)a.fillRect((int)cx+k*8,(int)cy-10,6,4);
-    }
+   case 6:{ // tres aguias de espirito (isca); arte em aguia_espirito.png, senao versao provisoria
+    for(int ic=0;ic<3;ic++){if(vidaClones[ic]<=0)continue;int cx=(int)clones[ic][0]+22,cy=(int)clones[ic][1]+20;
+     if(AGUIA!=null){int fw=AGUIA.getWidth()/4,q=vidaClones[ic]==1&&(int)(tempo*10)%2==0?3:(int)(tempo*10+ic)%3,h=56,w=fw*h/AGUIA.getHeight();a.drawImage(AGUIA,cx-w/2,cy-h/2,cx+w/2,cy+h/2,q*fw,0,q*fw+fw,AGUIA.getHeight(),null);}
+     else{double bat=Math.sin(tempo*12+ic*2);a.setColor(new Color(60,220,210,70));a.fillOval(cx-34,cy-22,68,44);
+      a.setColor(new Color(80,230,220));a.fillPolygon(new int[]{cx-30,cx-6,cx+14,cx-4},new int[]{cy-(int)(18*bat),cy-4,cy,cy+4},4);a.fillPolygon(new int[]{cx-30,cx-6,cx+14,cx-4},new int[]{cy+(int)(18*bat),cy+4,cy,cy-4},4);
+      a.setColor(new Color(255,210,90));a.fillPolygon(new int[]{cx+14,cx+22,cx+14},new int[]{cy-3,cy,cy+3},3);a.setColor(new Color(220,255,250));a.fillRect(cx+6,cy-2,4,4);}
+     for(int k=0;k<4;k++){double f=(tempo*1.5+k*.25+ic*.1)%1;a.setColor(new Color(120,240,230,(int)(200*(1-f))));a.fillRect(cx-20-(int)(f*50),cy-6+(k%2)*10+(int)(f*8),5,2);}
+     a.setColor(new Color(255,210,90));for(int k=0;k<vidaClones[ic];k++)a.fillRect(cx-20+k*8,cy-30,6,4);}
     break;}
    case 7:{ // revoada: morcegos rodando em volta da nave
     for(int k=0;k<22;k++){double an=tempo*(3+k%3)+k*.9;double rr=26+(k*13)%48;int bx=px+(int)(Math.cos(an)*rr*1.25),by=py+(int)(Math.sin(an)*rr*.9);TiroChefe.morcego(a,bx,by,2,tempo+k*.11,Math.cos(an+Math.PI/2)>0,k%4==0);}
@@ -242,7 +244,7 @@ final class Poderes099 {
   a.dispose();
  }
 
- static final Color[] CORES_SIMBOLO={new Color(70,200,255),new Color(255,140,40),new Color(150,230,255),new Color(245,235,200),new Color(80,150,255),new Color(255,50,40),new Color(90,240,120),new Color(190,90,255)};
+ static final Color[] CORES_SIMBOLO={new Color(70,200,255),new Color(255,140,40),new Color(150,230,255),new Color(245,235,200),new Color(80,150,255),new Color(255,50,40),new Color(60,220,210),new Color(190,90,255)};
  /** Simbolo de cada chefe: ondas, roda em chamas, espada, as de espadas, raio, pentagrama, cristal e morcego. */
  private static final String[] ARQ_SIMBOLO={"lula","rob","bruce","lemmy","james","tom","chuck","ozzy"};
  private static final BufferedImage[][] SIMBOLOS=new BufferedImage[8][];private static final boolean[] LIDO=new boolean[8];
@@ -290,7 +292,7 @@ final class Poderes099 {
    case 3:{int s2=r/2;g.fillOval(cx-s2-3,cy-2,s2+2,s2+2);g.fillOval(cx+1,cy-2,s2+2,s2+2);g.fillPolygon(new int[]{cx,cx+s2+3,cx-s2-3},new int[]{cy-r,cy+4,cy+4},3);g.fillPolygon(new int[]{cx,cx+7,cx-7},new int[]{cy+2,cy+r,cy+r},3);break;}
    case 4:g.fillPolygon(new int[]{cx+6,cx-r/2,cx-2,cx-8,cx+r/2,cx+3},new int[]{cy-r,cy+4,cy+4,cy+r,cy-6,cy-6},6);break;
    case 5:{g.drawOval(cx-r,cy-r,2*r,2*r);int[] xs=new int[5],ys=new int[5];for(int k=0;k<5;k++){double a=-Math.PI/2+k*4*Math.PI/5;xs[k]=cx+(int)(Math.cos(a)*r*.92);ys[k]=cy+(int)(Math.sin(a)*r*.92);}g.drawPolygon(xs,ys,5);break;}
-   case 6:g.drawPolygon(new int[]{cx,cx+r*2/3,cx,cx-r*2/3},new int[]{cy-r,cy,cy+r,cy},4);g.drawLine(cx,cy-r,cx,cy+r);g.drawLine(cx-r*2/3,cy,cx+r*2/3,cy);break;
+   case 6:g.drawOval(cx-r,cy-r,2*r,2*r);g.fillPolygon(new int[]{cx-r*4/5,cx-r/4,cx,cx+r/4,cx+r*4/5,cx+r/4,cx,cx-r/4},new int[]{cy-r/3,cy-r/6,cy-r/2,cy-r/6,cy-r/3,cy+r/6,cy+r/2,cy+r/6},8);g.setColor(new Color(255,210,90));g.fillOval(cx-3,cy-r/2-2,6,6);break;
    default:g.fillPolygon(new int[]{cx-r,cx-r/2,cx-r/4,cx-5,cx-4,cx,cx+4,cx+5,cx+r/4,cx+r/2,cx+r,cx+r/2,cx,cx-r/2},new int[]{cy-r/3,cy-r/2,cy-r/6,cy-r/3,cy-r/2,cy-r/3,cy-r/2,cy-r/3,cy-r/6,cy-r/2,cy-r/3,cy+r/4,cy+r/6,cy+r/4},14);break;
   }
   g.dispose();

@@ -13,9 +13,9 @@ import java.util.Random;
 final class LaserConvergencia {
     static final double DURACAO = 1.6;
     static final String[] NOMES = {"MARE ABISSAL", "LANCA PAINKILLER", "LAMINAS DO EDDIE", "LEQUE DE ASES",
-            "TEMPESTADE DE RAIOS", "PENTAGRAMA INFERNAL", "PRISMA DE CRISTAL", "ECLIPSE DO PRINCIPE"};
+            "TEMPESTADE DE RAIOS", "PENTAGRAMA INFERNAL", "NATIVE BLOOD", "ECLIPSE DO PRINCIPE"};
     static final String[] EFEITO_CHEFE = {"Congela o chefe", "Dano dobrado no chefe", "Corta todos os tiros", "Quatro feixes",
-            "Paralisa o chefe", "Queima o chefe", "Ricocheteia pela tela", "Rouba vida: +3 casco"};
+            "Paralisa o chefe", "Queima o chefe", "Aguia de trovao", "Rouba vida: +3 casco"};
     /** Dano no chefe/mini-chefe por tipo (-1 = laser base). */
     static int danoChefe(int tipo) { return tipo < 0 ? 40 : new int[]{40, 80, 50, 60, 50, 50, 65, 45}[tipo]; }
 
@@ -193,14 +193,15 @@ final class LaserConvergencia {
         for (int k = 0; k < 70; k++) { int x = acaso.nextInt(Config.LARGURA), y = Config.HUD + (int) ((acaso.nextInt(600) + tempo * 500) % (Config.ALTURA - Config.HUD));
             g.setColor(c(255, 100 + acaso.nextInt(120), 20, f)); g.fillPolygon(new int[]{x - 5, x, x + 5}, new int[]{y, y - 16, y}, 3); }
     }
+    /** Provisorio do Native Blood: feixe turquesa com uma aguia de luz na ponta e penas douradas. */
     private void prisma(Graphics2D g, int ox, int cy, double f) {
-        int n = 7; int[] xs = new int[n + 1], ys = new int[n + 1]; xs[0] = ox; ys[0] = cy;
-        for (int k = 1; k <= n; k++) { xs[k] = ox + (Config.LARGURA - ox) * k / n; ys[k] = k % 2 == 1 ? Config.HUD + 10 : Config.ALTURA - 10; }
-        g.setStroke(new BasicStroke(26)); g.setColor(c(40, 200, 90, f * .45)); g.drawPolyline(xs, ys, n + 1);
-        g.setStroke(new BasicStroke(10)); g.setColor(c(150, 255, 170, f)); g.drawPolyline(xs, ys, n + 1);
-        g.setStroke(new BasicStroke(3)); g.setColor(c(255, 255, 255, f)); g.drawPolyline(xs, ys, n + 1);
-        g.setStroke(new BasicStroke(1));
-        for (int k = 1; k < n; k++) { g.setColor(c(200, 255, 210, f)); g.fillPolygon(new int[]{xs[k], xs[k] + 14, xs[k], xs[k] - 14}, new int[]{ys[k] - 18, ys[k], ys[k] + 18, ys[k]}, 4); }
+        feixe(g, ox, cy, f * .7, new Color(20, 140, 140), new Color(110, 240, 230));
+        int ax = ox + (int) ((tempo / DURACAO) * (Config.LARGURA - ox)), bat = (int) (Math.sin(tempo * 16) * 60);
+        g.setColor(c(110, 240, 230, f)); g.fillPolygon(new int[]{ax - 90, ax - 20, ax + 30, ax - 20}, new int[]{cy - bat - 40, cy - 10, cy, cy + 10}, 4);
+        g.fillPolygon(new int[]{ax - 90, ax - 20, ax + 30, ax - 20}, new int[]{cy + bat + 40, cy + 10, cy, cy - 10}, 4);
+        g.setColor(c(255, 215, 100, f)); g.fillPolygon(new int[]{ax + 30, ax + 50, ax + 30}, new int[]{cy - 7, cy, cy + 7}, 3);
+        for (int k = 0; k < 40; k++) { int x = ox + (int) ((k * 41 + tempo * 600) % Math.max(1, ax - ox)), y = cy + (int) (Math.sin(k * 2.1 + tempo * 6) * 60);
+            g.setColor(c(255, 215, 100, f * .9)); g.fillRect(x, y, 6, 2); }
     }
     private void eclipse(Graphics2D g, double f) {
         g.setColor(c(10, 0, 20, f * .75)); g.fillRect(0, Config.HUD, Config.LARGURA, Config.ALTURA - Config.HUD);
