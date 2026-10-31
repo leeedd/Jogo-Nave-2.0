@@ -78,7 +78,7 @@ public final class AtlasInimigos {
     static final BufferedImage OLHO = imagemOpcional("sentinela_olho.png");
     static boolean temSentinelaOlho() { return OLHO != null; }
     static void sentinelaOlho(Graphics2D g, int x, int y, int quadro) {
-        int fw = OLHO.getWidth() / 4, h = 150, w = fw * h / OLHO.getHeight();
+        int fw = OLHO.getWidth() / 4, h = 175, w = fw * h / OLHO.getHeight();
         Graphics2D a = (Graphics2D) g.create();
         a.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         a.drawImage(OLHO, x - w / 2, y - h / 2, x + w / 2, y + h / 2, quadro * fw, 0, quadro * fw + fw, OLHO.getHeight(), null); a.dispose();

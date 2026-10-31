@@ -153,9 +153,9 @@ public final class MiniChefe {
         } else AtlasInimigos.sentinela(graphics2D2, n, n2, n3);
         graphics2D2.setColor(new Color(255, 205, 115));
         graphics2D2.setFont(new Font("Monospaced", 1, 12));
-        {String rot=invasor ? "DEVORADOR DO VAZIO" : nome();graphics2D2.drawString(rot, n - graphics2D2.getFontMetrics().stringWidth(rot) / 2 + 2, n2 - 65);}
+        {String rot=invasor ? "DEVORADOR DO VAZIO" : nome();graphics2D2.drawString(rot, n - graphics2D2.getFontMetrics().stringWidth(rot) / 2 + 2, n2 - (AtlasInimigos.temSentinelaOlho() && !invasor ? 92 : 65));}
         int bx = Math.max(8, Math.min(824, n - 64));
-        int by = Math.min(564, n2 + 66);
+        int by = Math.min(564, n2 + (AtlasInimigos.temSentinelaOlho() && !invasor ? 90 : 66));
         HudMetal.painel(graphics2D2, bx, by, 128, 27);
         for (int i = 0; i < 16; i++) {
             int px = bx + 10 + i * 7;
