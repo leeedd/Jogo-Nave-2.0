@@ -29,6 +29,11 @@ final class MapaEstelar {
  int escolhaValida(){if(!escolha||vencido(selecionado))return -1;escolha=false;return selecionado;}
  private int ultimoX,ultimoY;
 
+ /** Planeta da turne em que a nave esta no setor atual (os anteriores ja foram cancelados). */
+ private int planetaTurne;
+ void planetaTurne(int p){planetaTurne=Math.max(0,p);}
+ /** Integrante (ou chefe) do planeta j do sistema i ja foi derrotado. */
+ private boolean cancelado(int i,int j){return vencido(i)||(i==atual&&j<planetaTurne);}
  void estado(int setor,boolean emDobra,boolean fora,double fracao){
   atual=Math.max(0,Math.min(7,setor));dobra=emDobra;foraRota=fora;
   viagem=Math.max(0,Math.min(1,fracao));
@@ -87,7 +92,7 @@ final class MapaEstelar {
   for(int i=0;i<8;i++){
    double d=Math.hypot(x-telaX(SISTEMAS[i][0]),y-telaY(SISTEMAS[i][1]));
    if(d<melhor){melhor=d;escolhido=i;corpo=-1;}
-   if(zoom>1.2)for(int j=0;j<5;j++){
+   if(zoom>1.2)for(int j=0;j<Turne.planetas(i);j++){
     double[] pos=posicaoPlaneta(i,j);
     d=Math.hypot(x-telaX(pos[0]),y-telaY(pos[1]));
     if(d<Math.max(12,raioPlaneta(j)*zoom)&&d<melhor){melhor=d;escolhido=i;corpo=j;}
@@ -179,15 +184,22 @@ final class MapaEstelar {
   int x=telaX(SISTEMAS[i][0]),y=telaY(SISTEMAS[i][1]);
   if(zoom>1.2){
    double alcance=22*zoom;if(x+alcance<16||x-alcance>722||y+alcance<82||y-alcance>522)return;
-   for(int j=0;j<5;j++){
+   for(int j=0;j<Turne.planetas(i);j++){
     double r=(5+j*3.5)*zoom;
     g.setColor(new Color(100,145,170,65));g.drawOval((int)(x-r),(int)(y-r*.78),(int)(r*2),(int)(r*1.56));
     double[] pos=posicaoPlaneta(i,j);int qx=telaX(pos[0]),qy=telaY(pos[1]);
     int tamanho=Math.max(4,(int)(raioPlaneta(j)*zoom*2));
     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+    // cor do risco: halo em volta; risco alto ganha anel, como Saturno
+    int risco=Turne.risco(i,j);Color cr=Turne.CORES_RISCO[risco];boolean anel=Turne.anel(i,j);
+    for(int k=3;k>0;k--){g.setColor(new Color(cr.getRed(),cr.getGreen(),cr.getBlue(),26));int hr=tamanho/2+k*Math.max(2,tamanho/10);g.fillOval(qx-hr,qy-hr,hr*2,hr*2);}
+    if(anel){Graphics2D a=(Graphics2D)g.create();a.setColor(cr.darker());a.setStroke(new BasicStroke(Math.max(1,tamanho/10f)));a.drawArc(qx-tamanho,qy-tamanho/4,tamanho*2,tamanho/2,0,180);a.dispose();}
     g.drawImage(PLANETAS[i][j],qx-tamanho/2,qy-tamanho/2,tamanho,tamanho,null);
+    if(anel){Graphics2D a=(Graphics2D)g.create();a.setColor(cr);a.setStroke(new BasicStroke(Math.max(1,tamanho/10f)));a.drawArc(qx-tamanho,qy-tamanho/4,tamanho*2,tamanho/2,180,180);a.dispose();}
     if(i==selecionado&&j==planeta){g.setColor(Color.WHITE);g.drawOval(qx-tamanho/2-4,qy-tamanho/2-4,tamanho+8,tamanho+8);}
-    if(zoom>4)texto(g,NOMES[i]+" "+(j+1),qx+tamanho/2+5,qy+3,10,new Color(170,199,219));
+    boolean chefe=j==Turne.planetas(i)-1;String quem=chefe?CHEFES[i]:Turne.integrante(i,j);
+    if(zoom>4){texto(g,(j+1)+". "+quem,qx+tamanho/2+5,qy+3,10,chefe?new Color(255,199,111):new Color(170,199,219));
+     if(cancelado(i,j)){Graphics2D c=(Graphics2D)g.create();c.rotate(-.25,qx,qy);c.setColor(new Color(230,40,40,220));c.setStroke(new BasicStroke(2));c.drawRect(qx-34,qy-9,68,16);texto(c,"CANCELADO",qx-30,qy+4,10,new Color(255,70,70));c.dispose();}}
    }
   }
   if(x<0||x>740||y<60||y>540)return;
@@ -205,6 +217,7 @@ final class MapaEstelar {
   texto(g,"SETOR "+(selecionado+1)+" / 8",748,159,12,Color.WHITE);
   if(escolha){
    texto(g,vencido(selecionado)?"CHEFE JA VENCIDO":"CHEFE: "+CHEFES[selecionado],748,181,11,vencido(selecionado)?new Color(120,130,150):new Color(255,199,111));
+   texto(g,Turne.planetas(selecionado)+" PLANETAS / RISCO ATE "+Turne.NOMES_RISCO[Turne.risco(selecionado,Turne.planetas(selecionado)-1)],748,197,10,Turne.CORES_RISCO[Turne.risco(selecionado,Turne.planetas(selecionado)-1)]);
    texto(g,"ESCOLHA O PROXIMO SETOR",748,223,13,new Color(255,199,111));
    texto(g,"SETAS: TROCAR SETOR",748,251,11,Color.WHITE);
    texto(g,"ENTER: INICIAR DOBRA",748,269,11,Color.WHITE);
@@ -214,9 +227,12 @@ final class MapaEstelar {
   texto(g,selecionado<atual?"PERCORRIDO":selecionado==atual?"POSICAO DA CAMPANHA":"AINDA NAO ALCANCADO",748,181,11,new Color(165,190,214));
   if(planeta>=0){
    g.drawImage(PLANETAS[selecionado][planeta],800,207,80,80,null);
-   texto(g,"PLANETA "+(planeta+1),748,316,15,Color.WHITE);
+   boolean chefe=planeta==Turne.planetas(selecionado)-1;int risco=Turne.risco(selecionado,planeta);
+   texto(g,"PLANETA "+(planeta+1)+" / "+Turne.planetas(selecionado),748,302,13,Color.WHITE);
+   texto(g,chefe?"CHEFE: "+CHEFES[selecionado]:Turne.integrante(selecionado,planeta),748,318,11,chefe?new Color(255,199,111):Color.WHITE);
+   texto(g,"RISCO "+Turne.NOMES_RISCO[risco]+(Turne.anel(selecionado,planeta)?"  (ANEL)":"")+"  x"+String.format(java.util.Locale.ROOT,"%.2f",Turne.premio(risco)),748,334,10,Turne.CORES_RISCO[risco]);
   }else if(!escolha){
-   texto(g,"5 PLANETAS CATALOGADOS",748,223,11,Color.WHITE);
+   texto(g,Turne.planetas(selecionado)+" PLANETAS NA TURNE",748,223,11,Color.WHITE);
    texto(g,"Aproxime para observar",748,251,11,new Color(154,182,205));
    texto(g,"as orbitas e superficies.",748,269,11,new Color(154,182,205));
   }
@@ -239,8 +255,8 @@ final class MapaEstelar {
   g.dispose();return b;
  }
  private static BufferedImage[][] criarPlanetas(){
-  BufferedImage[][] result=new BufferedImage[8][5];
-  for(int i=0;i<8;i++)for(int j=0;j<5;j++){
+  BufferedImage[][] result=new BufferedImage[8][6];
+  for(int i=0;i<8;i++)for(int j=0;j<6;j++){
    BufferedImage b=new BufferedImage(64,64,BufferedImage.TYPE_INT_ARGB);Random r=new Random(200+i*17+j);
    Color c=CORES[i];
    for(int y=0;y<64;y++)for(int x=0;x<64;x++){

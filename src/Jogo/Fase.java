@@ -116,6 +116,9 @@ implements ActionListener {
     private final java.util.Set<Integer> teclasTeste = new java.util.HashSet<Integer>();
     private MiniChefe miniChefe;
     private boolean miniChefeEnfrentado;
+    /** Turne ao contrario: planeta atual do sistema (0..integrantes); o ultimo e o do chefe. */
+    private int planetaAtual;
+    int riscoAtual() { return Turne.risco(setorAtual, planetaAtual); }
     private int totalMiniChefesDerrotados;
     private double proximoAsteroide = 8.0;
     private double tempoOndaEscudo;
@@ -409,7 +412,7 @@ implements ActionListener {
         double[] r = new double[16 + 8];
         r[0] = setorAtual; r[1] = setoresVencidos; r[2] = chefesDerrotados; r[3] = eliminados; r[4] = pontos;
         r[5] = nave.getNivel(); r[6] = nave.getVida(); r[7] = nave.temArmaSecundaria() ? 1 : 0; r[8] = geloColetado ? 1 : 0; r[9] = fogoColetado ? 1 : 0;
-        r[10] = lancadosNoSetor; r[11] = numeroEsquadrao; r[12] = modeloVisual; r[13] = creditos;
+        r[10] = lancadosNoSetor; r[11] = numeroEsquadrao; r[12] = modeloVisual; r[13] = creditos; r[15] = planetaAtual;
         for (int i = 0; i < 8; i++) r[16 + i] = poderes.energia[i];
         retomada = r; comandoSalvo = comando.copia();
     }
@@ -421,7 +424,7 @@ implements ActionListener {
         for (int i = 0; i < (int) r[5]; i++) nave.melhorar();
         if (r[7] > 0) nave.coletarArmaSecundaria();
         geloColetado = r[8] > 0; fogoColetado = r[9] > 0;
-        lancadosNoSetor = (int) r[10]; numeroEsquadrao = (int) r[11]; miniChefeEnfrentado = true;
+        lancadosNoSetor = (int) r[10]; numeroEsquadrao = (int) r[11]; planetaAtual = (int) r[15]; miniChefeEnfrentado = false;
         for (int i = 0; i < 8; i++) poderes.energia[i] = (int) r[16 + i];
         nave.definirVida((int) r[6]);
         retomada = r; alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
@@ -714,7 +717,7 @@ implements ActionListener {
             int guarda=0;for(Alien a:alien)if(a.isVisible()&&a.especieEnxame()==1&&guarda<2)a.escoltar(miniChefe.getBounds(),guarda++);
         }
         if(!intercepcao){comando.observar(d,nave.getX(),nave.getY());
-            comando.atualizarNivel(chefesDerrotados,nave.getNivel(),inventario.reator(),inventario.blindagem(),nave.getVida()/(double)Math.max(1,nave.getVidaMaxima()));
+            comando.atualizarNivel(chefesDerrotados+riscoAtual()/2,nave.getNivel(),inventario.reator(),inventario.blindagem(),nave.getVida()/(double)Math.max(1,nave.getVidaMaxima()));
             if(comando.pedirKamikaze())for(Alien k:alien)if(k.isVisible()&&k.getClasse()==Alien.Classe.KAMIKAZE&&k.estaNaFormacao()&&!k.kamikazeArmado()){k.prepararKamikaze(nave.getY()+18);break;}
             String pista=comando.radio();if(pista!=null&&!partidaTeste)radio.falar(pista);}
         radio.atualizar(d);
@@ -761,7 +764,8 @@ implements ActionListener {
             return;
         }
         if (intercepcao) return;
-        if (!this.miniChefeEnfrentado && this.lancadosNoSetor >= this.quantidadeSetor() / 2) {
+        int planetas = Turne.planetas(setorAtual);
+        if (!this.miniChefeEnfrentado && planetaAtual < Turne.integrantes(setorAtual) && this.lancadosNoSetor >= this.quantidadeSetor() * (planetaAtual + 1) / planetas) {
             if (this.avisoMini < 0.0) {
                 this.avisoMini = 2.4;
             }
@@ -769,6 +773,8 @@ implements ActionListener {
             if (this.avisoMini <= 0.0) {
                 this.miniChefeEnfrentado = true;
                 this.miniChefe = new MiniChefe(this.setorAtual + 1);
+                miniChefe.definirIntegrante(Turne.integrante(setorAtual, planetaAtual), riscoAtual());
+                mostrarAviso("PLANETA " + (planetaAtual + 1) + "/" + planetas + ": " + Turne.integrante(setorAtual, planetaAtual) + " TE ESPERA");
                 this.avisoMini = -1.0;
             }
             return;
@@ -810,11 +816,15 @@ implements ActionListener {
             graphics2D2.setColor(i < n ? new Color(74, 210, 245) : new Color(29, 54, 72));
             graphics2D2.fillPolygon(new int[]{n3, n3 + 3, n3 + 6, n3 + 3}, new int[]{97, 91, 97, 95}, 4);
         }
-        String string = this.miniChefe != null ? "MINICHEFE EM COMBATE" : (this.avisoMini >= 0.0 ? "SENTINELA CHEGANDO: " + (int)Math.ceil(this.avisoMini) + "s" : (n == 0 ? "ELIMINE OS RESTANTES / CHEFE A FRENTE" : "PROXIMA: " + FORMACOES[this.proximaFormacao] + " / " + Math.min(TAMANHOS[this.proximaFormacao], n) + " NAVES" + (n2 + Math.min(TAMANHOS[this.proximaFormacao], n) > 18 ? " / AGUARDANDO ESPACO" : " / " + (int)Math.ceil(Math.max(0.0, this.esperaProximoEsquadrao)) + "s")));
+        String string = this.miniChefe != null ? "MINICHEFE EM COMBATE" : (this.avisoMini >= 0.0 ? Turne.integrante(setorAtual, planetaAtual) + " CHEGANDO: " + (int)Math.ceil(this.avisoMini) + "s" : (n == 0 ? "ELIMINE OS RESTANTES / CHEFE A FRENTE" : "PROXIMA: " + FORMACOES[this.proximaFormacao] + " / " + Math.min(TAMANHOS[this.proximaFormacao], n) + " NAVES" + (n2 + Math.min(TAMANHOS[this.proximaFormacao], n) > 18 ? " / AGUARDANDO ESPACO" : " / " + (int)Math.ceil(Math.max(0.0, this.esperaProximoEsquadrao)) + "s")));
         graphics2D2.setColor(this.avisoMini >= 0.0 ? new Color(255, 128, 100) : Color.WHITE);
         graphics2D2.drawString(string, 375, 85);
         graphics2D2.setColor(new Color(162, 186, 213));
-        graphics2D2.drawString((this.miniChefeEnfrentado ? "SENTINELA: " + (this.miniChefe == null ? "VENCIDA" : "ATIVA") : "SENTINELA NO MEIO DO SETOR") + "   " + (this.geloColetado ? "Q: GELO  " : "") + (this.fogoColetado ? "E: FOGO" : ""), 375, 100);
+        int pr = riscoAtual(); boolean chefePlaneta = planetaAtual >= Turne.integrantes(setorAtual);
+        graphics2D2.drawString("PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual) + ": " + (chefePlaneta ? MapaEstelar.CHEFES[Turne.setor(setorAtual)] : Turne.integrante(setorAtual, planetaAtual)) + "  RISCO ", 375, 100);
+        int rx = 375 + graphics2D2.getFontMetrics().stringWidth("PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual) + ": " + (chefePlaneta ? MapaEstelar.CHEFES[Turne.setor(setorAtual)] : Turne.integrante(setorAtual, planetaAtual)) + "  RISCO ");
+        graphics2D2.setColor(Turne.CORES_RISCO[pr]); graphics2D2.drawString(Turne.NOMES_RISCO[pr], rx, 100); graphics2D2.setColor(new Color(162, 186, 213));
+        graphics2D2.drawString((this.geloColetado ? "Q: GELO  " : "") + (this.fogoColetado ? "E: FOGO" : ""), 800, 100);
         graphics2D2.dispose();
     }
 
@@ -995,7 +1005,7 @@ implements ActionListener {
         chefesDerrotados = setorTeste - 1; setorAtual = setorTeste - 1; setoresVencidos = (1 << (setorTeste - 1)) - 1; escolhendoSetor = false;
         eliminados = chefesDerrotados == 0 ? 0 : FINAIS_SETORES[chefesDerrotados - 1];
         alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
-        lancadosNoSetor = 0; numeroEsquadrao = 0; miniChefeEnfrentado = false;
+        lancadosNoSetor = 0; numeroEsquadrao = 0; miniChefeEnfrentado = false; planetaAtual = 0;
         esperaProximoEsquadrao = 0; avisoMini = -1;
         for (int i=0;i<Nave.MAX_EVOLUCAO;i++) nave.melhorar();
         nave.coletarArmaSecundaria(); Missel.setTipoTiro(0);
@@ -1005,7 +1015,7 @@ implements ActionListener {
         if (encontro == KeyEvent.VK_S) {
             miniChefeEnfrentado = true; miniChefe = new MiniChefe(setorTeste);
         } else if (encontro == KeyEvent.VK_B) {
-            miniChefeEnfrentado = true; iniciarChefao(ORDEM_CHEFOES[setorAtual]);
+            miniChefeEnfrentado = true; planetaAtual = Turne.integrantes(setorAtual); iniciarChefao(ORDEM_CHEFOES[setorAtual]);
         } else if (encontro == KeyEvent.VK_D || encontro == KeyEvent.VK_I) {
             emboscadaPendente = encontro == KeyEvent.VK_I;
             etapa = Etapa.DOBRA; cenaNave = new CinematicaNave(nave, false, chefesDerrotados);
@@ -1018,6 +1028,7 @@ implements ActionListener {
     private void desenharMenuPausa(Graphics2D graphics2D) {
         if (mapaAberto()) {
             int setor=setorAtual;
+            mapaEstelar.planetaTurne(planetaAtual);
             mapaEstelar.estado(setor,etapa==Etapa.DOBRA&&!escolhendoSetor,intercepcao||etapa==Etapa.INTERDICAO,cenaNave==null?0:cenaNave.getTempo()/4.2);
             mapaEstelar.desenhar(graphics2D);return;
         }
@@ -1350,7 +1361,7 @@ implements ActionListener {
         if (intercepcao || !this.emJogo || this.etapa != Etapa.COMBATE || this.chefesDerrotados >= TOTAL_SETORES) {
             return;
         }
-        if (this.eliminados < FINAIS_SETORES[this.chefesDerrotados] || this.lancadosNoSetor < this.quantidadeSetor() || !this.alien.isEmpty() || this.miniChefe != null || !this.miniChefeEnfrentado) {
+        if (this.eliminados < FINAIS_SETORES[this.chefesDerrotados] || this.lancadosNoSetor < this.quantidadeSetor() || !this.alien.isEmpty() || this.miniChefe != null || planetaAtual < Turne.integrantes(setorAtual)) {
             return;
         }
         this.etapa = Etapa.ALERTA_CHEFE;
@@ -1417,7 +1428,7 @@ implements ActionListener {
         this.lancadosNoSetor = 0;
         this.numeroEsquadrao = 0;
         this.miniChefe = null;
-        this.miniChefeEnfrentado = false;
+        this.miniChefeEnfrentado = false; this.planetaAtual = 0;
         this.avisoMini = -1.0;
         this.esperaProximoEsquadrao = 0.0;
         this.alien.clear();
@@ -1717,7 +1728,13 @@ implements ActionListener {
         this.explosoes.add(new ExplosaoCurta((int)rectangle.getCenterX(), (int)rectangle.getCenterY(), 45));
         this.miniChefe = null;
         ++this.totalMiniChefesDerrotados;
-        premiar(1500);
+        premiar((int) (1500 * Turne.premio(riscoAtual())));
+        if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
+            // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta
+            String quem = Turne.integrante(setorAtual, planetaAtual); planetaAtual++; miniChefeEnfrentado = false;
+            mostrarAviso(quem + " CANCELADO! PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual));
+            if (!partidaTeste) radio.falar(quem + " caiu. A turne ta desmoronando, segurem esse cacador!");
+        }
         if (this.aleatorio.nextInt(5) == 0) {
             this.itens.add(new Item(Item.Tipo.ESCUDO, rectangle.x, rectangle.y, false));
         }
@@ -2128,7 +2145,7 @@ implements ActionListener {
         this.proximoItem = 22.0;
         this.proximoAsteroide = 8.0;
         this.miniChefe = null;
-        this.miniChefeEnfrentado = false;
+        this.miniChefeEnfrentado = false; this.planetaAtual = 0;
         this.avisoMini = -1.0;
         this.totalMiniChefesDerrotados = 0;
         this.fogoColetado = false;

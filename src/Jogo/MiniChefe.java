@@ -28,7 +28,10 @@ public final class MiniChefe {
     boolean derrotado(){return comandante!=null && comandante.terminou();}
     boolean morrendo(){return comandante!=null && comandante.morrendo();}
     int estagio(){return comandante==null?0:comandante.estagio();}
-    String nome(){return comandante==null?"SENTINELA":comandante.rainha?"RAINHA DO ENXAME":"PIRATA DOMADOR";}
+    /** Integrante da banda que a sentinela representa (provisorio ate a arte de cada um chegar). */
+    private String integrante="";
+    void definirIntegrante(String nome,int risco){integrante=nome==null?"":nome;vida=vidaMaxima=(int)Math.round(vidaMaxima*Turne.premio(risco));}
+    String nome(){if(comandante==null&&!integrante.isEmpty())return integrante;return comandante==null?"SENTINELA":comandante.rainha?"RAINHA DO ENXAME":"PIRATA DOMADOR";}
     ComandanteEnxame comandanteTeste(){return comandante;}
     boolean receberImpacto(Rectangle r,int dano){return comandante==null?receberDano(dano):comandante.impacto(r,dano);}
     MiniChefe(int n,boolean invasor,boolean rainha){this(n,invasor);if(invasor)comandante=new ComandanteEnxame(rainha,n);}
@@ -147,7 +150,7 @@ public final class MiniChefe {
         } else AtlasInimigos.sentinela(graphics2D2, n, n2, n3);
         graphics2D2.setColor(new Color(255, 205, 115));
         graphics2D2.setFont(new Font("Monospaced", 1, 12));
-        graphics2D2.drawString(invasor ? "DEVORADOR DO VAZIO" : "SENTINELA", n - (invasor ? 60 : 33), n2 - 65);
+        {String rot=invasor ? "DEVORADOR DO VAZIO" : nome();graphics2D2.drawString(rot, n - graphics2D2.getFontMetrics().stringWidth(rot) / 2 + 2, n2 - 65);}
         int bx = Math.max(8, Math.min(824, n - 64));
         int by = Math.min(564, n2 + 66);
         HudMetal.painel(graphics2D2, bx, by, 128, 27);
