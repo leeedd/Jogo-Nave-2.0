@@ -86,7 +86,7 @@ public final class MiniChefe {
     private boolean membro;
     /** Todos os integrantes do setor juntos, espalhados pela direita da tela. */
     static MiniChefe banda(int setor) {
-        MiniChefe g = new MiniChefe(setor + 1); g.banda = new java.util.ArrayList<>();
+        MiniChefe g = new MiniChefe(setor + 1); g.banda = new java.util.ArrayList<>(); g.setorBanda = Turne.setor(setor);
         boolean vocal = !Turne.VOCALISTAS[Turne.setor(setor)].isEmpty();
         int n = Turne.integrantes(setor) + (vocal ? 1 : 0);
         for (int k = 0; k < n; k++) {
@@ -99,13 +99,57 @@ public final class MiniChefe {
         return g;
     }
     boolean bandaReunida() { return banda != null; }
+    /** Ataque combinado da banda reunida: aviso pelo emblema atras da banda. */
+    private static final double COMBO = 1.7;
+    private double combo, proximoCombo = 7;
+    private int setorBanda;
+    boolean comboTeste() { return combo > 0; }
+    private static final java.util.Map<Integer, java.awt.image.BufferedImage> EMBLEMAS = new java.util.HashMap<>();
+    private static java.awt.image.BufferedImage emblema(int s) {
+        return EMBLEMAS.computeIfAbsent(s, k -> { java.net.URL u = MiniChefe.class.getResource("/ImagemIcon/emblema_banda_" + k + ".png"); if (u == null) return null; try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; } });
+    }
+    /** Emblema atras da banda: arte emblema_banda_N.png ou, sem ela, o logo desenhado em pixel art (o M da Metallica, as iniciais das outras). */
+    private void desenharEmblema(Graphics2D tela) {
+        double t = 1 - combo / COMBO; float a = (float) Math.min(1, t * 3) * (float) (.75 + .25 * Math.sin(tempo * 30));
+        Rectangle b = getBounds(); int cx = (int) b.getCenterX(), cy = (int) b.getCenterY(), h = (int) (230 + t * 60);
+        Graphics2D g = (Graphics2D) tela.create(); g.setComposite(java.awt.AlphaComposite.SrcOver.derive(Math.max(0, Math.min(1, a))));
+        java.awt.image.BufferedImage arte = emblema(setorBanda);
+        if (arte != null) { int w = arte.getWidth() * h / arte.getHeight(); g.drawImage(arte, cx - w / 2, cy - h / 2, w, h, null); g.dispose(); return; }
+        Color[] cores = {new Color(60, 220, 255), new Color(255, 140, 40), new Color(80, 220, 255), new Color(255, 70, 40), new Color(120, 180, 255), new Color(230, 30, 30), new Color(90, 240, 120), new Color(170, 80, 255)};
+        Color c = cores[Math.max(0, Math.min(7, setorBanda))];
+        // brilho atras
+        for (int k = 4; k > 0; k--) { g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 22)); g.fillOval(cx - h * k / 4, cy - h * k / 5, h * k / 2, h * k * 2 / 5); }
+        if (setorBanda == 4) {
+            // o M da Metallica: pernas com pontas de raio, em blocos de pixel
+            int u = h / 14;
+            int[][] pts = {{-7,-4},{-5,-5},{-4,2},{0,-3},{4,2},{5,-5},{7,-4},{5,5},{6,6},{3,6},{3,2},{0,5},{-3,2},{-3,6},{-6,6},{-5,5}};
+            int[] xs = new int[pts.length], ys = new int[pts.length];
+            for (int i = 0; i < pts.length; i++) { xs[i] = cx + pts[i][0] * u; ys[i] = cy + pts[i][1] * u; }
+            g.setColor(c.darker().darker()); g.translate(u / 2, u / 2); g.fillPolygon(xs, ys, xs.length); g.translate(-u / 2, -u / 2);
+            g.setColor(c); g.fillPolygon(xs, ys, xs.length);
+            g.setColor(new Color(235, 250, 255)); g.setStroke(new java.awt.BasicStroke(Math.max(2, u / 3f))); g.drawPolygon(xs, ys, xs.length);
+        } else {
+            String[] ini = {"ABISMO", "JP", "IM", "MH", "M", "S", "T", "BS"};
+            g.setFont(new Font(Font.SERIF, Font.BOLD, h * 2 / 3)); String txt = ini[Math.max(0, Math.min(7, setorBanda))];
+            int w = g.getFontMetrics().stringWidth(txt);
+            g.setColor(c.darker().darker()); g.drawString(txt, cx - w / 2 + 6, cy + h / 4 + 6);
+            g.setColor(c); g.drawString(txt, cx - w / 2, cy + h / 4);
+        }
+        g.dispose();
+    }
     private java.util.List<MiniChefe> vivos() { java.util.List<MiniChefe> l = new java.util.ArrayList<>(); for (MiniChefe m : banda) if (m.vida > 0) l.add(m); return l; }
     /** Construtor silencioso para membros da banda (sem o som de entrada repetido). */
     private MiniChefe(int n, String membro) { this.membro = true; this.invasor = false; this.setor = n; this.vida = this.vidaMaxima = 24 + n * 7; }
 
     public void atualizar(double d, int n) {
         if(comandante!=null){comandante.atualizar(d,n);return;}
-        if(banda!=null){for(MiniChefe m:vivos())m.atualizar(d,n);return;}
+        if(banda!=null){
+            // ataque combinado: o emblema da banda acende atras dela e todos carregam e disparam juntos
+            double dd=Math.max(0,Math.min(.05,d));tempo+=dd;
+            if(combo>0){combo=Math.max(0,combo-dd);}
+            else{proximoCombo-=dd;if(proximoCombo<=0&&vivos().size()>=2){combo=COMBO;proximoCombo=11+Math.random()*3;SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA);
+                for(MiniChefe m:vivos()){m.raioAlvo=(int)m.y;m.carregando=true;m.disparando=false;m.relogioRaio=COMBO;m.atingiu=false;}}}
+            for(MiniChefe m:vivos())m.atualizar(d,n);return;}
         d = Math.max(0.0, Math.min(0.05, d));
         this.tempo += d;
         for (TiroChefe t : projeteis) t.mexer(d);
@@ -243,7 +287,7 @@ public final class MiniChefe {
 
     public void desenhar(Graphics2D graphics2D) {
         if(comandante!=null){comandante.desenhar(graphics2D);return;}
-        if(banda!=null){for(MiniChefe m:vivos())m.desenhar(graphics2D);return;}
+        if(banda!=null){if(combo>0)desenharEmblema(graphics2D);for(MiniChefe m:vivos())m.desenhar(graphics2D);return;}
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
         // sem linha de aviso: enquanto carrega, o aviso e o proprio olho arregalado; o raio so aparece no disparo
         if (this.disparando && !atiraProjetil()) desenharRaio(graphics2D2);
