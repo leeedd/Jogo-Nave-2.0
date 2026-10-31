@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 final class Pausa099 {
  static final Color OURO=new Color(255,206,98),AZUL=new Color(65,219,238),CINZA=new Color(133,158,180);
  static final String[] NAVES={"RAPTOR MK-I","SHADOW","VALKYRIE","BERSERKER","METAL GOD"};
+ static String nomeNave(int m){return NAVES[Math.max(0,Math.min(4,m))];}
  static final String[] ABAS={"ARSENAL","NAVE","RELIQUIAS","MAPA","MERCADO","SISTEMA"};
  static final String[][] PECAS={{"CHASSI RAPTOR","CANHAO DUPLO","TURBINA RAPTOR"},{"CHASSI SHADOW","AGULHAS GEMEAS","MOTOR FANTASMA"},{"CHASSI VALKYRIE","LEQUE VALKYRIE","REATOR VALKYRIE"},{"CHASSI BERSERKER","OBUS PESADO","TURBINA CERCO"},{"CHASSI METAL GOD","TRIDENTE REAL","REATOR LENDARIO"}};
  static void txt(Graphics2D g,String s,int x,int y,Color c){g.setColor(c);g.setFont(new Font(Font.MONOSPACED,Font.BOLD,9));g.drawString(s,x,y);}

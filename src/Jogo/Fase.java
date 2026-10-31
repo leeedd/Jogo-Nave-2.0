@@ -157,6 +157,10 @@ implements ActionListener {
     private int abatesSeguidos; private boolean avisouSangrando;
     /** Emboscada do enxame: primeiro as ondas atravessam a tela, depois chega a rainha (ou a nave comandante). */
     private boolean rainhaChegou;
+    /** Cacador de recompensas: contrato ativo, ofertas do quadro da base e o tempo da luta de chefe. */
+    private Contrato contrato;
+    private java.util.List<Contrato> ofertasContrato = new java.util.ArrayList<>();
+    private boolean quadroBase; private int cursorQuadro; private double tempoBatalhaChefe;
     private int ultimaPassagemSetor = -1, ladoRota = 1;
     /** Manobras das naves do setor (o enxame tem as dele): mergulho, pinca, laco, por tras e escada. */
     private void configurarRota(Alien a, int tipo, int i, int q, double vel) {
@@ -229,6 +233,7 @@ implements ActionListener {
         int vaporizados=0;java.util.List<double[]> pontos=new java.util.ArrayList<>();
         for(Alien a:alien)if(a.isVisible()&&a.getX()>-40&&a.getX()<Config.LARGURA){Rectangle r=a.getBounds();pontos.add(new double[]{r.getCenterX(),r.getCenterY()});gerarParticulas((int)r.getCenterX(),(int)r.getCenterY(),14);eliminarAlien(a,true);vaporizados++;}
         premiar(vaporizados*(tipo>=0?350:250)); // bonus de vaporizacao; maior na fusao
+        if(contrato!=null){contrato.vaporizou(vaporizados);resolverContrato();}
         for(ProjetilInimigo t:tirosInimigos)t.setVisible(false);
         for(TiroChefe t:tirosChefes)t.setVisible(false);
         for(Asteroide r:asteroides)r.setVisible(false);
@@ -366,7 +371,25 @@ implements ActionListener {
         naBase = true; menuBase = false; cursorBase = 0; modeloBase = modeloVisual; avisoBase = "";
         nave.soltarTeclas(); espacoPressionado = geloPressionado = fogoPressionado = false;
         tirosInimigos.clear(); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
+        quadroBase = false; cursorQuadro = 0;
+        if (contrato == null) ofertasContrato = Contrato.ofertas(setorAtual, chefesDerrotados, inventario.reator(), aleatorio);
         gravarRetomada();
+    }
+    private void aceitarContrato() {
+        if (contrato != null || cursorQuadro >= ofertasContrato.size()) { SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
+        contrato = ofertasContrato.get(cursorQuadro); ofertasContrato.clear(); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
+        avisoBase = "CONTRATO ACEITO: " + contrato.titulo;
+    }
+    /** Paga ou encerra o contrato quando ele termina. */
+    private void resolverContrato() {
+        if (contrato == null || !contrato.terminado()) return;
+        Contrato c = contrato; contrato = null;
+        if (c.falhou) { SomJogo.tocar(SomJogo.Efeito.ERRO); mostrarAviso("CONTRATO " + c.titulo + " FALHOU"); return; }
+        inventario.creditar(c.premioCR); SomJogo.tocar(SomJogo.Efeito.VITORIA);
+        boolean subiu = !partidaTeste && ProgressoJogo.ganharXP(c.premioXP);
+        if (c.nave >= 0 && !partidaTeste) { ProgressoJogo.liberarNave(c.nave); mostrarAviso("CONTRATO " + c.titulo + " CUMPRIDO! " + Pausa099.nomeNave(c.nave) + " LIBERADA NO HANGAR"); }
+        else mostrarAviso("CONTRATO " + c.titulo + " CUMPRIDO: +" + c.premioCR + " CR  +" + c.premioXP + " XP");
+        if (subiu) radio.urgente("O cacador subiu de patente: " + Contrato.PATENTES[ProgressoJogo.patente()] + ". Dobrem a recompensa pela cabeca dele.");
     }
     private void partirDaBase() { naBase = false; if (base != null) base.partir(); gravarRetomada(); nave.tornarIntangivel(1.5); }
     /** Retomada: setor, progresso do setor, pontos, nivel, casco e energia dos poderes no momento da atracagem. */
@@ -402,7 +425,11 @@ implements ActionListener {
     private void trocarNaveNaBase(int passo) {
         int destino = -1;
         for (int k = 1; k <= 5 && destino < 0; k++) { int m = Math.floorMod(modeloBase + passo * k, 5); if (ProgressoJogo.modeloDisponivel(m)) destino = m; }
-        if (destino < 0 || destino == modeloVisual) { avisoBase = "NENHUMA OUTRA NAVE DESBLOQUEADA"; SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
+        if (destino < 0 || destino == modeloVisual) {
+            // mostra o que falta para a proxima nave travada
+            int trav = -1; for (int m = 1; m <= 4 && trav < 0; m++) if (!ProgressoJogo.modeloDisponivel(m)) trav = m;
+            avisoBase = trav < 0 ? "NENHUMA OUTRA NAVE DESBLOQUEADA" : Pausa099.nomeNave(trav) + " PRECISA: " + ProgressoJogo.requisito(trav);
+            SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
         double fracao = nave.getVida() / (double) nave.getVidaMaxima();
         modeloBase = destino; selecionarModeloNave(destino); aplicarInventario();
         nave.definirVida((int) Math.ceil(nave.getVidaMaxima() * fracao));
@@ -410,7 +437,7 @@ implements ActionListener {
     }
     private void confirmarBase() {
         switch (cursorBase) {
-            case 0: avisoBase = "MISSOES: EM BREVE NO QUADRO DA BASE"; SomJogo.tocar(SomJogo.Efeito.ERRO); break;
+            case 0: quadroBase = true; cursorQuadro = 0; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); break;
             case 1: {
                 int falta = nave.getVidaMaxima() - nave.getVida();
                 if (falta == 0) { avisoBase = "O CASCO JA ESTA INTEIRO"; SomJogo.tocar(SomJogo.Efeito.ERRO); break; }
@@ -908,7 +935,12 @@ implements ActionListener {
         }
         if (etapa == Etapa.COMBATE && !naBase) radio.desenhar(graphics2D);
         if (cenaChefe != null) cenaChefe.desenhar(graphics2D);
-        if (naBase && !pausado) EstacaoAliada.desenharMenu(graphics2D, menuBase, cursorBase, nave, inventario, modeloVisual, avisoBase, tempoTotal);
+        if (naBase && !pausado) { EstacaoAliada.desenharMenu(graphics2D, menuBase && !quadroBase, cursorBase, nave, inventario, modeloVisual, quadroBase ? "" : avisoBase, tempoTotal);
+            if (quadroBase) Contrato.desenharQuadro(graphics2D, ofertasContrato, cursorQuadro, contrato, avisoBase); }
+        if (contrato != null && !naBase && (etapa == Etapa.COMBATE || etapa == Etapa.BATALHA_CHEFE)) {
+            graphics2D.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); String ct = "CONTRATO " + contrato.hud();
+            graphics2D.setColor(new Color(0, 0, 0, 160)); graphics2D.fillRect(944 - graphics2D.getFontMetrics().stringWidth(ct) - 8, 530, graphics2D.getFontMetrics().stringWidth(ct) + 12, 18);
+            graphics2D.setColor(new Color(255, 206, 98)); graphics2D.drawString(ct, 944 - graphics2D.getFontMetrics().stringWidth(ct) - 2, 543); }
         if (escolhendoSetor || this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
         graphics2D.setColor(Color.CYAN);
         graphics2D.setFont(new Font("Monospaced", Font.BOLD, 12));
@@ -1234,7 +1266,7 @@ implements ActionListener {
                     projetilInimigo2.mexer(d);
                 }
             } else if (this.etapa == Etapa.BATALHA_CHEFE && this.chefe != null) {
-                int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, alvoX(), alvoY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
+                tempoBatalhaChefe+=d;int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, alvoX(), alvoY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
                 String pedido=chefe.consumirCena();if(pedido!=null)abrirCenaChefe(pedido);
                 // empurrao das caixas de som e puxao do gancho da van
                 if(empurraoNave>0){nave.teleportar(nave.getX()-empurraoNave*d,nave.getY());empurraoNave=Math.max(0,empurraoNave-1300*d);}
@@ -1694,7 +1726,7 @@ implements ActionListener {
         this.chefePendente = 0;
         this.tempoEtapa = 0.0;
         this.apresentacao = null;
-        this.chefe = new Chefe(n, this.dificuldade);
+        this.chefe = new Chefe(n, this.dificuldade); tempoBatalhaChefe = 0;
         this.tirosInimigos.clear();
         this.tirosChefes.clear();
         this.mostrarAviso("ALERTA: " + this.chefe.getNome() + "!");
@@ -1709,6 +1741,7 @@ implements ActionListener {
         if(id==HELLRAISER){premiar(30000);hellraiserVencido=true;emHellraiser=false;trofeuPendente=0;}
         else{premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;}
         chefe=null;cenaChefe=null;
+        if(contrato!=null){contrato.chefeDerrotado(tempoBatalhaChefe);resolverContrato();}
         tirosChefes.clear();tirosInimigos.clear();tirosElementais.clear();nave.getMisseis().clear();itens.clear();asteroides.clear();
         etapa=Etapa.DERROTA_CHEFE;espacoPressionado=false;geloPressionado=false;fogoPressionado=false;tempoAviso=0;
     }
@@ -1798,6 +1831,7 @@ implements ActionListener {
         this.gerarParticulas(this.nave.getX() + 25, this.nave.getY() + 20, 24);
         this.explosoes.add(new ExplosaoCurta(this.nave.getX() + 25, this.nave.getY() + 18, 11));
         abatesSeguidos = 0;
+        if (contrato != null && etapa == Etapa.BATALHA_CHEFE) { contrato.danoNoChefe(); resolverContrato(); }
         if (!avisouSangrando && !partidaTeste && etapa == Etapa.COMBATE && nave.getVida() > 0 && nave.getVida() * 4 <= nave.getVidaMaxima()) { avisouSangrando = true; radio.urgente("Ele ta sangrando! Todos em cima dele, AGORA!"); }
         Item.Tipo perdido=null;
         // O amuleto segura a arma, mas se desgasta a cada golpe e acaba se despedacando.
@@ -1842,6 +1876,7 @@ implements ActionListener {
         if (!alien.isVisible()) {
             return;
         }
+        if (contrato != null) { contrato.abate(); resolverContrato(); }
         if (++abatesSeguidos == 12 && !partidaTeste) radio.falar("Doze dos nossos e ele nem arranhou. Quem e esse piloto?");
         else if (abatesSeguidos == 30 && !partidaTeste) radio.falar("Trinta! Chamem reforcos, isso nao e um piloto comum.");
         Rectangle rectangle = alien.getBounds();
@@ -2047,7 +2082,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
@@ -2424,6 +2459,14 @@ implements ActionListener {
             if (naBase && !pausado) {
                 if (!teclasTeste.add(codigo)) return;
                 boolean esq = codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_A, dir = codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_D;
+                if (quadroBase) {
+                    int n = Math.max(1, ofertasContrato.size());
+                    if (codigo == KeyEvent.VK_UP || codigo == KeyEvent.VK_W) { cursorQuadro = Math.floorMod(cursorQuadro - 1, n); avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    else if (codigo == KeyEvent.VK_DOWN || codigo == KeyEvent.VK_S) { cursorQuadro = (cursorQuadro + 1) % n; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    else if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) aceitarContrato();
+                    else if (codigo == KeyEvent.VK_ESCAPE) { quadroBase = false; SomJogo.tocar(SomJogo.Efeito.VOLTAR); }
+                    repaint(); return;
+                }
                 if (!menuBase) {
                     // hangar livre: nave no centro; < > troca de nave, ENTER abre o menu, ESC parte
                     if (esq || dir) trocarNaveNaBase(esq ? -1 : 1);

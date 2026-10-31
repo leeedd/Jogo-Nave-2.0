@@ -1,0 +1,118 @@
+package Jogo;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Contrato de cacador de recompensas, pego no quadro de MISSOES da base aliada.
+ * Vale ate o chefe do setor cair: cumprido paga CR e XP; falhou ou expirou, so perde o contrato.
+ * Os contratos especiais de nave (Fantasma, Escudo de Ouro, Furia Verde, Forja Final) liberam a nave.
+ */
+final class Contrato {
+    enum Tipo { ABATES, SEM_DANO_CHEFE, CHEFE_RAPIDO, VAPORIZAR }
+
+    final Tipo tipo;
+    final int alvo, premioCR, premioXP, nave;
+    final String titulo;
+    int progresso;
+    boolean falhou, cumprido;
+
+    Contrato(Tipo tipo, int alvo, int cr, int xp, int nave, String titulo) {
+        this.tipo = tipo; this.alvo = alvo; this.premioCR = cr; this.premioXP = xp; this.nave = nave; this.titulo = titulo;
+    }
+
+    String descricao() {
+        switch (tipo) {
+            case ABATES: return "Abater " + alvo + " inimigos antes do chefe";
+            case SEM_DANO_CHEFE: return "Vencer o chefe sem levar dano";
+            case CHEFE_RAPIDO: return "Vencer o chefe em ate " + alvo + " s";
+            default: return "Vaporizar " + alvo + " com o laser (V)";
+        }
+    }
+    /** Texto curto para o HUD durante o combate. */
+    String hud() {
+        switch (tipo) {
+            case ABATES: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " ABATES";
+            case SEM_DANO_CHEFE: return titulo + ": CHEFE SEM DANO";
+            case CHEFE_RAPIDO: return titulo + ": CHEFE EM " + alvo + "s";
+            default: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " VAPORIZADOS";
+        }
+    }
+    boolean terminado() { return falhou || cumprido; }
+
+    // ---- eventos do combate ----
+    void abate() { if (tipo == Tipo.ABATES && !terminado() && ++progresso >= alvo) cumprido = true; }
+    void vaporizou(int n) { if (tipo == Tipo.VAPORIZAR && !terminado() && (progresso += n) >= alvo) cumprido = true; }
+    void danoNoChefe() { if (tipo == Tipo.SEM_DANO_CHEFE && !terminado()) falhou = true; }
+    /** Chefe caiu: resolve quem depende dele; quem nao chegou no alvo expira. */
+    void chefeDerrotado(double segundos) {
+        if (terminado()) return;
+        if (tipo == Tipo.SEM_DANO_CHEFE) cumprido = true;
+        else if (tipo == Tipo.CHEFE_RAPIDO) { if (segundos <= alvo) cumprido = true; else falhou = true; }
+        else falhou = true;
+    }
+
+    // ---- patente do piloto ----
+    static final String[] PATENTES = {"RECRUTA", "CADETE", "CACADOR", "VETERANO", "AS", "LENDA DO METAL"};
+    static final int[] XP_PATENTE = {0, 300, 900, 2000, 3600, 6000};
+    static int patente(int xp) { int p = 0; for (int i = 0; i < XP_PATENTE.length; i++) if (xp >= XP_PATENTE[i]) p = i; return p; }
+
+    // ---- requisitos das naves bloqueadas (indice = modelo) ----
+    static final int[] TROFEUS_NAVE = {0, 1, 3, 5, 8}, PATENTE_NAVE = {0, 1, 2, 3, 5};
+    static final String[] CONTRATO_NAVE = {"", "FANTASMA", "ESCUDO DE OURO", "FURIA VERDE", "FORJA FINAL"};
+    static Contrato daNave(int modelo) {
+        switch (modelo) {
+            case 1: return new Contrato(Tipo.SEM_DANO_CHEFE, 0, 1500, 400, 1, "FANTASMA");
+            case 2: return new Contrato(Tipo.ABATES, 45, 1800, 500, 2, "ESCUDO DE OURO");
+            case 3: return new Contrato(Tipo.CHEFE_RAPIDO, 60, 2500, 700, 3, "FURIA VERDE");
+            case 4: return new Contrato(Tipo.VAPORIZAR, 25, 5000, 1200, 4, "FORJA FINAL");
+            default: return null;
+        }
+    }
+
+    /** Tres contratos comuns sorteados para o setor, mais o contrato de nave que estiver liberado. */
+    static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r) {
+        List<Contrato> l = new ArrayList<>();
+        int abates = 18 + chefes * 4 + r.nextInt(8);
+        l.add(new Contrato(Tipo.ABATES, abates, 300 + abates * 15, 60 + abates * 3, -1, "LIMPEZA"));
+        l.add(new Contrato(Tipo.SEM_DANO_CHEFE, 0, 900 + chefes * 150, 220 + chefes * 30, -1, "INTOCAVEL"));
+        if (reator && r.nextBoolean()) { int v = 10 + chefes * 2; l.add(new Contrato(Tipo.VAPORIZAR, v, 700 + v * 30, 160 + v * 6, -1, "DESINTEGRADOR")); }
+        else { int t = Math.max(45, 100 - chefes * 6); l.add(new Contrato(Tipo.CHEFE_RAPIDO, t, 700 + chefes * 120, 180 + chefes * 25, -1, "RELAMPAGO")); }
+        for (int m = 1; m <= 4; m++) if (ProgressoJogo.podeTentarNave(m)) { l.add(daNave(m)); break; }
+        return l;
+    }
+
+    // ---- quadro da base ----
+    static void desenharQuadro(Graphics2D g, List<Contrato> ofertas, int cursor, Contrato ativo, String aviso) {
+        g.setColor(new Color(4, 6, 12)); g.fillRect(0, 557, 960, 43); // cobre o rodape do hangar
+        g.setColor(new Color(4, 8, 14, 225)); g.fillRect(150, 70, 660, 440);
+        g.setColor(new Color(110, 90, 50)); g.drawRect(150, 70, 660, 440); g.drawRect(153, 73, 654, 434);
+        int xp = ProgressoJogo.xp(), p = patente(xp);
+        texto(g, "QUADRO DE CONTRATOS", 170, 100, 18, new Color(255, 206, 98));
+        String pat = "PATENTE: " + PATENTES[p] + (p < PATENTES.length - 1 ? "  (XP " + xp + "/" + XP_PATENTE[p + 1] + ")" : "  (XP " + xp + ")");
+        texto(g, pat, 790 - largura(g, pat, 12), 100, 12, new Color(110, 222, 245));
+        if (ativo != null) {
+            texto(g, "CONTRATO ATIVO: " + ativo.titulo, 170, 140, 15, Color.WHITE);
+            texto(g, ativo.descricao(), 170, 162, 13, new Color(190, 205, 220));
+            texto(g, "PREMIO: CR " + ativo.premioCR + "  /  XP " + ativo.premioXP, 170, 184, 13, new Color(255, 206, 98));
+            texto(g, "Termine este antes de pegar outro. Ele vale ate o chefe do setor cair.", 170, 220, 12, new Color(150, 160, 175));
+        } else for (int i = 0; i < ofertas.size(); i++) {
+            Contrato c = ofertas.get(i); int y = 128 + i * 82; boolean sel = i == cursor, especial = c.nave >= 0;
+            g.setColor(sel ? new Color(40, 90, 60, 170) : new Color(12, 20, 32, 200)); g.fillRect(168, y, 624, 72);
+            g.setColor(sel ? new Color(255, 206, 98) : especial ? new Color(200, 120, 255) : new Color(48, 76, 101)); g.drawRect(168, y, 624, 72);
+            texto(g, (sel ? "> " : "  ") + c.titulo + (especial ? "   [LIBERA " + Pausa099.nomeNave(c.nave) + "]" : ""), 180, y + 22, 15, especial ? new Color(220, 160, 255) : Color.WHITE);
+            texto(g, c.descricao(), 196, y + 44, 13, new Color(190, 205, 220));
+            texto(g, "CR " + c.premioCR + "   XP " + c.premioXP, 196, y + 63, 12, new Color(255, 206, 98));
+        }
+        if (aviso != null && !aviso.isEmpty()) texto(g, aviso, 480 - largura(g, aviso, 13) / 2, 470, 13, new Color(255, 206, 98));
+        texto(g, ativo != null ? "ESC: VOLTAR" : "SETAS: ESCOLHER    ENTER: ACEITAR    ESC: VOLTAR", 170, 496, 12, new Color(150, 160, 175));
+    }
+    private static int largura(Graphics2D g, String s, int t) { g.setFont(new Font(Font.MONOSPACED, Font.BOLD, t)); return g.getFontMetrics().stringWidth(s); }
+    private static void texto(Graphics2D g, String s, int x, int y, int t, Color c) {
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, t)); g.setColor(new Color(0, 0, 0, 170)); g.drawString(s, x + 1, y + 1); g.setColor(c); g.drawString(s, x, y);
+    }
+}
