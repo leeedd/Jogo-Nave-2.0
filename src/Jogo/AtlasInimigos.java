@@ -97,7 +97,7 @@ public final class AtlasInimigos {
     }
     /** Desenha o integrante com o corpo centrado em (x, y); o golpe sai para a esquerda, fora do corpo. */
     static void integrante(Graphics2D g, BufferedImage arte, int x, int y, int quadro) {
-        int fw = arte.getWidth() / 4, h = 200; double e = h / (double) arte.getHeight(); int w = (int) (fw * e);
+        int fw = arte.getWidth() / 4; double e = Math.min(200.0 / arte.getHeight(), 260.0 / fw); int h = (int) (arte.getHeight() * e), w = (int) (fw * e);
         int x0 = x - (int) (fw * .67 * e), y0 = y - h / 2;
         Graphics2D a = (Graphics2D) g.create();
         a.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
