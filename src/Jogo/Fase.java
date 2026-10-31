@@ -172,16 +172,23 @@ implements ActionListener {
         if(!emJogo||pausado||!(etapa==Etapa.COMBATE||etapa==Etapa.BATALHA_CHEFE)||recargaFusao>0)return false;
         if(!inventario.reator()||!geloColetado||!fogoColetado||energia.carga(0)<40||energia.carga(1)<40){SomJogo.tocar(SomJogo.Efeito.ERRO);return false;}
         SomJogo.tocar(SomJogo.Efeito.FUSAO);SomJogo.tocar(SomJogo.Efeito.LASER);energia.gastar(0,40);energia.gastar(1,40);recargaFusao=30;
-        int vaporizados=0;
-        for(Alien a:alien)if(a.isVisible()&&a.getX()>-40&&a.getX()<Config.LARGURA){Rectangle r=a.getBounds();gerarParticulas((int)r.getCenterX(),(int)r.getCenterY(),14);eliminarAlien(a,true);vaporizados++;}
-        premiar(vaporizados*250); // bonus de vaporizacao, alem dos pontos normais de cada inimigo
+        // Fusao com o poder de chefe equipado (se houver energia para ele): muda o disparo, como no Mega Man X.
+        int sel=poderes.selecionado,tipo=inventario.temChaveIndice(sel)&&poderes.energia[sel]>=Poderes099.CUSTO[sel]?sel:-1;
+        if(tipo>=0)poderes.energia[sel]-=Poderes099.CUSTO[sel];
+        int vaporizados=0;java.util.List<double[]> pontos=new java.util.ArrayList<>();
+        for(Alien a:alien)if(a.isVisible()&&a.getX()>-40&&a.getX()<Config.LARGURA){Rectangle r=a.getBounds();pontos.add(new double[]{r.getCenterX(),r.getCenterY()});gerarParticulas((int)r.getCenterX(),(int)r.getCenterY(),14);eliminarAlien(a,true);vaporizados++;}
+        premiar(vaporizados*(tipo>=0?350:250)); // bonus de vaporizacao; maior na fusao
         for(ProjetilInimigo t:tirosInimigos)t.setVisible(false);
         for(TiroChefe t:tirosChefes)t.setVisible(false);
         for(Asteroide r:asteroides)r.setVisible(false);
-        if(miniChefe!=null&&miniChefe.receberDano(40))derrotarMiniChefe();
-        if(chefe!=null&&chefe.receberDano(40))derrotarChefao();
-        laser=new LaserConvergencia(nave.getY(),vaporizados);
-        if(vaporizados>0)mostrarAviso("LASER DE CONVERGENCIA! "+vaporizados+" VAPORIZADOS +"+vaporizados*250);
+        int dano=LaserConvergencia.danoChefe(tipo);
+        if(miniChefe!=null){pontos.add(new double[]{miniChefe.getBounds().getCenterX(),miniChefe.getBounds().getCenterY()});if(miniChefe.receberDano(dano))derrotarMiniChefe();}
+        if(chefe!=null){pontos.add(new double[]{chefe.getBounds().getCenterX(),chefe.getBounds().getCenterY()});
+            if(tipo==0||tipo==4||tipo==5)chefe.reagir(tipo,true);
+            if(chefe.receberDano(dano))derrotarChefao();}
+        if(tipo==7)nave.curar(3);
+        laser=new LaserConvergencia(tipo,vaporizados,pontos.toArray(new double[0][]));
+        mostrarAviso((tipo<0?"LASER DE CONVERGENCIA":"FUSAO: "+LaserConvergencia.NOMES[tipo])+(vaporizados>0?"! "+vaporizados+" VAPORIZADOS":""));
         return true;
     }
     private void aplicarInventario(){

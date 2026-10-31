@@ -1,68 +1,141 @@
 package Jogo;
 
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.Random;
 
-/** Laser de Convergencia: gelo e fogo fundidos num feixe que varre a tela e vaporiza quem estiver nela. */
+/**
+ * Laser de Convergencia: gelo e fogo fundidos num raio roxo eletrico que vaporiza a tela.
+ * Com um poder de chefe equipado, o laser se funde com ele e vira outro disparo (tipo 0 a 7).
+ */
 final class LaserConvergencia {
     static final double DURACAO = 1.6;
-    private final double y; private double tempo; private final int vaporizados;
+    static final String[] NOMES = {"MARE ABISSAL", "LANCA PAINKILLER", "LAMINAS DO EDDIE", "LEQUE DE ASES",
+            "TEMPESTADE DE RAIOS", "PENTAGRAMA INFERNAL", "PRISMA DE CRISTAL", "ECLIPSE DO PRINCIPE"};
+    static final String[] EFEITO_CHEFE = {"Congela o chefe", "Dano dobrado no chefe", "Corta todos os tiros", "Quatro feixes",
+            "Paralisa o chefe", "Queima o chefe", "Ricocheteia pela tela", "Rouba vida: +3 casco"};
+    /** Dano no chefe/mini-chefe por tipo (-1 = laser base). */
+    static int danoChefe(int tipo) { return tipo < 0 ? 40 : new int[]{40, 80, 50, 60, 50, 50, 65, 45}[tipo]; }
+
+    final int tipo; private double tempo; private final int vaporizados;
     private final Random acaso = new Random(9);
-    LaserConvergencia(double y, int vaporizados) { this.y = y; this.vaporizados = vaporizados; }
+    private final double[][] alvos;
+    LaserConvergencia(int tipo, int vaporizados, double[][] alvos) { this.tipo = tipo; this.vaporizados = vaporizados; this.alvos = alvos; }
     void atualizar(double dt) { tempo += dt; }
     boolean ativo() { return tempo < DURACAO; }
 
+    private static Color c(int r, int g, int b, double a) { return new Color(r, g, b, (int) Math.max(0, Math.min(255, a * 255))); }
+
     void desenhar(Graphics2D original, int naveX, int naveY) {
         Graphics2D g = (Graphics2D) original.create();
-        double t = tempo / DURACAO;
-        // carga (0-.15), disparo (.15-.75), apagando (.75-1)
-        double forca = t < .15 ? t / .15 : t < .75 ? 1 : 1 - (t - .75) / .25;
-        int ox = naveX + 46, cy = naveY + 20;
-        if (t >= .12) {
-            // clarao de tela inteira no inicio do disparo
-            if (t < .3) { g.setComposite(AlphaComposite.SrcOver.derive((float) (.55 * (1 - (t - .12) / .18)))); g.setColor(Color.WHITE); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); }
-            int h = (int) (46 + 70 * forca);
-            for (int camada = 0; camada < 5; camada++) {
-                float a = (float) (forca * (camada == 4 ? 1 : .35 + camada * .12));
-                g.setComposite(AlphaComposite.SrcOver.derive(Math.min(1f, a)));
-                int hh = h - camada * h / 6;
-                // metade de cima gelo, metade de baixo fogo, nucleo branco
-                Color cima = camada == 4 ? Color.WHITE : new Color(60 + camada * 40, 170 + camada * 18, 255);
-                Color baixo = camada == 4 ? Color.WHITE : new Color(255, 110 + camada * 30, 30 + camada * 20);
-                g.setColor(cima); g.fillRect(ox, cy - hh / 2, Config.LARGURA - ox, hh / 2);
-                g.setColor(baixo); g.fillRect(ox, cy, Config.LARGURA - ox, hh / 2);
-            }
-            // espiral de energia correndo pelo feixe
-            g.setComposite(AlphaComposite.SrcOver.derive((float) forca));
-            for (int k = 0; k < 60; k++) {
-                int x = ox + (int) ((k * 17 + tempo * 1400) % (Config.LARGURA - ox));
-                int dy = (int) (Math.sin(x * .05 + tempo * 20) * h * .45);
-                g.setColor(k % 2 == 0 ? new Color(180, 240, 255) : new Color(255, 200, 90));
-                g.fillRect(x, cy + dy - 3, 6, 6);
-            }
-            // particulas de vaporizacao pela tela
-            for (int k = 0; k < 90; k++) {
-                int x = acaso.nextInt(Config.LARGURA), yy = Config.HUD + acaso.nextInt(Config.ALTURA - Config.HUD);
-                int sobe = (int) (tempo * 120 * (1 + k % 3));
-                g.setColor(k % 3 == 0 ? new Color(255, 255, 255, 180) : k % 3 == 1 ? new Color(120, 220, 255, 160) : new Color(255, 160, 60, 160));
-                g.fillRect(x, yy - sobe, 3, 3);
-            }
+        double t = tempo / DURACAO, forca = t < .15 ? t / .15 : t < .75 ? 1 : 1 - (t - .75) / .25;
+        int ox = naveX + 46, cy = naveY + 20, W = Config.LARGURA;
+        if (t >= .12 && t < .3) { g.setColor(c(255, 255, 255, .5 * (1 - (t - .12) / .18))); g.fillRect(0, 0, W, Config.ALTURA); }
+        if (t >= .12) switch (tipo) {
+            case 0: feixe(g, ox, cy, forca, new Color(20, 120, 200), new Color(90, 230, 255)); bolhas(g, ox, cy, forca); break;
+            case 1: feixeFino(g, ox, cy, forca); break;
+            case 2: laminas(g, forca); break;
+            case 3: for (int k = -3; k <= 3; k += 2) leque(g, ox, cy, k * 5, forca); break;
+            case 4: feixe(g, ox, cy, forca * .6, new Color(30, 80, 220), new Color(160, 200, 255)); raios(g, ox, cy, forca, true); break;
+            case 5: pentagrama(g, forca); break;
+            case 6: prisma(g, ox, cy, forca); break;
+            case 7: eclipse(g, forca); break;
+            default: feixe(g, ox, cy, forca, new Color(110, 30, 200), new Color(210, 120, 255)); raios(g, ox, cy, forca, false); break;
         }
-        // esfera de carga na ponta da nave
+        // esfera de carga na ponta da nave, na cor do disparo
+        Color nucleo = tipo < 0 ? new Color(190, 90, 255) : Poderes099.CORES_SIMBOLO[tipo];
         int r = (int) (10 + 22 * forca + Math.sin(tempo * 40) * 3);
-        g.setComposite(AlphaComposite.SrcOver.derive((float) Math.max(.2, forca)));
-        g.setColor(new Color(120, 220, 255)); g.fillOval(ox - r, cy - r, r * 2, r);
-        g.setColor(new Color(255, 150, 50)); g.fillOval(ox - r, cy, r * 2, r);
-        g.setColor(Color.WHITE); g.fillOval(ox - r / 2, cy - r / 2, r, r);
-        if (vaporizados > 0 && t > .2) {
-            g.setComposite(AlphaComposite.SrcOver.derive((float) Math.min(1, (1 - t) * 3)));
-            g.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.BOLD, 30));
-            String s = "VAPORIZADOS x" + vaporizados;
-            g.setColor(new Color(60, 0, 0)); g.drawString(s, 482 - g.getFontMetrics().stringWidth(s) / 2, 152);
-            g.setColor(new Color(255, 230, 120)); g.drawString(s, 480 - g.getFontMetrics().stringWidth(s) / 2, 150);
-        }
+        g.setColor(c(nucleo.getRed(), nucleo.getGreen(), nucleo.getBlue(), Math.max(.3, forca))); g.fillOval(ox - r, cy - r, r * 2, r * 2);
+        g.setColor(c(255, 255, 255, Math.max(.3, forca))); g.fillOval(ox - r / 2, cy - r / 2, r, r);
         g.dispose();
+    }
+
+    /** Feixe largo em camadas, com nucleo branco. */
+    private void feixe(Graphics2D g, int ox, int cy, double f, Color borda, Color meio) {
+        int h = (int) (40 + 74 * f);
+        for (int k = 0; k < 4; k++) {
+            int hh = h - k * h / 4;
+            Color cor = k == 3 ? Color.WHITE : k == 2 ? meio : borda;
+            g.setColor(c(cor.getRed(), cor.getGreen(), cor.getBlue(), f * (k == 0 ? .45 : .85)));
+            g.fillRect(ox, cy - hh / 2, Config.LARGURA - ox, hh);
+        }
+    }
+    /** Arcos eletricos em zigue-zague em volta do feixe (e, na tempestade, ate cada alvo). */
+    private void raios(Graphics2D g, int ox, int cy, double f, boolean ateAlvos) {
+        g.setStroke(new BasicStroke(3));
+        for (int b = 0; b < 7; b++) {
+            int n = 14, px = ox, py = cy; double lado = b % 2 == 0 ? 1 : -1;
+            for (int k = 1; k <= n; k++) {
+                int nx = ox + (Config.LARGURA - ox) * k / n, ny = cy + (int) (lado * (20 + acaso.nextInt(46)) * f * (k % 2 == 0 ? 1 : .3));
+                g.setColor(c(230, 200, 255, f)); g.drawLine(px, py, nx, ny); px = nx; py = ny;
+            }
+        }
+        if (ateAlvos) for (double[] a : alvos) {
+            int px = ox, py = cy;
+            for (int k = 1; k <= 8; k++) {
+                double q = k / 8.0; int nx = (int) (ox + (a[0] - ox) * q) + (k < 8 ? acaso.nextInt(24) - 12 : 0), ny = (int) (cy + (a[1] - cy) * q) + (k < 8 ? acaso.nextInt(24) - 12 : 0);
+                g.setColor(c(170, 210, 255, f)); g.drawLine(px, py, nx, ny); px = nx; py = ny;
+            }
+            g.setColor(c(255, 255, 255, f)); g.fillOval((int) a[0] - 10, (int) a[1] - 10, 20, 20);
+        }
+        g.setStroke(new BasicStroke(1));
+    }
+    private void bolhas(Graphics2D g, int ox, int cy, double f) {
+        for (int k = 0; k < 50; k++) {
+            int x = ox + (int) ((k * 37 + tempo * 900) % (Config.LARGURA - ox)), y = cy + (int) (Math.sin(k * 1.7 + tempo * 9) * 50 * f);
+            g.setColor(c(200, 250, 255, f * .9)); g.drawOval(x, y, 6 + k % 6, 6 + k % 6);
+        }
+    }
+    private void feixeFino(Graphics2D g, int ox, int cy, double f) {
+        int h = (int) (16 + 18 * f);
+        g.setColor(c(255, 90, 20, f * .5)); g.fillRect(ox, cy - h, Config.LARGURA - ox, h * 2);
+        g.setColor(c(255, 200, 60, f)); g.fillRect(ox, cy - h / 2, Config.LARGURA - ox, h);
+        g.setColor(c(255, 255, 230, f)); g.fillRect(ox, cy - 3, Config.LARGURA - ox, 6);
+        for (int k = 0; k < 40; k++) { int x = ox + (int) ((k * 29 + tempo * 1600) % (Config.LARGURA - ox)); int alto = 10 + acaso.nextInt(28);
+            g.setColor(c(255, 120 + acaso.nextInt(100), 30, f)); g.fillPolygon(new int[]{x - 6, x, x + 6}, new int[]{cy - h / 2, cy - h / 2 - alto, cy - h / 2}, 3);
+            g.fillPolygon(new int[]{x - 6, x, x + 6}, new int[]{cy + h / 2, cy + h / 2 + alto, cy + h / 2}, 3); }
+    }
+    private void laminas(Graphics2D g, double f) {
+        for (int k = 0; k < 3; k++) {
+            double ida = Math.max(0, Math.min(1, (tempo - .2 - k * .25) / .6)); int x = (int) (-200 + ida * 1300), y = 150 + k * 150;
+            g.setStroke(new BasicStroke(18)); g.setColor(c(40, 200, 80, f * .6)); g.drawArc(x - 220, y - 160, 260, 320, -70, 140);
+            g.setStroke(new BasicStroke(8)); g.setColor(c(170, 255, 180, f)); g.drawArc(x - 216, y - 156, 252, 312, -66, 132);
+            g.setStroke(new BasicStroke(2)); g.setColor(c(255, 255, 255, f)); g.drawArc(x - 212, y - 152, 244, 304, -60, 120);
+        }
+        g.setStroke(new BasicStroke(1));
+    }
+    private void leque(Graphics2D g, int ox, int cy, double graus, double f) {
+        Graphics2D a = (Graphics2D) g.create(); a.rotate(Math.toRadians(graus), ox, cy);
+        a.setColor(c(255, 200, 70, f * .5)); a.fillRect(ox, cy - 18, 1200, 36);
+        a.setColor(c(255, 240, 200, f)); a.fillRect(ox, cy - 6, 1200, 12);
+        for (int k = 0; k < 10; k++) { int x = ox + (int) ((k * 113 + tempo * 1200) % 1100); a.setColor(c(30, 20, 30, f)); a.fillOval(x - 6, cy - 7, 12, 10); a.fillPolygon(new int[]{x - 6, x + 6, x}, new int[]{cy - 3, cy - 3, cy - 14}, 3); }
+        a.dispose();
+    }
+    private void pentagrama(Graphics2D g, double f) {
+        int cx = Config.LARGURA / 2, cy = (Config.ALTURA + Config.HUD) / 2, r = (int) (60 + 200 * f);
+        g.setColor(c(120, 0, 0, f * .35)); g.fillRect(0, Config.HUD, Config.LARGURA, Config.ALTURA - Config.HUD);
+        Graphics2D a = (Graphics2D) g.create(); a.rotate(tempo * 1.5, cx, cy); a.setStroke(new BasicStroke(10));
+        a.setColor(c(255, 60, 30, f)); a.drawOval(cx - r, cy - r, 2 * r, 2 * r);
+        int[] xs = new int[5], ys = new int[5]; for (int k = 0; k < 5; k++) { double an = -Math.PI / 2 + k * 4 * Math.PI / 5; xs[k] = cx + (int) (Math.cos(an) * r * .95); ys[k] = cy + (int) (Math.sin(an) * r * .95); }
+        a.drawPolygon(xs, ys, 5); a.setStroke(new BasicStroke(3)); a.setColor(c(255, 220, 120, f)); a.drawPolygon(xs, ys, 5); a.dispose();
+        for (int k = 0; k < 70; k++) { int x = acaso.nextInt(Config.LARGURA), y = Config.HUD + (int) ((acaso.nextInt(600) + tempo * 500) % (Config.ALTURA - Config.HUD));
+            g.setColor(c(255, 100 + acaso.nextInt(120), 20, f)); g.fillPolygon(new int[]{x - 5, x, x + 5}, new int[]{y, y - 16, y}, 3); }
+    }
+    private void prisma(Graphics2D g, int ox, int cy, double f) {
+        int n = 7; int[] xs = new int[n + 1], ys = new int[n + 1]; xs[0] = ox; ys[0] = cy;
+        for (int k = 1; k <= n; k++) { xs[k] = ox + (Config.LARGURA - ox) * k / n; ys[k] = k % 2 == 1 ? Config.HUD + 10 : Config.ALTURA - 10; }
+        g.setStroke(new BasicStroke(26)); g.setColor(c(40, 200, 90, f * .45)); g.drawPolyline(xs, ys, n + 1);
+        g.setStroke(new BasicStroke(10)); g.setColor(c(150, 255, 170, f)); g.drawPolyline(xs, ys, n + 1);
+        g.setStroke(new BasicStroke(3)); g.setColor(c(255, 255, 255, f)); g.drawPolyline(xs, ys, n + 1);
+        g.setStroke(new BasicStroke(1));
+        for (int k = 1; k < n; k++) { g.setColor(c(200, 255, 210, f)); g.fillPolygon(new int[]{xs[k], xs[k] + 14, xs[k], xs[k] - 14}, new int[]{ys[k] - 18, ys[k], ys[k] + 18, ys[k]}, 4); }
+    }
+    private void eclipse(Graphics2D g, double f) {
+        g.setColor(c(10, 0, 20, f * .75)); g.fillRect(0, Config.HUD, Config.LARGURA, Config.ALTURA - Config.HUD);
+        int cx = Config.LARGURA / 2, cy = 300, r = 90; g.setColor(c(200, 120, 255, f)); g.fillOval(cx - r - 8, cy - r - 8, 2 * r + 16, 2 * r + 16); g.setColor(c(0, 0, 0, f)); g.fillOval(cx - r, cy - r, 2 * r, 2 * r);
+        for (int k = 0; k < 40; k++) { int x = (int) ((k * 97 + tempo * 700) % (Config.LARGURA + 200)) - 100, y = Config.HUD + 20 + (k * 53) % (Config.ALTURA - Config.HUD - 40);
+            TiroChefe.morcego(g, x, y + (int) (Math.sin(tempo * 8 + k) * 10), 3, tempo + k * .1, true, k % 3 == 0); }
     }
 }
