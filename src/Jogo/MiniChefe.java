@@ -177,21 +177,23 @@ public final class MiniChefe {
         else desenharFeixe(g, c);
     }
     private void desenharFeixe(Graphics2D g, Color c) {
-        Color borda = c != null ? c.darker().darker() : new Color(150, 20, 30), meio = c != null ? c : new Color(240, 60, 50),
-              claro = c != null ? new Color(Math.min(255, c.getRed() + 90), Math.min(255, c.getGreen() + 90), Math.min(255, c.getBlue() + 90)) : new Color(255, 200, 120);
-        int fim = fimRaio(), y = this.raioAlvo; java.util.Random r = new java.util.Random((long) (this.tempo * 30));
+        // mesma paleta e espessura do raio da arte: borda vermelha viva, meio laranja, miolo claro grosso
+        Color borda = c != null ? c : new Color(215, 35, 35), meio = c != null ? new Color(Math.min(255, c.getRed() + 50), Math.min(255, c.getGreen() + 50), Math.min(255, c.getBlue() + 50)) : new Color(255, 110, 60),
+              claro = c != null ? new Color(Math.min(255, c.getRed() + 120), Math.min(255, c.getGreen() + 120), Math.min(255, c.getBlue() + 120)) : new Color(255, 240, 215);
+        // entra 24 px por baixo da arte para nao deixar emenda (a arte e desenhada por cima)
+        int fim = fimRaio() + 24, y = this.raioAlvo; java.util.Random r = new java.util.Random((long) (this.tempo * 30));
         for (int px = 0; px < fim; px += 4) {
-            int h = 9 + r.nextInt(3) * 2;
+            int h = 10 + r.nextInt(3) * 2;
             g.setColor(borda); g.fillRect(px, y - h, 4, h * 2);
-            g.setColor(meio); g.fillRect(px, y - h + 4, 4, h * 2 - 8);
-            g.setColor(claro); g.fillRect(px, y - 2, 4, 4);
-            if (r.nextInt(7) == 0) { g.setColor(claro); g.fillRect(px, y + (r.nextBoolean() ? -h - 4 : h), 4, 4); } // faisca solta
+            g.setColor(meio); g.fillRect(px, y - h + 3, 4, h * 2 - 6);
+            g.setColor(claro); g.fillRect(px, y - 4, 4, 8);
+            if (r.nextInt(6) == 0) { g.setColor(meio); g.fillRect(px, y + (r.nextBoolean() ? -h - 4 : h), 4, 4); } // faisca solta
         }
-        // dois raios eletricos serpenteando em volta do laser, em sentidos opostos
+        // eletricidade serpenteando, so ate a boca do raio da arte
         for (int fio = 0; fio < 2; fio++) {
             int ant = y;
-            for (int px = fim; px > 0; px -= 4) {
-                int yy = y + (int) (Math.sin(px * .045 + this.tempo * (fio == 0 ? 26 : -22) + fio * Math.PI) * 17) + r.nextInt(3) - 1;
+            for (int px = fim - 24; px > 0; px -= 4) {
+                int yy = y + (int) (Math.sin(px * .045 + this.tempo * (fio == 0 ? 26 : -22) + fio * Math.PI) * 15) + r.nextInt(3) - 1;
                 g.setColor(fio == 0 ? Color.WHITE : claro);
                 g.fillRect(px - 4, Math.min(ant, yy), 4, Math.abs(yy - ant) + 3); ant = yy;
             }
