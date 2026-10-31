@@ -22,6 +22,8 @@ final class Turne {
         {"TONY IOMMI", "GEEZER BUTLER", "BILL WARD", "ZAKK WYLDE"}};
     /** Instrumento de cada integrante (mesma ordem de INTEGRANTES): G guitarra, B baixo, D bateria, C criatura. */
     static final String[] INSTRUMENTOS = {"CC", "GGBD", "BGGGD", "GD", "GDB", "GGD", "GGB", "GBDG"};
+    /** Integrantes cuja arte traz o quadro 4 caido (derrotado) em vez do bate-cabeca. */
+    static boolean quadroQueda(String nome) { return nome.equals("GLENN TIPTON") || nome.equals("RICHIE FAULKNER") || nome.equals("ROB HALFORD"); }
     static char instrumento(String nome) {
         for (int s = 0; s < 8; s++) for (int p = 0; p < INTEGRANTES[s].length; p++) if (INTEGRANTES[s][p].equals(nome)) return INSTRUMENTOS[s].charAt(p);
         return idVocalista(nome) > 0 ? 'V' : 'C';
@@ -34,7 +36,7 @@ final class Turne {
      */
     static final String[][] ATAQUES = {
         {"ZIGUE ENERGIA 60 220 255", "ANEL ENERGIA 170 70 220"},
-        {"ESPIRAL ENERGIA 255 150 40", "LEQUE7 ENERGIA 255 80 40", "PAREDE ONDA 255 150 60", "CHUVA PRATO 255 200 80"},
+        {"ESPIRAL ENERGIA 255 150 40", "LEQUE7 ENERGIA 80 170 255", "PAREDE ONDA 255 150 60", "CHUVA PRATO 255 200 80"},
         {"RAJADA NOTA 70 140 255", "RAIO2 ENERGIA 80 230 255", "VARRE ENERGIA 120 240 255", "ESPIRAL NOTA 90 220 255", "ANEL PRATO 255 210 90"},
         {"LEQUE AS 255 120 40", "RAJADA PRATO 255 120 30"},
         {"RAIO ENERGIA 170 60 255", "LEQUE PRATO 255 210 90", "LEQUE ONDA 80 150 255"},
@@ -45,7 +47,7 @@ final class Turne {
     static final String[] VOCALISTAS = {"", "ROB HALFORD", "BRUCE DICKINSON", "LEMMY KILMISTER", "JAMES HETFIELD", "TOM ARAYA", "CHUCK BILLY", "OZZY OSBOURNE"};
     /** Id do chefe de cada setor (mesma ordem da Fase: 8 Lula, 2 Rob, 3 Bruce, 4 Lemmy, 5 James, 6 Tom, 7 Chuck, 1 Ozzy). */
     static final int[] ID_CHEFE = {8, 2, 3, 4, 5, 6, 7, 1};
-    static final String[] ATAQUES_VOCAL = {"", "RAJADA AS 255 160 60", "CRUZ NOTA 90 230 220", "PAREDE AS 255 150 60", "RAIO2 ENERGIA 80 160 255", "CHUVA NOTA 240 60 70", "ANEL NOTA 100 240 130", "ESPIRAL ENERGIA 190 90 240"};
+    static final String[] ATAQUES_VOCAL = {"", "CHUVA ENERGIA 255 120 30", "CRUZ NOTA 90 230 220", "PAREDE AS 255 150 60", "RAIO2 ENERGIA 80 160 255", "CHUVA NOTA 240 60 70", "ANEL NOTA 100 240 130", "ESPIRAL ENERGIA 190 90 240"};
     static int idVocalista(String nome) { for (int s = 1; s < 8; s++) if (VOCALISTAS[s].equals(nome)) return ID_CHEFE[s]; return -1; }
     static String[] ataque(String nome) {
         for (int s = 1; s < 8; s++) if (VOCALISTAS[s].equals(nome)) return ATAQUES_VOCAL[s].split(" ");

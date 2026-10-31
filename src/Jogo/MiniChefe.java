@@ -302,7 +302,7 @@ public final class MiniChefe {
         } else if (AtlasInimigos.integrante(integrante) != null) {
             // o integrante toca o tempo todo: alterna tocar e bate-cabeca; arregala no preparo e solta o golpe
             // criatura: o quadro 4 e ela ferida, so com pouca vida; musicos alternam tocar e bate-cabeca
-            int q = this.disparando ? 2 : this.carregando ? 1 : instrumento() == 'C' ? (vida < vidaMaxima * .35 ? 3 : 0) : (int) (this.tempo * 2.2) % 2 == 0 ? 0 : 3;
+            int q = this.disparando ? 2 : this.carregando ? 1 : instrumento() == 'C' || Turne.quadroQueda(integrante) ? (vida < vidaMaxima * .35 ? 3 : 0) : (int) (this.tempo * 2.2) % 2 == 0 ? 0 : 3;
             AtlasInimigos.integrante(graphics2D2, AtlasInimigos.integrante(integrante), n, n2 + 5, q);
         } else if (AtlasInimigos.temSentinelaOlho()) {
             AtlasInimigos.sentinelaOlho(graphics2D2, n, n2 - 11, this.disparando ? 2 : this.carregando ? 1 : vida < vidaMaxima * .35 ? 3 : 0);

@@ -17,17 +17,17 @@ onda do Lemmy, vans do Hellraiser, trem e dragão do Ozzy.
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores ciano e azul-petróleo, com tentáculos, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
 
-### Emblema 2: JUDAS PRIEST (emblema_banda_1.png)
+### [FEITO] Emblema 2: JUDAS PRIEST (emblema_banda_1.png)
 ```
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores laranja e cromado, com um garfo de raio, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
 
-### Emblema 3: IRON MAIDEN (emblema_banda_2.png)
+### [FEITO] Emblema 3: IRON MAIDEN (emblema_banda_2.png)
 ```
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores azul-ciano, com a caveira do Eddie ao fundo, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
 
-### Emblema 4: MOTORHEAD (emblema_banda_3.png)
+### [FEITO] Emblema 4: MOTORHEAD (emblema_banda_3.png)
 ```
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores vermelho e preto, com o ás de espadas, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
@@ -37,17 +37,17 @@ Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de he
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: a letra M angulosa com pontas afiadas como raios nas pernas, estilo logotipo de metal dos anos 80, cores prateado cromado com azul-elétrico, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
 
-### Emblema 6: SLAYER (emblema_banda_5.png)
+### [FEITO] Emblema 6: SLAYER (emblema_banda_5.png)
 ```
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores vermelho-sangue com pentagrama, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
 
-### Emblema 7: TESTAMENT (emblema_banda_6.png)
+### [FEITO] Emblema 7: TESTAMENT (emblema_banda_6.png)
 ```
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores verde e dourado, com penas indígenas, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
 
-### Emblema 8: BLACK SABBATH (emblema_banda_7.png)
+### [FEITO] Emblema 8: BLACK SABBATH (emblema_banda_7.png)
 ```
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores roxo sombrio com uma cruz e morcegos, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
@@ -67,7 +67,7 @@ Poder: três esferas de energia ciano saindo da boca e ondulando como serpentes
 Pixel art 16-bit estilo arcade, tom sombrio e ameaçador, fundo branco liso, tira horizontal com 4 quadros do mesmo tamanho, vista lateral virada para a ESQUERDA. Criatura espacial monstruosa: ENGUIA DAS PROFUNDEZAS, corpo longo e escuro azul-petróleo com bioluminescência ciano, mandíbula enorme cheia de dentes de agulha, olhos brancos sem pupila. Quadro 1: repouso, respirando. Quadro 2: preparando o ataque, boca abrindo e olhos brilhando. Quadro 3: o PODER: três esferas de energia ciano saindo da boca e ondulando como serpentes. Quadro 4: ferida, rachada e sangrando luz. Contorno escuro bem marcado, mesma escala e mesma posição nos 4 quadros.
 ```
 
-### 2. CRIA DA LULA (integrante_cria_da_lula.png)
+### 2. [FEITO] CRIA DA LULA (integrante_cria_da_lula.png)
 Poder: um anel de gotas de tinta roxa explodindo em todas as direções
 ```
 Pixel art 16-bit estilo arcade, tom sombrio e ameaçador, fundo branco liso, tira horizontal com 4 quadros do mesmo tamanho, vista lateral virada para a ESQUERDA. Criatura espacial monstruosa: CRIA DA LULA, lula jovem vermelha e roxa com olho único gigante, tentáculos curtos se debatendo, ventosas brilhando. Quadro 1: repouso, respirando. Quadro 2: preparando o ataque, boca abrindo e olhos brilhando. Quadro 3: o PODER: um anel de gotas de tinta roxa explodindo em todas as direções. Quadro 4: ferida, rachada e sangrando luz. Contorno escuro bem marcado, mesma escala e mesma posição nos 4 quadros.
@@ -75,13 +75,13 @@ Pixel art 16-bit estilo arcade, tom sombrio e ameaçador, fundo branco liso, tir
 
 ## JUDAS PRIEST
 
-### 3. [JA GERADO, MANDAR COMO ARQUIVO] GLENN TIPTON (integrante_glenn_tipton.png)
+### 3. [FEITO] GLENN TIPTON (integrante_glenn_tipton.png)
 Poder: uma ESPIRAL de energia laranja girando para fora da guitarra
 ```
 Pixel art 16-bit estilo arcade Metal Slug, fundo branco liso, tira horizontal com 4 quadros do mesmo tamanho, corpo inteiro virado para a ESQUERDA, flutuando no espaço e TOCANDO o instrumento em todos os quadros. GLENN TIPTON, guitarrista do Judas Priest: cabelo loiro médio, jaqueta de couro com rebites, guitarra preta. Quadro 1: tocando, dedos no braço do instrumento. Quadro 2: tocando mais forte, instrumento começando a brilhar na cor do poder. Quadro 3: o PODER saindo do instrumento para a esquerda: uma ESPIRAL de energia laranja girando para fora da guitarra. Quadro 4: bate-cabeça sem parar de tocar. Mesma escala e mesma posição nos 4 quadros, contorno escuro marcado.
 ```
 
-### 4. RICHIE FAULKNER (integrante_richie_faulkner.png)
+### 4. [FEITO] RICHIE FAULKNER (integrante_richie_faulkner.png)
 Poder: um LEQUE largo de sete bolas de fogo vermelho
 ```
 Pixel art 16-bit estilo arcade Metal Slug, fundo branco liso, tira horizontal com 4 quadros do mesmo tamanho, corpo inteiro virado para a ESQUERDA, flutuando no espaço e TOCANDO o instrumento em todos os quadros. RICHIE FAULKNER, guitarrista do Judas Priest: cabelo loiro comprido, roupa de couro com tachas, guitarra Flying V branca. Quadro 1: tocando, dedos no braço do instrumento. Quadro 2: tocando mais forte, instrumento começando a brilhar na cor do poder. Quadro 3: o PODER saindo do instrumento para a esquerda: um LEQUE largo de sete bolas de fogo vermelho. Quadro 4: bate-cabeça sem parar de tocar. Mesma escala e mesma posição nos 4 quadros, contorno escuro marcado.
