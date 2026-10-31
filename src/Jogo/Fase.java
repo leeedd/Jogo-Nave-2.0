@@ -1898,7 +1898,7 @@ implements ActionListener {
         }
         if (alien.procurado() && alien.reliquia() > 0) {
             itens.add(new Item(Item.Tipo.RELIQUIA_NAVE, alien.getX() + 10, alien.getY() + 10, false, alien.reliquia()));
-            mostrarAviso("ALVO PROCURADO ABATIDO! PEGUE O " + Contrato.RELIQUIA_NAVE[alien.reliquia()]);
+            mostrarAviso("ALVO PROCURADO ABATIDO! PEGUE " + Contrato.ARTIGO[alien.reliquia()].toUpperCase() + " " + Contrato.RELIQUIA_NAVE[alien.reliquia()]);
             if (!partidaTeste) radio.urgente("Pegaram " + Contrato.ALVO_NAVE[alien.reliquia()] + "! Esse cacador nao e brincadeira.");
         }
         if (contrato != null) { contrato.abate(); resolverContrato(); }

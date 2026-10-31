@@ -121,8 +121,17 @@ public class Item {
     }
 
     /** Reliquia em pixel art provisorio: cristal na cor da nave, com aura girando. */
+    private static final java.awt.image.BufferedImage[] ARTE_RELIQUIA=new java.awt.image.BufferedImage[5];
+    static{for(int i=1;i<=4;i++){java.net.URL u=Item.class.getResource("/ImagemIcon/reliquia_"+i+".png");if(u!=null)try{ARTE_RELIQUIA[i]=javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){}}}
     static void reliquia(Graphics2D g,int cx,int cy,double t,int nave){
         Color c=Contrato.corReliquia(nave);
+        java.awt.image.BufferedImage arte=nave>=1&&nave<=4?ARTE_RELIQUIA[nave]:null;
+        if(arte!=null){
+            // aura pulsando por tras e a reliquia flutuando
+            int r=(int)(26+Math.sin(t*5)*4);g.setColor(new Color(c.getRed(),c.getGreen(),c.getBlue(),70));g.fillOval(cx-r,cy-r,r*2,r*2);
+            Graphics2D a=(Graphics2D)g.create();a.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            int h=(int)(Math.sin(t*3)*3),w=arte.getWidth()*44/96,hh=arte.getHeight()*44/96;a.drawImage(arte,cx-w/2,cy-hh/2+h,w,hh,null);a.dispose();return;
+        }
         for(int k=0;k<8;k++){double a=t*2.4+k*Math.PI/4;int r=20+(int)(Math.sin(t*6+k)*3);g.setColor(new Color(c.getRed(),c.getGreen(),c.getBlue(),120));g.fillRect(cx+(int)(Math.cos(a)*r)-2,cy+(int)(Math.sin(a)*r)-2,4,4);}
         int p=3,h=(int)(Math.sin(t*5)*2);
         g.setColor(c.darker());g.fillPolygon(new int[]{cx,cx+p*4,cx,cx-p*4},new int[]{cy-p*6+h,cy+h,cy+p*6+h,cy+h},4);

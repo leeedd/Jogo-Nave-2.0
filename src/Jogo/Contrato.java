@@ -35,8 +35,8 @@ final class Contrato {
             case ABATES: return "Abater " + alvo + " antes do chefe, levando no maximo " + GOLPES_MAX + " golpes";
             case SEM_DANO_CHEFE: return "Vencer o chefe sem levar dano";
             case CHEFE_RAPIDO: return "Vencer o chefe em ate " + alvo + " s";
-            case CACADA: return "Cacar " + ALVO_NAVE[nave] + " e recuperar o " + RELIQUIA_NAVE[nave];
-            case TROCA: return "Entregar o " + RELIQUIA_NAVE[nave] + " e liberar a nave";
+            case CACADA: return "Cacar " + ALVO_NAVE[nave] + " e recuperar " + ARTIGO[nave] + " " + RELIQUIA_NAVE[nave];
+            case TROCA: return "Entregar " + ARTIGO[nave] + " " + RELIQUIA_NAVE[nave] + " e liberar a nave";
             default: return "Vaporizar " + alvo + " com o laser, levando no maximo " + GOLPES_MAX + " golpes";
         }
     }
@@ -79,6 +79,7 @@ final class Contrato {
     static final String[] CONTRATO_NAVE = {"", "FANTASMA", "ESCUDO DE OURO", "FURIA VERDE", "FORJA FINAL"};
     /** Cacada da nave: um alvo procurado aparece no setor e solta a reliquia que libera a nave. */
     static final String[] ALVO_NAVE = {"", "O ESPECTRO", "A HARPIA DOURADA", "O CARNICEIRO VERDE", "O FERREIRO"};
+    static final String[] ARTIGO = {"", "o", "a", "a", "o"};
     static final String[] RELIQUIA_NAVE = {"", "VEU FANTASMA", "PENA DE OURO", "PRESA VERDE", "CORACAO DA FORJA"};
     /** Resistencia do alvo: quanto melhor a nave, mais duro o procurado. */
     static final int[] FORCA_ALVO = {1, 5, 6, 7, 9};
@@ -127,13 +128,14 @@ final class Contrato {
             y0 = 228;
         }
         for (int i = 0; i < ofertas.size(); i++) {
-            Contrato c = ofertas.get(i); int y = y0 + i * 82; boolean sel = i == cursor, especial = c.nave >= 0;
-            g.setColor(sel ? new Color(40, 90, 60, 170) : new Color(12, 20, 32, 200)); g.fillRect(168, y, 624, 72);
-            g.setColor(sel ? new Color(255, 206, 98) : especial ? new Color(200, 120, 255) : new Color(48, 76, 101)); g.drawRect(168, y, 624, 72);
-            if (c.tipo == Tipo.TROCA || c.tipo == Tipo.CACADA) Item.reliquia(g, 770, y + 36, System.nanoTime() / 1e9, c.nave);
-            texto(g, (sel ? "> " : "  ") + c.titulo + (especial ? "   [LIBERA " + Pausa099.nomeNave(c.nave) + "]" : ""), 180, y + 22, 15, especial ? new Color(220, 160, 255) : Color.WHITE);
-            texto(g, c.descricao(), 196, y + 44, 13, new Color(190, 205, 220));
-            texto(g, c.tipo == Tipo.TROCA ? "ENTER: ENTREGAR" : "CR " + c.premioCR + "   XP " + c.premioXP + (c.tipo == Tipo.CACADA ? "   + RELIQUIA" : ""), 196, y + 63, 12, new Color(255, 206, 98));
+            int passo = Math.min(82, (478 - y0) / Math.max(1, ofertas.size())), alto = passo - 8, q = passo < 82 ? 3 : 0;
+            Contrato c = ofertas.get(i); int y = y0 + i * passo; boolean sel = i == cursor, especial = c.nave >= 0;
+            g.setColor(sel ? new Color(40, 90, 60, 170) : new Color(12, 20, 32, 200)); g.fillRect(168, y, 624, alto);
+            g.setColor(sel ? new Color(255, 206, 98) : especial ? new Color(200, 120, 255) : new Color(48, 76, 101)); g.drawRect(168, y, 624, alto);
+            if (c.tipo == Tipo.TROCA || c.tipo == Tipo.CACADA) Item.reliquia(g, 770, y + alto / 2, System.nanoTime() / 1e9, c.nave);
+            texto(g, (sel ? "> " : "  ") + c.titulo + (especial ? "   [LIBERA " + Pausa099.nomeNave(c.nave) + "]" : ""), 180, y + 20 - q / 3, 15, especial ? new Color(220, 160, 255) : Color.WHITE);
+            texto(g, c.descricao(), 196, y + 41 - q * 2, 13, new Color(190, 205, 220));
+            texto(g, c.tipo == Tipo.TROCA ? "ENTER: ENTREGAR" : "CR " + c.premioCR + "   XP " + c.premioXP + (c.tipo == Tipo.CACADA ? "   + RELIQUIA" : ""), 196, y + 60 - q * 3, 12, new Color(255, 206, 98));
         }
         if (aviso != null && !aviso.isEmpty()) texto(g, aviso, 480 - largura(g, aviso, 13) / 2, 470, 13, new Color(255, 206, 98));
         texto(g, ativo != null ? "ESC: VOLTAR" : "SETAS: ESCOLHER    ENTER: ACEITAR    ESC: VOLTAR", 170, 496, 12, new Color(150, 160, 175));
