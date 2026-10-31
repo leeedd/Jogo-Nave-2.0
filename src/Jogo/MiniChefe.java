@@ -33,7 +33,31 @@ public final class MiniChefe {
     /** Bateristas e baixistas com arte propria atiram projeteis em vez do raio (pratos e ondas graves). */
     private final java.util.List<TiroChefe> projeteis = new java.util.ArrayList<>();
     private char instrumento() { return AtlasInimigos.integrante(integrante) == null ? 'C' : Turne.instrumento(integrante); }
-    private boolean atiraProjetil() { char c = instrumento(); return c == 'D' || c == 'B'; }
+    /** Ataque proprio do integrante com arte: padrao, projetil e cor (Turne.ATAQUES). */
+    private String[] ataque() { return AtlasInimigos.integrante(integrante) == null ? null : Turne.ataque(integrante); }
+    private String padrao() { String[] a = ataque(); return a == null ? "RAIO" : a[0]; }
+    private Color corAtaque() { String[] a = ataque(); return a == null ? null : new Color(Integer.parseInt(a[2]), Integer.parseInt(a[3]), Integer.parseInt(a[4])); }
+    private boolean atiraProjetil() { String p = padrao(); return !p.startsWith("RAIO") && !p.equals("VARRE"); }
+    private double emissao; private int naveYAlvo;
+    private TiroChefe proj(double x0, double y0, double ang, double vel, TiroChefe.Movimento m) {
+        String[] a = ataque(); String e = a == null ? "ENERGIA" : a[1];
+        int estilo = e.equals("NOTA") ? TiroChefe.NOTA : e.equals("PRATO") ? TiroChefe.PRATO : e.equals("ONDA") ? TiroChefe.ONDA_SOM : e.equals("AS") ? TiroChefe.AS_ESPADAS : TiroChefe.ENERGIA;
+        TiroChefe t = new TiroChefe(x0, y0, Math.cos(ang) * vel, Math.sin(ang) * vel, false, estilo, m).comCor(corAtaque()); projeteis.add(t); return t;
+    }
+    /** Disparo de abertura do padrao (os padroes continuos emitem em atualizar). */
+    private void abrirAtaque(int ny) {
+        double ox = this.x - 60, oy = this.y, mira = Math.atan2(ny + 18 - oy, 120 - ox);
+        switch (padrao()) {
+            case "LEQUE": for (int i = -2; i <= 2; i++) proj(ox, oy, mira + i * .2, 300, TiroChefe.Movimento.RETO); break;
+            case "LEQUE7": for (int i = -3; i <= 3; i++) proj(ox, oy, mira + i * .16, 330, TiroChefe.Movimento.RETO); break;
+            case "PAREDE": { int buraco = (ny - 90) / 60; for (int j = 0; j < 8; j++) if (Math.abs(j - buraco) > 0) proj(ox, 110 + j * 60, Math.PI, 230, TiroChefe.Movimento.RETO); break; }
+            case "CHUVA": for (int j = 0; j < 8; j++) proj(140 + j * 80, 92, Math.PI / 2 + (j % 2 == 0 ? .12 : -.12), 250, TiroChefe.Movimento.ACELERADO); break;
+            case "ANEL": for (int j = 0; j < 12; j++) proj(ox + 40, oy, j * Math.PI / 6, 220, TiroChefe.Movimento.RETO); break;
+            case "ZIGUE": for (int i = -1; i <= 1; i++) proj(ox, oy + i * 60, Math.PI, 260, TiroChefe.Movimento.ONDA); break;
+            case "CRUZ": for (int j = 0; j < 3; j++) { proj(ox - j * 30, 100, Math.atan2(ny + 18 - 100, 120 - ox), 320, TiroChefe.Movimento.RETO); proj(ox - j * 30, 540, Math.atan2(ny + 18 - 540, 120 - ox), 320, TiroChefe.Movimento.RETO); } break;
+            default: break; // ESPIRAL e RAJADA saem aos poucos, durante o disparo
+        }
+    }
     java.util.List<TiroChefe> projeteisTeste() { return projeteis; }
     void definirIntegrante(String nome,int risco){integrante=nome==null?"":nome;vida=vidaMaxima=(int)Math.round(vidaMaxima*Turne.premio(risco));}
     String nome(){if(comandante==null&&!integrante.isEmpty())return integrante;return comandante==null?"SENTINELA":comandante.rainha?"RAINHA DO ENXAME":"PIRATA DOMADOR";}
@@ -77,16 +101,16 @@ public final class MiniChefe {
                 this.carregando = false;
                 this.raioAlvo = (int)Math.round(this.y);
                 this.disparando = true;SomJogo.tocar(atiraProjetil() ? SomJogo.Efeito.CHEFE_TIRO : SomJogo.Efeito.LASER);
-                if (atiraProjetil()) {
-                    this.atingiu = true; // sem raio: o perigo sao os projeteis
-                    double ox = this.x - 60, oy = this.y, mira = Math.atan2(n + 18 - oy, 120 - ox);
-                    if (instrumento() == 'D') for (int i = -2; i <= 2; i++) projeteis.add(new TiroChefe(ox, oy, Math.cos(mira + i * .2) * 300, Math.sin(mira + i * .2) * 300, false, TiroChefe.PRATO, TiroChefe.Movimento.RETO));
-                    else for (int i = -1; i <= 1; i++) projeteis.add(new TiroChefe(ox, oy + i * 50, -320, i * 30, false, TiroChefe.ONDA_SOM, TiroChefe.Movimento.RETO));
-                }
-                this.relogioRaio = 0.43;
+                naveYAlvo = n; emissao = 0;
+                if (atiraProjetil()) { this.atingiu = true; abrirAtaque(n); } // sem raio: o perigo sao os projeteis
+                String pd = padrao(); this.relogioRaio = pd.equals("ESPIRAL") || pd.equals("RAJADA") ? 1.0 : pd.equals("VARRE") ? .9 : 0.43;
             }
         } else {
             this.relogioRaio -= d;
+            String pd = padrao(); emissao -= d;
+            if (pd.equals("ESPIRAL") && emissao <= 0) { emissao = .07; double a0 = this.tempo * 7; for (int k = 0; k < 2; k++) proj(this.x - 40, this.y, a0 + k * Math.PI, 210, TiroChefe.Movimento.RETO); }
+            if (pd.equals("RAJADA") && emissao <= 0) { emissao = .12; proj(this.x - 60, this.y, Math.atan2(n + 18 - this.y, 120 - (this.x - 60)) + (Math.random() - .5) * .12, 380, TiroChefe.Movimento.RETO); }
+            if (pd.equals("VARRE")) { this.raioAlvo = (int) Math.max(110, Math.min(540, this.raioAlvo + Math.signum(n + 18 - this.raioAlvo) * 140 * d)); }
             if (this.relogioRaio <= 0.0) {
                 this.disparando = false;
                 this.carga = Math.max(1.4, 3.2 - (double)this.setor * 0.13);
@@ -101,6 +125,9 @@ public final class MiniChefe {
             return false;
         }
         Rectangle rectangle2 = new Rectangle(0, this.raioAlvo - 12, Math.max(0, fimRaio()), 24);
+        boolean duplo = padrao().equals("RAIO2");
+        if (duplo) rectangle2 = new Rectangle(0, this.raioAlvo - 52, Math.max(0, fimRaio()), 24);
+        if (duplo && !rectangle2.intersects(rectangle)) rectangle2 = new Rectangle(0, this.raioAlvo + 28, Math.max(0, fimRaio()), 24);
         if (!rectangle2.intersects(rectangle)) {
             return false;
         }
@@ -116,9 +143,13 @@ public final class MiniChefe {
     }
     /** Raio em pixel art: blocos de 4 px, borda serrilhada que treme, nucleo claro; roxo no integrante. */
     private void desenharRaio(Graphics2D g) {
-        boolean roxo = AtlasInimigos.integrante(integrante) != null;
-        Color borda = roxo ? new Color(110, 30, 190) : new Color(150, 20, 30), meio = roxo ? new Color(190, 90, 255) : new Color(240, 60, 50),
-              claro = roxo ? new Color(235, 200, 255) : new Color(255, 200, 120);
+        Color c = corAtaque();
+        if (padrao().equals("RAIO2")) { int y0 = this.raioAlvo; this.raioAlvo = y0 - 40; desenharFeixe(g, c); this.raioAlvo = y0 + 40; desenharFeixe(g, c); this.raioAlvo = y0; }
+        else desenharFeixe(g, c);
+    }
+    private void desenharFeixe(Graphics2D g, Color c) {
+        Color borda = c != null ? c.darker().darker() : new Color(150, 20, 30), meio = c != null ? c : new Color(240, 60, 50),
+              claro = c != null ? new Color(Math.min(255, c.getRed() + 90), Math.min(255, c.getGreen() + 90), Math.min(255, c.getBlue() + 90)) : new Color(255, 200, 120);
         int fim = fimRaio(), y = this.raioAlvo; java.util.Random r = new java.util.Random((long) (this.tempo * 30));
         for (int px = 0; px < fim; px += 4) {
             int h = 9 + r.nextInt(3) * 2;

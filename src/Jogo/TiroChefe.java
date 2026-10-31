@@ -14,6 +14,9 @@ public final class TiroChefe {
     private double queda;
     private final boolean pesado;
     private final int estilo;
+    /** Cor dos projeteis genericos (ENERGIA e NOTA) dos integrantes. */
+    private Color cor = new Color(240, 80, 60);
+    TiroChefe comCor(Color c) { if (c != null) cor = c; return this; }
     private boolean visivel = true;
 
     public TiroChefe(double x, double y, double vx, double vy, boolean pesado) {
@@ -53,6 +56,8 @@ public final class TiroChefe {
             case RASTRO: desenharRastro(g, px, py); return;
             case ONDA_SOM: desenharOndaLemmy(g, px, py); return;
             case PRATO: desenharPrato(g, px, py); return;
+            case ENERGIA: desenharEnergia(g, px, py); return;
+            case NOTA: desenharNota(g, px, py); return;
             case AS_ESPADAS: desenharAs(g, px, py); return;
             case MORCEGO_OZZY: desenharMorcegoOzzy(g, px, py); return;
             case 1: desenharMorcego(g, px, py); return;
@@ -266,13 +271,23 @@ public final class TiroChefe {
     public Rectangle getBounds() {
         if (estilo == VAGAO) return new Rectangle((int) x - 70, (int) y - 26, 150, 52);
         if (estilo == ONDA_SOM) { int h = alturaOnda() * 3 / 4; return new Rectangle((int) x - 16, (int) y - h / 2, 32, h); }
-        int r = estilo == PRATO ? 14 : estilo == AS_ESPADAS ? 14 : estilo == MORCEGO_OZZY ? 13 : estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
+        int r = estilo == ENERGIA ? 9 : estilo == NOTA ? 9 : estilo == PRATO ? 14 : estilo == AS_ESPADAS ? 14 : estilo == MORCEGO_OZZY ? 13 : estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
         return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2);
     }
     public int dano() { return estilo == ONDA_SOM ? 1 : estilo == VAGAO ? 5 : estilo == FOGO_ROXO ? 3 : pesado ? 3 : 2; }
 
     // ---- Ozzy (Crazy Train e dragao) ----
-    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24, ONDA_SOM = 25, AS_ESPADAS = 26, MORCEGO_OZZY = 27, PRATO = 28;
+    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24, ONDA_SOM = 25, AS_ESPADAS = 26, MORCEGO_OZZY = 27, PRATO = 28, ENERGIA = 29, NOTA = 30;
+    private void desenharEnergia(Graphics2D g, int px, int py) {
+        double d = Math.atan2(vy, vx);
+        for (int k = 4; k >= 0; k--) { int tx = px - (int) (Math.cos(d) * k * 6), ty = py - (int) (Math.sin(d) * k * 6), r = 10 - k * 2; g.setColor(new Color(cor.getRed(), cor.getGreen(), cor.getBlue(), 230 - k * 40)); g.fillRect(tx - r, ty - r, r * 2, r * 2); }
+        g.setColor(Color.WHITE); g.fillRect(px - 3, py - 3, 6, 6);
+    }
+    private void desenharNota(Graphics2D g, int px, int py) {
+        int b = (int) (Math.sin(tempo * 12) * 2);
+        g.setColor(cor.darker()); g.fillOval(px - 9, py + 2 + b, 12, 9); g.fillRect(px + 1, py - 14 + b, 3, 18); g.fillRect(px + 1, py - 14 + b, 9, 4);
+        g.setColor(cor); g.fillOval(px - 8, py + 3 + b, 10, 7); g.fillRect(px + 2, py - 13 + b, 2, 16);
+    }
     /** Prato de bateria girando como serra, em pixel art: disco dourado com dentes. */
     private void desenharPrato(Graphics2D tela, int px, int py) {
         Graphics2D g = (Graphics2D) tela.create(); g.rotate(tempo * 18, px, py);

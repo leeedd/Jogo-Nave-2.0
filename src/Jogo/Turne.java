@@ -26,6 +26,25 @@ final class Turne {
         for (int s = 0; s < 8; s++) for (int p = 0; p < INTEGRANTES[s].length; p++) if (INTEGRANTES[s][p].equals(nome)) return INSTRUMENTOS[s].charAt(p);
         return 'C';
     }
+    /**
+     * Ataque proprio de cada integrante: PADRAO PROJETIL R G B (mesma ordem de INTEGRANTES).
+     * Padroes: RAIO, RAIO2 (dois feixes), VARRE (feixe que varre), LEQUE, LEQUE7, PAREDE (com buraco),
+     * CHUVA (de cima), ANEL, ESPIRAL, ZIGUE, RAJADA (metralhadora), CRUZ (de cima e de baixo).
+     * Projeteis: ENERGIA, NOTA, PRATO, ONDA, AS.
+     */
+    static final String[][] ATAQUES = {
+        {"ZIGUE ENERGIA 60 220 255", "ANEL ENERGIA 170 70 220"},
+        {"ESPIRAL ENERGIA 255 150 40", "LEQUE7 ENERGIA 255 80 40", "PAREDE ONDA 255 150 60", "CHUVA PRATO 255 200 80"},
+        {"RAJADA NOTA 70 140 255", "RAIO2 ENERGIA 80 230 255", "VARRE ENERGIA 120 240 255", "ESPIRAL NOTA 90 220 255", "ANEL PRATO 255 210 90"},
+        {"LEQUE AS 255 120 40", "RAJADA PRATO 255 120 30"},
+        {"RAIO ENERGIA 170 60 255", "LEQUE PRATO 255 210 90", "LEQUE ONDA 80 150 255"},
+        {"CRUZ ENERGIA 240 40 40", "PAREDE ENERGIA 220 30 30", "ZIGUE PRATO 230 60 50"},
+        {"RAJADA ENERGIA 80 240 110", "LEQUE7 NOTA 110 255 140", "ZIGUE ONDA 80 230 120"},
+        {"CHUVA ENERGIA 150 70 220", "RAJADA ONDA 150 90 255", "PAREDE PRATO 220 190 120", "ANEL ENERGIA 255 210 60"}};
+    static String[] ataque(String nome) {
+        for (int s = 0; s < 8; s++) for (int p = 0; p < INTEGRANTES[s].length; p++) if (INTEGRANTES[s][p].equals(nome)) return ATAQUES[s][p].split(" ");
+        return "RAIO ENERGIA 240 60 50".split(" ");
+    }
     static final String[] NOMES_RISCO = {"BAIXO", "MEDIO", "ALTO", "SEVERO", "EXTREMO"};
     static final Color[] CORES_RISCO = {new Color(90, 220, 110), new Color(240, 220, 80), new Color(255, 150, 50), new Color(240, 60, 60), new Color(190, 90, 255)};
 
