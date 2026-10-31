@@ -82,11 +82,12 @@ final class Poderes099 {
  }
  /** Espiral de 3 voltas em volta do alvo: a metade de tras (frente=false) fica atras do inimigo, a da frente por cima. */
  private void espiral(Graphics2D g,double tx,double ty,boolean frente){
-  double aperto=1-.1*Math.abs(Math.sin(tempo*5)),rx2=42*aperto,ry2=15;int passos=72;
+  // elipse mais alta que antes: a volta de tras aparece por cima e por baixo do corpo, entao le como enrolado
+  double aperto=1-.1*Math.abs(Math.sin(tempo*5)),rx2=34*aperto,ry2=21*aperto;int passos=90;
   for(int k=0;k<=passos;k++){double a2=-Math.PI/2+k*(3*2*Math.PI)/passos;boolean naFrente=Math.sin(a2)>0;if(naFrente!=frente)continue;
-   double ex=tx+Math.cos(a2)*rx2,ey=ty-24+k*48.0/passos+Math.sin(a2)*ry2;double w=15-k*5.0/passos;
+   double ex=tx+Math.cos(a2)*rx2,ey=ty-22+k*44.0/passos+Math.sin(a2)*ry2;double w=(frente?15:12)-k*4.0/passos;
    LulaVisual.elo(g,ex,ey,a2+Math.PI/2,w);
-   if(!frente){g.setColor(new Color(10,0,20,120));g.fillOval((int)(ex-w/2),(int)(ey-w/2),(int)w,(int)w);}}
+   if(!frente){g.setColor(new Color(10,0,20,150));g.fillOval((int)(ex-w/2),(int)(ey-w/2),(int)w,(int)w);}}
  }
  /** Desenhado antes dos inimigos: as voltas que passam por tras do corpo agarrado. */
  void desenharAtras(Graphics2D g){
