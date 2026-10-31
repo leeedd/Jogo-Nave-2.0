@@ -15,6 +15,9 @@ final class MapaEstelar {
  private static final double MIN_ZOOM=.025,MAX_ZOOM=160;
  private static final BufferedImage GALAXIA=criarGalaxia();
  private static final BufferedImage[][] PLANETAS=criarPlanetas();
+ /** Estrela de cada sistema em pixel art (mapa_estrela_0..7.png); sem a arte, fica a bolinha antiga. */
+ private static final BufferedImage[] ESTRELAS=new BufferedImage[8];
+ static{for(int i=0;i<8;i++){java.net.URL u=MapaEstelar.class.getResource("/ImagemIcon/mapa_estrela_"+i+".png");if(u!=null)try{ESTRELAS[i]=javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){}}}
  private double cameraX,cameraY,zoom=.19,alvoX,alvoY,alvoZoom=.19;
  private double tempo,viagem;
  private int atual,selecionado,planeta=-1;
@@ -204,8 +207,13 @@ final class MapaEstelar {
   }
   if(x<0||x>740||y<60||y>540)return;
   int r=Math.max(3,(int)Math.min(18,zoom*1.2));
+  if(ESTRELAS[i]!=null){
+   // estrela pulsando devagar, cada uma no seu ritmo
+   int t=(int)(Math.max(22,r*5)*(1+.05*Math.sin(tempo*2+i)));
+   Graphics2D e=(Graphics2D)g.create();e.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);e.drawImage(ESTRELAS[i],x-t/2,y-t/2,t,t,null);e.dispose();
+  }else{
   for(int k=3;k>0;k--){g.setColor(new Color(CORES[i].getRed(),CORES[i].getGreen(),CORES[i].getBlue(),35));g.fillOval(x-r*k,y-r*k,r*k*2,r*k*2);}
-  g.setColor(CORES[i]);g.fillOval(x-r,y-r,2*r,2*r);g.setColor(Color.WHITE);g.fillOval(x-r/3,y-r/3,Math.max(2,r*2/3),Math.max(2,r*2/3));
+  g.setColor(CORES[i]);g.fillOval(x-r,y-r,2*r,2*r);g.setColor(Color.WHITE);g.fillOval(x-r/3,y-r/3,Math.max(2,r*2/3),Math.max(2,r*2/3));}
   if(i==selecionado&&planeta<0){g.setColor(new Color(255,199,111));g.drawOval(x-r-5,y-r-5,r*2+10,r*2+10);}
   if(escolha&&vencido(i)){g.setColor(new Color(110,230,120));g.setStroke(new BasicStroke(3));g.drawLine(x-r-2,y,x-2,y+r);g.drawLine(x-2,y+r,x+r+4,y-r-2);g.setStroke(new BasicStroke(1));}
   if(zoom>.09)texto(g,(i+1)+" / "+(escolha?CHEFES[i]:NOMES[i]),x+10+r,y+16,11,escolha?(vencido(i)?new Color(110,130,120):Color.WHITE):i<=atual?Color.WHITE:new Color(153,166,190));
@@ -213,6 +221,7 @@ final class MapaEstelar {
  private void desenharPainel(Graphics2D g){
   g.setColor(new Color(9,16,29));g.fillRect(736,82,208,440);
   texto(g,"SISTEMA SELECIONADO",748,109,11,new Color(131,158,180));
+  if(ESTRELAS[selecionado]!=null&&planeta<0)g.drawImage(ESTRELAS[selecionado],884,88,52,52,null);
   texto(g,NOMES[selecionado],748,137,19,CORES[selecionado]);
   texto(g,"SETOR "+(selecionado+1)+" / 8",748,159,12,Color.WHITE);
   if(escolha){
