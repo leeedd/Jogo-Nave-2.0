@@ -1565,23 +1565,44 @@ implements ActionListener {
             this.mostrarAviso("ESCUDO ATIVADO!");
         }
         if (this.etapa == Etapa.COMBATE) {
+            for (Asteroide est : this.asteroides) {
+                if (!est.isVisible() || !est.estilhaco()) continue;
+                for (Alien al : this.alien) {
+                    if (!al.isVisible() || !est.getBounds().intersects(al.getBounds())) continue;
+                    SomJogo.tocar(SomJogo.Efeito.IMPACTO); gerarParticulas(al.getX() + 20, al.getY() + 20, 8);
+                    if (al.receberImpacto(0, est.danoEstilhaco())) { eliminarAlien(al, false); premiar(40); }
+                    est.ricochetear();
+                    break;
+                }
+                if (miniChefe != null && est.isVisible() && est.getBounds().intersects(miniChefe.getBounds())) {
+                    SomJogo.tocar(SomJogo.Efeito.IMPACTO); if (miniChefe.receberImpacto(est.getBounds(), est.danoEstilhaco())) derrotarMiniChefe();
+                    est.ricochetear();
+                }
+            }
             block4: for (Asteroide asteroide : this.asteroides) {
                 if (!asteroide.isVisible()) continue;
-                if (rectangle.intersects(asteroide.getBounds())) {
+                if (!asteroide.estilhaco() && rectangle.intersects(asteroide.getBounds())) {
                     asteroide.setVisible(false);
                     this.processarDano(this.dificuldade.ajustarDano(asteroide.danoColisao()), null);
                     if (!this.emJogo) {
                         return;
                     }
                 }
+                if (asteroide.estilhaco()) continue; // o tiro passa pelos estilhacos
                 for (Missel missel : this.nave.getMisseis()) {
                     if (!missel.isVisible() || !missel.getBounds().intersects(asteroide.getBounds())) continue;
                     if (asteroide.receberTiro()) {
                         premiar(50);
                         if(asteroide.temSuprimento())itens.add(new Item(Item.Tipo.REPARO,asteroide.getX(),asteroide.getY(),false));
                         if(asteroide.temMinerio())itens.add(new Item(Item.Tipo.MINERIO,asteroide.getX(),asteroide.getY(),false));
-                        if(asteroide.gigante()){premiar(200);for(int k=0;k<3;k++)fragmentos.add(new Asteroide(asteroide.getX()+aleatorio.nextInt(40)-20,asteroide.getY()+(k-1)*38,18+aleatorio.nextInt(8),k==1&&aleatorio.nextBoolean()?Asteroide.MINERIO:aleatorio.nextInt(7)));
-                            this.explosoes.add(new ExplosaoCurta(asteroide.getX(), asteroide.getY(), 30));}
+                        if(!asteroide.estilhaco()){
+                            // estilhacos voam para longe do piloto, em leque, e ricocheteiam nos inimigos
+                            boolean g=asteroide.gigante();int pedacos=g?4:2;double forca=g?420:330;
+                            for(int k=0;k<pedacos;k++){double ang=(k-(pedacos-1)/2.0)*(g?.45:.6)+(aleatorio.nextDouble()-.5)*.2;
+                                int var=aleatorio.nextInt(7);
+                                fragmentos.add(new Asteroide(asteroide.getX(),asteroide.getY(),g?16+aleatorio.nextInt(8):9+aleatorio.nextInt(4),var).lancar(Math.cos(ang)*forca,Math.sin(ang)*forca));}
+                            if(g&&aleatorio.nextBoolean())itens.add(new Item(Item.Tipo.MINERIO,asteroide.getX(),asteroide.getY(),false));
+                            if(g){premiar(200);this.explosoes.add(new ExplosaoCurta(asteroide.getX(), asteroide.getY(), 30));}}
                         this.explosoes.add(new ExplosaoCurta(asteroide.getX(), asteroide.getY(), 14));
                         this.gerarParticulas(asteroide.getX(), asteroide.getY(), 18);
                     }

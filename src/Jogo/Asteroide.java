@@ -17,6 +17,14 @@ public final class Asteroide {
     private final int raio, variante;
     private int vida;
     private boolean visivel = true;
+    /** Estilhaco arremessado: voa com velocidade propria, ricocheteia no teto e no chao e fere inimigos. */
+    private double vx, vy; private boolean estilhaco; private int ricochetes = 2;
+    Asteroide lancar(double vx, double vy) { this.vx = vx; this.vy = vy; estilhaco = true; vida = 1; return this; }
+    boolean estilhaco() { return estilhaco; }
+    /** Bateu num inimigo: quica de volta e gasta um ricochete; sem ricochetes, se desfaz. */
+    boolean ricochetear() { vx = -vx * .7; vy = -vy * .7 + (vy >= 0 ? -60 : 60); if (--ricochetes <= 0) visivel = false; return visivel; }
+    /** Dano que o estilhaco causa no inimigo. */
+    int danoEstilhaco() { return 2 + raio / 9; }
 
     public Asteroide(int x, int y, int raio, int variante) {
         this.x = x; this.y = y; this.raio = raio; this.variante = variante;
@@ -24,6 +32,12 @@ public final class Asteroide {
     }
     public void mexer(double dt) {
         tempo += dt;
+        if (estilhaco) {
+            x += vx * dt; y += vy * dt; vx *= Math.pow(.6, dt);
+            if (y < 92 + raio || y > 560 - raio) { vy = -vy; y = Math.max(92 + raio, Math.min(560 - raio, y)); }
+            if (x > 1000 || x < -raio * 2 || Math.abs(vx) + Math.abs(vy) < 40) visivel = false;
+            return;
+        }
         x -= (gigante() ? 26 : 39 + raio * .25) * dt;
         y += Math.sin(tempo * 1.3 + variante) * 4 * dt;
         if (x < -raio * 2) visivel = false;

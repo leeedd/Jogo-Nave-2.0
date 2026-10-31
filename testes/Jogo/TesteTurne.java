@@ -3,7 +3,7 @@ import java.lang.reflect.Method;
 /** Turne ao contrario: planetas por banda, integrante por planeta, risco e chefe no ultimo planeta. */
 public class TesteTurne{static void ok(boolean b,String m){if(!b)throw new AssertionError(m);System.out.println("ok "+m);}
  static Object call(Object o,String n)throws Exception{Method m=o.getClass().getDeclaredMethod(n);m.setAccessible(true);return m.invoke(o);}
- public static void main(String[] a)throws Exception{
+ @SuppressWarnings("unchecked") public static void main(String[] a)throws Exception{
   int[] esperado={3,5,6,3,4,4,4,5};for(int s=0;s<8;s++)ok(Turne.planetas(s)==esperado[s],"setor "+(s+1)+" tem "+esperado[s]+" planetas");
   ok("KIRK HAMMETT".equals(Turne.integrante(4,0))&&"ROBERT TRUJILLO".equals(Turne.integrante(4,2)),"Metallica: Kirk primeiro, Trujillo por ultimo");
   for(int s=0;s<8;s++){int ant=-1;for(int p=0;p<Turne.planetas(s);p++){ok(Turne.risco(s,p)>=ant,"risco nao cai no setor "+(s+1)+" planeta "+(p+1));ant=Turne.risco(s,p);}
@@ -28,6 +28,13 @@ public class TesteTurne{static void ok(boolean b,String m){if(!b)throw new Asser
   Asteroide m=new Asteroide(500,300,24,Asteroide.MINERIO);int tiros=0;while(!m.receberTiro())tiros++;ok(tiros>=2,"meteoro de minerio e mais duro");
   Asteroide gig=new Asteroide(500,300,70,1);ok(gig.gigante()&&gig.danoColisao()==3,"meteoro gigante bate forte");int tg=0;while(!gig.receberTiro())tg++;ok(tg>=8,"gigante aguenta muito tiro ("+(tg+1)+")");
   boolean viuGigante=false;for(int i=0;i<60*60&&!viuGigante;i++){c.getNave().tornarIntangivel(1);c.getNave().teleportar(20,90);c.atualizarSimulacao(1/60.0);for(Object o:ast)if(((Asteroide)o).gigante())viuGigante=true;}ok(viuGigante,"campo traz meteoro gigante");
+  // estilhaco ricocheteia: atinge o inimigo, quica e nao fere o piloto
+  Fase e=TesteInvasao093.fase(58);TesteInvasao093.set(e,"partidaTeste",true);e.getAliens().clear();TesteInvasao093.set(e,"esperaProximoEsquadrao",999.0);
+  Alien alvoE=new Alien(600,300,Alien.Tipo.PIRATA,Alien.Classe.TANQUE);TesteInvasao093.set(alvoE,"x",600.0);TesteInvasao093.set(alvoE,"y",300.0);TesteInvasao093.set(alvoE,"esperaEntrada",0.0);e.getAliens().add(alvoE);int r0=alvoE.getResistencia();
+  Asteroide est=new Asteroide(620,325,12,1).lancar(300,0);((java.util.List<Asteroide>)TesteInvasao093.get(e,"asteroides")).add(est);
+e.getNave().teleportar(100,480);Asteroide perto=new Asteroide(120,495,12,1).lancar(300,0);((java.util.List<Asteroide>)TesteInvasao093.get(e,"asteroides")).add(perto);int vida0=e.getNave().getVida();e.checarColisoes();
+  ok(alvoE.getResistencia()<r0||!alvoE.isVisible(),"estilhaco fere o inimigo");ok(e.getNave().getVida()==vida0,"estilhaco nao fere o piloto");
+  Asteroide q=new Asteroide(500,100,10,1).lancar(200,-300);for(int i=0;i<30;i++)q.mexer(1/60.0);ok(q.getY()>=92,"estilhaco ricocheteia no teto");
   Contrato g=new Contrato(Contrato.Tipo.MINERACAO,2,1,1,-1,"GARIMPO");g.minerio();ok(!g.cumprido,"falta minerio");g.minerio();ok(g.cumprido,"garimpo cumprido");
   ok(Contrato.ofertas(4,4,false,new java.util.Random(1),true).stream().anyMatch(x->x.tipo==Contrato.Tipo.MINERACAO),"quadro oferece garimpo com campo a frente");
   System.out.println("OK turne");}}
