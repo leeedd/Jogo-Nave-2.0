@@ -13,6 +13,9 @@ final class Pecas {
     final int dano, casco, defesa;
     final double recarga, velocidade, truqueRecarga, truqueDuracao, capsulas;
     final boolean ima, scanner;
+    /** Multiplicador do tempo em que a nave fica travada carregando o Laser de Convergencia. */
+    double cargaLaser = 1;
+    private Pecas laser(double m) { cargaLaser = m; return this; }
 
     private Pecas(int id, int encaixe, int nave, int preco, String nome, String bom, String ruim,
                   int dano, int casco, int defesa, double recarga, double velocidade,
@@ -33,6 +36,8 @@ final class Pecas {
         new Pecas(6, MODULO, -1, 600, "IMA DE CAPSULAS", "Atrai capsulas de energia", "Nenhum", 0, 0, 0, 1, 1, 1, 1, 1, true, false),
         new Pecas(7, MODULO, -1, 600, "SCANNER DE SEGREDOS", "Revela cofres e nucleos", "Nenhum", 0, 0, 0, 1, 1, 1, 1, 1, false, true),
         new Pecas(8, MODULO, -1, 900, "BATERIA DE PODER", "Capsulas rendem 50% mais", "-1 casco", 0, -1, 0, 1, 1, 1, 1, 1.5, false, false),
+        new Pecas(14, MOTOR, -1, 4000, "MOTOR DE CONVERGENCIA", "Laser carrega 35% mais rapido", "Nave 6% mais lenta", 0, 0, 0, 1, .94, 1, 1, 1, false, false).laser(.65),
+        new Pecas(15, MOTOR, -1, 9000, "NUCLEO DE PLASMA", "Laser carrega 65% mais rapido", "-2 casco, tiro 10% mais lento", 0, -2, 0, 1.10, 1, 1, 1, 1, false, false).laser(.35),
         new Pecas(9, MOTOR, 0, 1200, "TURBINAS GEMEAS", "Impulso recarrega 40% antes", "Nave 4% mais lenta", 0, 0, 0, 1, .96, .6, 1, 1, false, false),
         new Pecas(10, BLINDAGEM, 1, 1200, "ASAS FANTASMA", "Camuflagem dura o dobro", "-1 casco", 0, -1, 0, 1, 1, 1, 2, 1, false, false),
         new Pecas(11, MODULO, 2, 1200, "HALO DA VALQUIRIA", "Escudo recarrega 40% antes", "Tiro 5% mais lento", 0, 0, 0, 1.05, 1, .6, 1, 1, false, false),
@@ -41,13 +46,13 @@ final class Pecas {
     };
 
     /** Icone da peca: pecas_icones.png (grade 7x2, na ordem do catalogo) ou peca_N.png avulso. */
-    private static final java.awt.image.BufferedImage[] ICONES = new java.awt.image.BufferedImage[14];
+    private static final java.awt.image.BufferedImage[] ICONES = new java.awt.image.BufferedImage[16];
     static {
         java.awt.image.BufferedImage folha = ler("pecas_icones.png");
         for (int i = 0; i < ICONES.length; i++) {
             java.awt.image.BufferedImage avulso = ler("peca_" + i + ".png");
             if (avulso != null) ICONES[i] = avulso;
-            else if (folha != null) { int cw = folha.getWidth() / 7, ch = folha.getHeight() / 2; ICONES[i] = folha.getSubimage(i % 7 * cw, i / 7 * ch, cw, ch); }
+            else if (folha != null && i < 14) { int cw = folha.getWidth() / 7, ch = folha.getHeight() / 2; ICONES[i] = folha.getSubimage(i % 7 * cw, i / 7 * ch, cw, ch); }
         }
     }
     private static java.awt.image.BufferedImage ler(String n) { java.net.URL u = Pecas.class.getResource("/ImagemIcon/" + n); if (u == null) return null; try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; } }
@@ -59,7 +64,7 @@ final class Pecas {
         a.drawImage(ICONES[id], x, y, lado, lado, null); a.dispose();
     }
 
-    static Pecas obter(int id) { return id >= 0 && id < TODAS.length ? TODAS[id] : null; }
+    static Pecas obter(int id) { for (Pecas p : TODAS) if (p.id == id) return p; return null; }
     boolean serveEm(int modelo) { return nave < 0 || nave == modelo; }
 
     /** Pecas de um encaixe que a nave pode usar, gerais primeiro e exclusivas depois. */

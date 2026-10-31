@@ -29,12 +29,13 @@ public class Nave {
     private int danoPeca, cascoPeca, defesaPeca; private double recargaPeca = 1, velocidadePeca = 1, truqueRecPeca = 1, truqueDurPeca = 1, capsulasPeca = 1; private boolean ima, scanner;
     void aplicarEquipamento(int[] ids) {
         int antes = getVidaMaxima();
-        danoPeca = cascoPeca = defesaPeca = 0; recargaPeca = velocidadePeca = truqueRecPeca = truqueDurPeca = capsulasPeca = 1; ima = scanner = false;
+        danoPeca = cascoPeca = defesaPeca = 0; tempoCargaLaser = 1; recargaPeca = velocidadePeca = truqueRecPeca = truqueDurPeca = capsulasPeca = 1; ima = scanner = false;
         for (int id : ids) { Pecas p = Pecas.obter(id); if (p == null || !p.serveEm(modeloVisual)) continue;
             danoPeca += p.dano; cascoPeca += p.casco; defesaPeca += p.defesa; recargaPeca *= p.recarga; velocidadePeca *= p.velocidade;
-            truqueRecPeca *= p.truqueRecarga; truqueDurPeca *= p.truqueDuracao; capsulasPeca *= p.capsulas; ima |= p.ima; scanner |= p.scanner; }
+            tempoCargaLaser *= p.cargaLaser; truqueRecPeca *= p.truqueRecarga; truqueDurPeca *= p.truqueDuracao; capsulasPeca *= p.capsulas; ima |= p.ima; scanner |= p.scanner; }
         vida = Math.max(1, Math.min(getVidaMaxima(), vida + getVidaMaxima() - antes));
     }
+    double tempoCargaLaser = 1;
     boolean temIma() { return ima; } boolean temScanner() { return scanner; } double bonusCapsulas() { return capsulasPeca; }
     /** Cada Nucleo de Casco encontrado aumenta o casco maximo em 2; o novo casco entra cheio. */
     void aplicarNucleos(int n){int antes=getVidaMaxima();nucleosCasco=Math.max(0,Math.min(8,n));vida=Math.max(1,Math.min(getVidaMaxima(),vida+getVidaMaxima()-antes));}
@@ -100,6 +101,7 @@ public class Nave {
 
     public void mexer(double d) {
         impulso=Math.max(0,impulso-d);truqueRecarga=Math.max(0,truqueRecarga-d);truqueAtivo=Math.max(0,truqueAtivo-d);
+        if (travada) soltarTeclas();
         int n = (this.direita ? 1 : 0) - (this.esquerda ? 1 : 0);
         int n2 = (this.baixo ? 1 : 0) - (this.cima ? 1 : 0);
         double d2 = n != 0 && n2 != 0 ? 0.7071068 : 1.0;
@@ -127,7 +129,12 @@ public class Nave {
         return Math.max(d2, Math.min(d3, d));
     }
 
+    /** Travada carregando o Laser de Convergencia: nao se move nem atira. */
+    private boolean travada;
+    void travar(boolean t) { travada = t; if (t) soltarTeclas(); }
+    boolean travada() { return travada; }
     public void atira() {
+        if (travada) return;
         if (this.recarga > 0.0) {
             return;
         }

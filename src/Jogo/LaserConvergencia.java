@@ -24,6 +24,23 @@ final class LaserConvergencia {
     private final double[][] alvos;
     LaserConvergencia(int tipo, int vaporizados, double[][] alvos) { this.tipo = tipo; this.vaporizados = vaporizados; this.alvos = alvos; }
     void atualizar(double dt) { tempo += dt; }
+
+    /** Carga: particulas convergindo para o nariz da nave e um anel que fecha conforme o progresso (0..1). */
+    static void desenharCarga(Graphics2D original, int naveX, int naveY, double p, int tipo, double t) {
+        Graphics2D g = (Graphics2D) original.create();
+        Color cor = tipo < 0 ? new Color(190, 90, 255) : Poderes099.CORES_SIMBOLO[tipo];
+        int cx = naveX + 46, cy = naveY + 20;
+        for (int k = 0; k < 24; k++) {
+            double an = k * 2.399 + t * 3, dist = (1 - ((t * 1.8 + k * .07) % 1)) * 120 * (1 - p * .5);
+            g.setColor(c(cor.getRed(), cor.getGreen(), cor.getBlue(), .4 + .6 * p)); g.fillRect(cx + (int) (Math.cos(an) * dist), cy + (int) (Math.sin(an) * dist), 4, 4);
+        }
+        int r = (int) (6 + 26 * p + Math.sin(t * 30) * 2);
+        g.setColor(c(cor.getRed(), cor.getGreen(), cor.getBlue(), .5 + .4 * p)); g.fillOval(cx - r, cy - r, r * 2, r * 2);
+        g.setColor(c(255, 255, 255, .6 + .4 * p)); g.fillOval(cx - r / 2, cy - r / 2, r, r);
+        g.setStroke(new BasicStroke(3)); g.setColor(c(255, 230, 140, 1)); g.drawArc(naveX - 14, naveY - 22, 72, 84, 90, -(int) (360 * p));
+        g.setStroke(new BasicStroke(1)); g.setColor(c(40, 50, 70, .8)); g.drawOval(naveX - 14, naveY - 22, 72, 84);
+        g.dispose();
+    }
     boolean ativo() { return tempo < DURACAO; }
 
     private static Color c(int r, int g, int b, double a) { return new Color(r, g, b, (int) Math.max(0, Math.min(255, a * 255))); }

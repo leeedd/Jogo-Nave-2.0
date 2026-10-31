@@ -168,13 +168,28 @@ implements ActionListener {
     private double recargaFusao;
     private LaserConvergencia laser;
     /** Laser de Convergencia (V): funde gelo e fogo e vaporiza todo inimigo comum na tela; chefes levam um golpe pesado. */
+    /** Carga do laser: a nave fica travada ate disparar. Motores de convergencia encurtam o tempo. */
+    static final double CARGA_LASER = 2.0;
+    private double cargaLaser, cargaLaserTotal; private int tipoCarga = -1;
     private boolean ativarFusao(){
-        if(!emJogo||pausado||!(etapa==Etapa.COMBATE||etapa==Etapa.BATALHA_CHEFE)||recargaFusao>0)return false;
+        if(!emJogo||pausado||!(etapa==Etapa.COMBATE||etapa==Etapa.BATALHA_CHEFE)||recargaFusao>0||cargaLaser>0)return false;
         if(!inventario.reator()||!geloColetado||!fogoColetado||energia.carga(0)<40||energia.carga(1)<40){SomJogo.tocar(SomJogo.Efeito.ERRO);return false;}
-        SomJogo.tocar(SomJogo.Efeito.FUSAO);SomJogo.tocar(SomJogo.Efeito.LASER);energia.gastar(0,40);energia.gastar(1,40);recargaFusao=30;
-        // Fusao com o poder de chefe equipado (se houver energia para ele): muda o disparo, como no Mega Man X.
-        int sel=poderes.selecionado,tipo=inventario.temChaveIndice(sel)&&poderes.energia[sel]>=Poderes099.CUSTO[sel]?sel:-1;
-        if(tipo>=0)poderes.energia[sel]-=Poderes099.CUSTO[sel];
+        energia.gastar(0,40);energia.gastar(1,40);recargaFusao=30;
+        int sel=poderes.selecionado;tipoCarga=inventario.temChaveIndice(sel)&&poderes.energia[sel]>=Poderes099.CUSTO[sel]?sel:-1;
+        if(tipoCarga>=0)poderes.energia[sel]-=Poderes099.CUSTO[sel];
+        cargaLaserTotal=cargaLaser=CARGA_LASER*nave.tempoCargaLaser;nave.travar(true);espacoPressionado=geloPressionado=fogoPressionado=false;
+        SomJogo.tocar(SomJogo.Efeito.ENERGIA);mostrarAviso("CARREGANDO "+(tipoCarga<0?"LASER":LaserConvergencia.NOMES[tipoCarga])+"... NAVE TRAVADA");
+        return true;
+    }
+    private void atualizarCargaLaser(double d){
+        if(cargaLaser<=0)return;
+        if(!emJogo){cargaLaser=0;nave.travar(false);return;}
+        cargaLaser=Math.max(0,cargaLaser-d);nave.travar(true);
+        if(cargaLaser==0){nave.travar(false);dispararLaser();}
+    }
+    private void dispararLaser(){
+        SomJogo.tocar(SomJogo.Efeito.FUSAO);SomJogo.tocar(SomJogo.Efeito.LASER);
+        int tipo=tipoCarga;
         int vaporizados=0;java.util.List<double[]> pontos=new java.util.ArrayList<>();
         for(Alien a:alien)if(a.isVisible()&&a.getX()>-40&&a.getX()<Config.LARGURA){Rectangle r=a.getBounds();pontos.add(new double[]{r.getCenterX(),r.getCenterY()});gerarParticulas((int)r.getCenterX(),(int)r.getCenterY(),14);eliminarAlien(a,true);vaporizados++;}
         premiar(vaporizados*(tipo>=0?350:250)); // bonus de vaporizacao; maior na fusao
@@ -189,7 +204,6 @@ implements ActionListener {
         if(tipo==7)nave.curar(3);
         laser=new LaserConvergencia(tipo,vaporizados,pontos.toArray(new double[0][]));
         mostrarAviso((tipo<0?"LASER DE CONVERGENCIA":"FUSAO: "+LaserConvergencia.NOMES[tipo])+(vaporizados>0?"! "+vaporizados+" VAPORIZADOS":""));
-        return true;
     }
     private void aplicarInventario(){
         nave.aplicarBlindagem(inventario.blindagem());
@@ -767,6 +781,7 @@ implements ActionListener {
         }
         if(efeitoFusao!=null)efeitoFusao.desenhar(graphics2D2);
         if(laser!=null)laser.desenhar(graphics2D2,nave.getX(),nave.getY());
+        if(cargaLaser>0)LaserConvergencia.desenharCarga(graphics2D2,nave.getX(),nave.getY(),1-cargaLaser/cargaLaserTotal,tipoCarga,tempoTotal);
         poderes.desenhar(graphics2D2);
         if(cenaDerrota!=null)cenaDerrota.desenhar(graphics2D2);
         this.desenharParticulas(graphics2D2);
@@ -1112,6 +1127,7 @@ implements ActionListener {
         atualizarPoderes(d);
         if(efeitoFusao!=null){efeitoFusao.atualizar(d);if(!efeitoFusao.ativa())efeitoFusao=null;}
         if(laser!=null){laser.atualizar(d);if(!laser.ativo())laser=null;}
+        atualizarCargaLaser(d);
         atualizarSegredo(d);
         this.recargaElemental = Math.max(0.0, this.recargaElemental - d);energia.esfriar(d);
         if(emJogo&&(etapa==Etapa.COMBATE||etapa==Etapa.BATALHA_CHEFE)&&recargaElemental<=0){
@@ -1939,6 +1955,7 @@ implements ActionListener {
         this.tempoOndaEscudo = 0.0;
         this.chefe = null;
         this.cenaFinal = null;
+        cargaLaser = 0; nave.travar(false);
         this.chefesDerrotados = 0; setorAtual = 0; setoresVencidos = 0; escolhendoSetor = false;
         this.oculosOzzyColetados = false;
         this.emblemaHalfordColetado = false;
