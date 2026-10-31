@@ -166,17 +166,23 @@ implements ActionListener {
     private boolean oficinaAberta;
     private Fusao098 efeitoFusao;
     private double recargaFusao;
+    private LaserConvergencia laser;
+    /** Laser de Convergencia (V): funde gelo e fogo e vaporiza todo inimigo comum na tela; chefes levam um golpe pesado. */
     private boolean ativarFusao(){
         if(!emJogo||pausado||!(etapa==Etapa.COMBATE||etapa==Etapa.BATALHA_CHEFE)||recargaFusao>0)return false;
-        if(!inventario.retencao()||!inventario.reator()||!geloColetado||!fogoColetado||energia.carga(0)<40||energia.carga(1)<40){mostrarAviso("FUSAO: REATOR + RETENCAO + GELO E FOGO 40%");return false;}
-        SomJogo.tocar(SomJogo.Efeito.FUSAO);energia.gastar(0,40);energia.gastar(1,40);recargaFusao=30;
-        efeitoFusao=new Fusao098(0,nave.getX()+25,nave.getY()+18);
-        for(Alien a:alien)if(a.isVisible()&&efeitoFusao.alcanca(a.getBounds())){a.incendiarPor(3);if(a.receberImpacto(0,14))eliminarAlien(a,true);}
-        for(ProjetilInimigo t:tirosInimigos)if(t.isVisible()&&efeitoFusao.alcanca(t.getBounds()))t.setVisible(false);
-        for(TiroChefe t:tirosChefes)if(t.isVisible()&&efeitoFusao.alcanca(t.getBounds()))t.setVisible(false);
-        if(miniChefe!=null&&efeitoFusao.alcanca(miniChefe.getBounds())&&miniChefe.receberDano(14))derrotarMiniChefe();
-        if(chefe!=null&&efeitoFusao.alcanca(chefe.getBounds())&&chefe.receberDano(14))derrotarChefao();
-        mostrarAviso("CHOQUE TERMICO!");return true;
+        if(!inventario.reator()||!geloColetado||!fogoColetado||energia.carga(0)<40||energia.carga(1)<40){SomJogo.tocar(SomJogo.Efeito.ERRO);return false;}
+        SomJogo.tocar(SomJogo.Efeito.FUSAO);SomJogo.tocar(SomJogo.Efeito.LASER);energia.gastar(0,40);energia.gastar(1,40);recargaFusao=30;
+        int vaporizados=0;
+        for(Alien a:alien)if(a.isVisible()&&a.getX()>-40&&a.getX()<Config.LARGURA){Rectangle r=a.getBounds();gerarParticulas((int)r.getCenterX(),(int)r.getCenterY(),14);eliminarAlien(a,true);vaporizados++;}
+        premiar(vaporizados*250); // bonus de vaporizacao, alem dos pontos normais de cada inimigo
+        for(ProjetilInimigo t:tirosInimigos)t.setVisible(false);
+        for(TiroChefe t:tirosChefes)t.setVisible(false);
+        for(Asteroide r:asteroides)r.setVisible(false);
+        if(miniChefe!=null&&miniChefe.receberDano(40))derrotarMiniChefe();
+        if(chefe!=null&&chefe.receberDano(40))derrotarChefao();
+        laser=new LaserConvergencia(nave.getY(),vaporizados);
+        if(vaporizados>0)mostrarAviso("LASER DE CONVERGENCIA! "+vaporizados+" VAPORIZADOS +"+vaporizados*250);
+        return true;
     }
     private void aplicarInventario(){
         nave.aplicarBlindagem(inventario.blindagem());
@@ -184,7 +190,8 @@ implements ActionListener {
         nave.aplicarEquipamento(inventario.equipamento(nave.getModeloVisual()));
         int m=nave.getModeloVisual();
         nave.aplicarPecas(inventario.peca(m,0),inventario.peca(m,1),inventario.peca(m,2));
-        if(inventario.retencao()){geloColetado=inventario.gelo()>0;fogoColetado=inventario.fogo()>0;}
+        // armas especiais compradas vem instaladas; sem o amuleto, um golpe pode faze-las cair e o inimigo captura
+        if(inventario.gelo()>0)geloColetado=true;if(inventario.fogo()>0)fogoColetado=true;
     }
     private void usarPoderDoChefe(){
         if(etapa!=Etapa.COMBATE && etapa!=Etapa.BATALHA_CHEFE)return;
@@ -751,6 +758,7 @@ implements ActionListener {
             }
         }
         if(efeitoFusao!=null)efeitoFusao.desenhar(graphics2D2);
+        if(laser!=null)laser.desenhar(graphics2D2,nave.getX(),nave.getY());
         poderes.desenhar(graphics2D2);
         if(cenaDerrota!=null)cenaDerrota.desenhar(graphics2D2);
         this.desenharParticulas(graphics2D2);
@@ -1089,6 +1097,7 @@ implements ActionListener {
         recargaFusao=Math.max(0,recargaFusao-d);
         atualizarPoderes(d);
         if(efeitoFusao!=null){efeitoFusao.atualizar(d);if(!efeitoFusao.ativa())efeitoFusao=null;}
+        if(laser!=null){laser.atualizar(d);if(!laser.ativo())laser=null;}
         atualizarSegredo(d);
         this.recargaElemental = Math.max(0.0, this.recargaElemental - d);
         if(emJogo&&(etapa==Etapa.COMBATE||etapa==Etapa.BATALHA_CHEFE)&&recargaElemental<=0){
@@ -2343,8 +2352,8 @@ implements ActionListener {
                 if(codigo==KeyEvent.VK_M){voltarAoMenuInicial();return;}
                 if(codigo==KeyEvent.VK_TAB){if(teclasTeste.add(codigo)){abaPausa=(abaPausa+1)%6;cursorPausa=0;}repaint();return;}
                 if(codigo>=KeyEvent.VK_1&&codigo<=KeyEvent.VK_6){abaPausa=codigo-KeyEvent.VK_1;cursorPausa=0;repaint();return;}
-                if(abaPausa==4&&(codigo==KeyEvent.VK_LEFT||codigo==KeyEvent.VK_RIGHT)){if(teclasTeste.add(codigo)){Pausa099.encaixeMercado=Math.floorMod(Pausa099.encaixeMercado+(codigo==KeyEvent.VK_LEFT?-1:1),4);cursorPausa=0;SomJogo.tocar(SomJogo.Efeito.MENU);}repaint();return;}
-                int total=abaPausa==4?Math.max(1,Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual()).size()):abaPausa==0||abaPausa==2?8:4;
+                if(abaPausa==4&&(codigo==KeyEvent.VK_LEFT||codigo==KeyEvent.VK_RIGHT)){if(teclasTeste.add(codigo)){Pausa099.encaixeMercado=Math.floorMod(Pausa099.encaixeMercado+(codigo==KeyEvent.VK_LEFT?-1:1),5);cursorPausa=0;SomJogo.tocar(SomJogo.Efeito.MENU);}repaint();return;}
+                int total=abaPausa==4?(Pausa099.encaixeMercado==4?4:Math.max(1,Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual()).size())):abaPausa==0||abaPausa==2?8:4;
                 if(codigo==KeyEvent.VK_UP||codigo==KeyEvent.VK_LEFT)cursorPausa=(cursorPausa+total-1)%total;
                 if(codigo==KeyEvent.VK_DOWN||codigo==KeyEvent.VK_RIGHT)cursorPausa=(cursorPausa+1)%total;
                 if(codigo==KeyEvent.VK_O){abaPausa=4;cursorPausa=0;}
@@ -2352,6 +2361,10 @@ implements ActionListener {
                 if(codigo==KeyEvent.VK_SPACE && teclasTeste.add(codigo)){
                     if(abaPausa==0){poderes.selecionar(cursorPausa,inventario);mostrarAviso("PODER EQUIPADO: "+Poderes099.NOMES[poderes.selecionado]);}
                     if(abaPausa==4){
+                        if(Pausa099.encaixeMercado==4){int prod=new int[]{1,2,0,4}[Math.min(3,cursorPausa)];
+                            if(inventario.comprar(prod)){SomJogo.tocar(SomJogo.Efeito.COMPRA);aplicarInventario();mostrarAviso("COMPRADO: "+new String[]{"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"}[Math.min(3,cursorPausa)]);}
+                            else{SomJogo.tocar(SomJogo.Efeito.ERRO);mostrarAviso(inventario.preco(prod)==0?"JA ADQUIRIDO":"CREDITOS INSUFICIENTES");}
+                            repaint();return;}
                         java.util.List<Pecas> lista=Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual());
                         if(cursorPausa<lista.size()){String r=inventario.usarPeca(nave.getModeloVisual(),lista.get(cursorPausa).id);
                             boolean ok=!r.startsWith("CREDITOS")&&!r.startsWith("PECA INC");SomJogo.tocar(ok?SomJogo.Efeito.COMPRA:SomJogo.Efeito.ERRO);if(ok)aplicarInventario();mostrarAviso(r);}

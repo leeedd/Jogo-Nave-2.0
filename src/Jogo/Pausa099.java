@@ -30,9 +30,20 @@ final class Pausa099 {
   }else if(aba==4){
    // Mercado em encaixes: < > escolhe o encaixe, cima/baixo a peca, ESPACO compra / equipa / desequipa
    int e=encaixeMercado;Color VERDE=new Color(110,230,130),VERM=new Color(240,100,100);
-   for(int k=0;k<4;k++){int bx=12+k*114;box(g,bx,56,110,40,k==e);txt(g,Pecas.ENCAIXES[k],bx+6,69,k==e?OURO:CINZA);Pecas q=Pecas.obter(inv.equipada(m,k));if(q!=null&&Pecas.temIcone(q.id)){Pecas.icone(g,q.id,bx+82,59,24);}txtCabe(g,q==null?"VAZIO":q.nome,bx+6,86,98,q==null?CINZA:Color.WHITE);}
-   java.util.List<Pecas> lista=Pecas.doEncaixe(e,m);
-   for(int i=0;i<lista.size();i++){Pecas q=lista.get(i);int y=102+i*28;box(g,12,y,282,25,cursor==i);boolean tem=inv.temPeca(q.id),eq=inv.equipada(m,e)==q.id;
+   for(int k=0;k<5;k++){int bx=12+k*91;box(g,bx,56,87,40,k==e);txt(g,k<4?Pecas.ENCAIXES[k]:"ESPECIAIS",bx+5,69,k==e?OURO:k==4?new Color(255,150,90):CINZA);
+    if(k<4){Pecas q=Pecas.obter(inv.equipada(m,k));if(q!=null&&Pecas.temIcone(q.id))Pecas.icone(g,q.id,bx+61,59,22);txtCabe(g,q==null?"VAZIO":q.nome,bx+5,86,78,q==null?CINZA:Color.WHITE);}
+    else txtCabe(g,"ARMAS E ITENS",bx+5,86,78,Color.WHITE);}
+   if(e==4){
+    String[] nomes={"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"};int[] prod={1,2,0,4},ic={6,7,5,8};
+    String[] bom={"Arma de gelo (Q): congela","Arma de fogo (E): queima","Nunca perde gelo e fogo","Gelo + fogo = LASER (V)"};
+    String[] info={"Nivel "+inv.gelo()+"/3: mais dano","Nivel "+inv.fogo()+"/3: mais dano","Golpes nao derrubam armas","Vaporiza a tela inteira"};
+    for(int i=0;i<4;i++){int y=102+i*28,preco=inv.preco(prod[i]);box(g,12,y,282,25,cursor==i);Arte098.item(g,ic[i],15,y+1,23);
+     txtCabe(g,nomes[i]+(prod[i]<3&&prod[i]>0?" NV "+(prod[i]==1?inv.gelo():inv.fogo()):""),42,y+11,240,Color.WHITE);txt(g,preco==0?"ADQUIRIDO / MAXIMO":"CR "+preco,42,y+21,preco==0?VERDE:preco>inv.saldo()?VERM:OURO);}
+    box(g,302,102,164,137,false);int c=Math.min(3,cursor);Arte098.item(g,ic[c],310,108,40);txtCabe(g,nomes[c],356,118,104,OURO);txt(g,"SERVE EM TODAS",356,131,CINZA);
+    txt(g,"+ "+bom[c],310,161,VERDE);txt(g,info[c],310,174,CINZA);txt(g,inv.preco(prod[c])==0?"JA ADQUIRIDO":"ESPACO: COMPRAR",310,190,AZUL);
+    txt(g,c==3?"PRECISA DE GELO E FOGO":c==2?"SEM ELE O INIMIGO CAPTURA":"VEM INSTALADA EM TODA NAVE",310,217,c==2?VERM:CINZA);txt(g,"COMPRAS SAO PERMANENTES",310,232,AZUL);
+   }else{
+   java.util.List<Pecas> lista=Pecas.doEncaixe(e,m);   for(int i=0;i<lista.size();i++){Pecas q=lista.get(i);int y=102+i*28;box(g,12,y,282,25,cursor==i);boolean tem=inv.temPeca(q.id),eq=inv.equipada(m,e)==q.id;
     int ix=Pecas.temIcone(q.id)?42:20;Pecas.icone(g,q.id,16,y+1,23);
     txtCabe(g,q.nome+(q.nave>=0?"  EXCLUSIVA":""),ix,y+11,262-ix,q.nave>=0?OURO:Color.WHITE);
     txt(g,eq?"EQUIPADA":tem?"COMPRADA":"CR "+q.preco,ix,y+21,eq?VERDE:tem?AZUL:q.preco>inv.saldo()?VERM:OURO);}
@@ -41,7 +52,8 @@ final class Pausa099 {
     txt(g,"+ "+q.bom,310,161,VERDE);txt(g,"- "+q.ruim,310,174,VERM);
     boolean tem=inv.temPeca(q.id),eq=inv.equipada(m,e)==q.id;txt(g,eq?"ESPACO: DESEQUIPAR":tem?"ESPACO: EQUIPAR":"ESPACO: COMPRAR",310,190,AZUL);}
    txt(g,"NAVE ATUAL",310,204,CINZA);txt(g,"DANO "+nave.danoBalistico()+"  CASCO "+nave.getVidaMaxima(),310,217,Color.WHITE);txt(g,"COMPRAS SAO PERMANENTES",310,232,AZUL);
+   }
   }else if(aba==5){String[] linhas={"ENTER / ESC: RETOMAR VOO","M: VOLTAR AO MENU INICIAL","F8: LABORATORIO DE TESTES","F9: OPCOES (AUDIO, JOGO, CONTROLES)","COMPRAS SALVAS AUTOMATICAMENTE","ROTA LIVRE: ESCOLHA O SETOR NO MAPA"};box(g,12,56,454,183,false);for(int i=0;i<linhas.length;i++)txt(g,linhas[i],30,82+i*28,i%2==0?Color.WHITE:OURO);}
-  if(aviso!=null&&!aviso.isEmpty())txt(g,aviso.substring(0,Math.min(69,aviso.length())),12,267,OURO);txt(g,aba==4?"< >: ENCAIXE  CIMA/BAIXO: PECA  ESPACO: COMPRAR / EQUIPAR  TAB: ABA  ENTER: VOLTAR":aba==0?"C: USAR  X: TROCAR  1-8: ESCOLHER  ESPACO: EQUIPAR  TAB: ABA  ENTER: VOLTAR":"TAB: ABA  SETAS: SELECAO  ESPACO: CONFIRMAR  ENTER: VOLTAR",12,285,CINZA);g.dispose();tela.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);tela.drawImage(b,0,0,960,600,null);
+  if(aviso!=null&&!aviso.isEmpty())txt(g,aviso.substring(0,Math.min(69,aviso.length())),12,267,OURO);txt(g,aba==4?"< >: ENCAIXE  CIMA/BAIXO: ITEM  ESPACO: COMPRAR / EQUIPAR  TAB: ABA  ENTER: VOLTAR":aba==0?"C: USAR  X: TROCAR  1-8: ESCOLHER  ESPACO: EQUIPAR  TAB: ABA  ENTER: VOLTAR":"TAB: ABA  SETAS: SELECAO  ESPACO: CONFIRMAR  ENTER: VOLTAR",12,285,CINZA);g.dispose();tela.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);tela.drawImage(b,0,0,960,600,null);
  }
 }
