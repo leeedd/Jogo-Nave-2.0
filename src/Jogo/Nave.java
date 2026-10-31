@@ -368,9 +368,30 @@ public class Nave {
     }
 
     /** Visual de cada truque: rastro do impulso, chamas da investida, aura da furia, isca da camuflagem. */
+    private static final java.awt.image.BufferedImage[] EFEITO = {img("efeito_impulso"), img("efeito_camuflagem"), img("efeito_escudo"), img("efeito_investida"), img("efeito_furia")};
+    private static java.awt.image.BufferedImage img(String n) { java.net.URL u = Nave.class.getResource("/ImagemIcon/" + n + ".png"); if (u == null) return null; try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; } }
+    /** Desenha o quadro atual da tira de efeito (4 quadros) com a borda direita em xDir, centrado em cy, na altura h. */
+    private void quadroEfeito(Graphics2D g, int i, int xDir, int cy, int h, float alfa) {
+        java.awt.image.BufferedImage e = EFEITO[i]; if (e == null) return;
+        int fw = e.getWidth() / 4, q = (int) (tempoVisual * 12) % 4, w = fw * h / e.getHeight();
+        Graphics2D a = (Graphics2D) g.create(); a.setComposite(java.awt.AlphaComposite.SrcOver.derive(alfa));
+        a.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        a.drawImage(e, xDir - w, cy - h / 2, xDir, cy + h / 2, q * fw, 0, q * fw + fw, e.getHeight(), null); a.dispose();
+    }
+
     private void efeitoTruque(Graphics2D g) {
-        if (truqueAtivo <= 0) return;
         int cx = (int) x + 22, cy = (int) y + 20;
+        if (modeloVisual == 2 && escudo > 0 && EFEITO[2] != null) { quadroEfeito(g, 2, cx + 62, cy, 118, .85f); }
+        if (truqueAtivo <= 0) return;
+        if (EFEITO[modeloVisual] != null && modeloVisual != 2) {
+            switch (modeloVisual) {
+                case 0: quadroEfeito(g, 0, cx - 6, cy, 60, 1f); break;
+                case 1: quadroEfeito(g, 1, (int) camuflagemX + 78, (int) camuflagemY + 20, 70, .9f); break;
+                case 3: quadroEfeito(g, 3, cx + 92, cy, 96, 1f); break;
+                default: quadroEfeito(g, 4, cx + 70, cy, 130, .9f); break;
+            }
+            return;
+        }
         Graphics2D a = (Graphics2D) g.create();
         switch (modeloVisual) {
             case 0: for (int k = 1; k <= 4; k++) { a.setColor(new Color(120, 200, 255, 120 - k * 25)); a.fillRoundRect(cx - 30 - k * 22, cy - 12, 50, 24, 20, 20); } break;
