@@ -52,6 +52,7 @@ public final class TiroChefe {
             case BARRIL: desenharBarril(g, px, py); return;
             case RASTRO: desenharRastro(g, px, py); return;
             case ONDA_SOM: desenharOndaLemmy(g, px, py); return;
+            case PRATO: desenharPrato(g, px, py); return;
             case AS_ESPADAS: desenharAs(g, px, py); return;
             case MORCEGO_OZZY: desenharMorcegoOzzy(g, px, py); return;
             case 1: desenharMorcego(g, px, py); return;
@@ -265,13 +266,24 @@ public final class TiroChefe {
     public Rectangle getBounds() {
         if (estilo == VAGAO) return new Rectangle((int) x - 70, (int) y - 26, 150, 52);
         if (estilo == ONDA_SOM) { int h = alturaOnda() * 3 / 4; return new Rectangle((int) x - 16, (int) y - h / 2, 32, h); }
-        int r = estilo == AS_ESPADAS ? 14 : estilo == MORCEGO_OZZY ? 13 : estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
+        int r = estilo == PRATO ? 14 : estilo == AS_ESPADAS ? 14 : estilo == MORCEGO_OZZY ? 13 : estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
         return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2);
     }
     public int dano() { return estilo == ONDA_SOM ? 1 : estilo == VAGAO ? 5 : estilo == FOGO_ROXO ? 3 : pesado ? 3 : 2; }
 
     // ---- Ozzy (Crazy Train e dragao) ----
-    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24, ONDA_SOM = 25, AS_ESPADAS = 26, MORCEGO_OZZY = 27;
+    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24, ONDA_SOM = 25, AS_ESPADAS = 26, MORCEGO_OZZY = 27, PRATO = 28;
+    /** Prato de bateria girando como serra, em pixel art: disco dourado com dentes. */
+    private void desenharPrato(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create(); g.rotate(tempo * 18, px, py);
+        int r = 15;
+        g.setColor(new Color(150, 100, 20)); for (int k = 0; k < 8; k++) { double a = k * Math.PI / 4; g.fillRect(px + (int) (Math.cos(a) * r) - 3, py + (int) (Math.sin(a) * r) - 3, 6, 6); }
+        g.setColor(new Color(200, 150, 40)); g.fillOval(px - r, py - r, r * 2, r * 2);
+        g.setColor(new Color(245, 205, 90)); g.fillOval(px - r + 4, py - r + 4, r * 2 - 8, r * 2 - 8);
+        g.setColor(new Color(170, 120, 30)); g.drawOval(px - 8, py - 8, 16, 16);
+        g.setColor(new Color(255, 245, 200)); g.fillRect(px - 6, py - 9, 5, 3); g.setColor(new Color(90, 60, 15)); g.fillRect(px - 2, py - 2, 4, 4);
+        g.dispose();
+    }
     private static final java.awt.image.BufferedImage ARTE_AS = ler("tiro_as_espadas.png"), ARTE_MORCEGO = ler("tiro_morcego_ozzy.png");
     /** As de espadas em chamas do Lemmy: gira como estrela ninja. */
     private void desenharAs(Graphics2D tela, int px, int py) {

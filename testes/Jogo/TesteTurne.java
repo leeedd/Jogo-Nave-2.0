@@ -37,4 +37,5 @@ e.getNave().teleportar(100,480);Asteroide perto=new Asteroide(120,495,12,1).lanc
   Asteroide q=new Asteroide(500,100,10,1).lancar(200,-300);for(int i=0;i<30;i++)q.mexer(1/60.0);ok(q.getY()>=92,"estilhaco ricocheteia no teto");
   Contrato g=new Contrato(Contrato.Tipo.MINERACAO,2,1,1,-1,"GARIMPO");g.minerio();ok(!g.cumprido,"falta minerio");g.minerio();ok(g.cumprido,"garimpo cumprido");
   ok(Contrato.ofertas(4,4,false,new java.util.Random(1),true).stream().anyMatch(x->x.tipo==Contrato.Tipo.MINERACAO),"quadro oferece garimpo com campo a frente");
+  ok(Turne.instrumento("LARS ULRICH")=='D'&&Turne.instrumento("ROBERT TRUJILLO")=='B'&&Turne.instrumento("KIRK HAMMETT")=='G'&&Turne.instrumento("NICKO MCBRAIN")=='D',"cada integrante tem o seu instrumento");
   System.out.println("OK turne");}}

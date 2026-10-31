@@ -20,6 +20,12 @@ final class Turne {
         {"KERRY KING", "GARY HOLT", "DAVE LOMBARDO"},
         {"ERIC PETERSON", "ALEX SKOLNICK", "STEVE DI GIORGIO"},
         {"TONY IOMMI", "GEEZER BUTLER", "BILL WARD", "ZAKK WYLDE"}};
+    /** Instrumento de cada integrante (mesma ordem de INTEGRANTES): G guitarra, B baixo, D bateria, C criatura. */
+    static final String[] INSTRUMENTOS = {"CC", "GGBD", "BGGGD", "GD", "GDB", "GGD", "GGB", "GBDG"};
+    static char instrumento(String nome) {
+        for (int s = 0; s < 8; s++) for (int p = 0; p < INTEGRANTES[s].length; p++) if (INTEGRANTES[s][p].equals(nome)) return INSTRUMENTOS[s].charAt(p);
+        return 'C';
+    }
     static final String[] NOMES_RISCO = {"BAIXO", "MEDIO", "ALTO", "SEVERO", "EXTREMO"};
     static final Color[] CORES_RISCO = {new Color(90, 220, 110), new Color(240, 220, 80), new Color(255, 150, 50), new Color(240, 60, 60), new Color(190, 90, 255)};
 

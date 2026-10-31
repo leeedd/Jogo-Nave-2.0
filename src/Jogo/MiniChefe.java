@@ -30,6 +30,11 @@ public final class MiniChefe {
     int estagio(){return comandante==null?0:comandante.estagio();}
     /** Integrante da banda que a sentinela representa (provisorio ate a arte de cada um chegar). */
     private String integrante="";
+    /** Bateristas e baixistas com arte propria atiram projeteis em vez do raio (pratos e ondas graves). */
+    private final java.util.List<TiroChefe> projeteis = new java.util.ArrayList<>();
+    private char instrumento() { return AtlasInimigos.integrante(integrante) == null ? 'C' : Turne.instrumento(integrante); }
+    private boolean atiraProjetil() { char c = instrumento(); return c == 'D' || c == 'B'; }
+    java.util.List<TiroChefe> projeteisTeste() { return projeteis; }
     void definirIntegrante(String nome,int risco){integrante=nome==null?"":nome;vida=vidaMaxima=(int)Math.round(vidaMaxima*Turne.premio(risco));}
     String nome(){if(comandante==null&&!integrante.isEmpty())return integrante;return comandante==null?"SENTINELA":comandante.rainha?"RAINHA DO ENXAME":"PIRATA DOMADOR";}
     ComandanteEnxame comandanteTeste(){return comandante;}
@@ -51,6 +56,8 @@ public final class MiniChefe {
         if(comandante!=null){comandante.atualizar(d,n);return;}
         d = Math.max(0.0, Math.min(0.05, d));
         this.tempo += d;
+        for (TiroChefe t : projeteis) t.mexer(d);
+        projeteis.removeIf(t -> !t.isVisible());
         this.x += (700.0 - this.x) * (1.0 - Math.exp(-1.7 * d));
         double destino = (this.carregando || this.disparando) ? this.raioAlvo
                 : 305.0 + Math.sin(this.tempo * 1.15) * 82.0;
@@ -69,7 +76,13 @@ public final class MiniChefe {
             if (this.relogioRaio <= 0.0) {
                 this.carregando = false;
                 this.raioAlvo = (int)Math.round(this.y);
-                this.disparando = true;SomJogo.tocar(SomJogo.Efeito.LASER);
+                this.disparando = true;SomJogo.tocar(atiraProjetil() ? SomJogo.Efeito.CHEFE_TIRO : SomJogo.Efeito.LASER);
+                if (atiraProjetil()) {
+                    this.atingiu = true; // sem raio: o perigo sao os projeteis
+                    double ox = this.x - 60, oy = this.y, mira = Math.atan2(n + 18 - oy, 120 - ox);
+                    if (instrumento() == 'D') for (int i = -2; i <= 2; i++) projeteis.add(new TiroChefe(ox, oy, Math.cos(mira + i * .2) * 300, Math.sin(mira + i * .2) * 300, false, TiroChefe.PRATO, TiroChefe.Movimento.RETO));
+                    else for (int i = -1; i <= 1; i++) projeteis.add(new TiroChefe(ox, oy + i * 50, -320, i * 30, false, TiroChefe.ONDA_SOM, TiroChefe.Movimento.RETO));
+                }
                 this.relogioRaio = 0.43;
             }
         } else {
@@ -83,6 +96,7 @@ public final class MiniChefe {
 
     public boolean consumirDano(Rectangle rectangle) {
         if(comandante!=null)return comandante.consumirDano(rectangle);
+        for (TiroChefe t : projeteis) if (t.isVisible() && t.getBounds().intersects(rectangle)) { t.setVisible(false); return true; }
         if (!this.disparando || this.atingiu) {
             return false;
         }
@@ -165,7 +179,8 @@ public final class MiniChefe {
         if(comandante!=null){comandante.desenhar(graphics2D);return;}
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
         // sem linha de aviso: enquanto carrega, o aviso e o proprio olho arregalado; o raio so aparece no disparo
-        if (this.disparando) desenharRaio(graphics2D2);
+        if (this.disparando && !atiraProjetil()) desenharRaio(graphics2D2);
+        for (TiroChefe t : projeteis) t.desenhar(graphics2D2);
         int n = (int)this.x;
         int n2 = (int)this.y;
         int n3 = this.disparando ? 2 : (this.carregando ? 1 : ((int)(this.tempo * 4.0)%2==0?0:3));
