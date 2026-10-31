@@ -157,6 +157,7 @@ implements ActionListener {
     private int abatesSeguidos; private boolean avisouSangrando;
     /** Emboscada do enxame: primeiro as ondas atravessam a tela, depois chega a rainha (ou a nave comandante). */
     private boolean rainhaChegou;
+    private int ultimaPassagemSetor = -1;
     private static final String[] RADIO_SETOR = {
         "Intruso no Abismo. Acordem a coisa la embaixo... ou matem ele antes.",
         "Ele entrou na Fornalha. Esquentem os canhoes.",
@@ -553,6 +554,10 @@ implements ActionListener {
         this.ultimoPadraoEsquadrao = n3;
         this.padraoEsquadrao = n3;
         double d4 = 1.0 + (double)this.chefesDerrotados * 0.075 + (double)this.faseMusical() * 0.065;
+        // o setor nao para: parte dos esquadroes atravessa a tela; os outros estacionam por pouco tempo e depois vao embora
+        boolean passa = numeroEsquadrao > 0 && aleatorio.nextDouble() < .55;
+        int padraoPassagem; do { padraoPassagem = aleatorio.nextInt(5); } while (padraoPassagem == ultimaPassagemSetor); if (passa) ultimaPassagemSetor = padraoPassagem;
+        double velPassagem = 205 + chefesDerrotados * 12 + aleatorio.nextInt(40), permanencia = 6 + aleatorio.nextDouble() * 5;
         for (int i = 0; i < n2; ++i) {
             Alien.Classe[] classeArray;
             Alien.Classe classe;
@@ -601,7 +606,8 @@ implements ActionListener {
             Alien novo = new Alien(1045 + i * 54, n6, tipo, classe);
             novo.definirSetor(setorAtual,aleatorio);
             if(!partidaTeste)novo.adaptar(comando.adaptacoes(aleatorio));
-            novo.entrarEmEsquadrao(d5, d6, i, n3, d4);
+            if (passa) configurarPassagem(novo, padraoPassagem, i, n2, velPassagem);
+            else { novo.entrarEmEsquadrao(d5, d6, i, n3, d4); novo.definirPermanencia(permanencia + i * .15); }
             this.alien.add(novo);
         }
         this.lancadosNoSetor += n2;
@@ -1257,7 +1263,8 @@ implements ActionListener {
             this.explodirEscudoSeNecessario();
             this.nave.getMisseis().removeIf(missel -> !missel.isVisible());
             this.tirosElementais.removeIf(disparoElemental -> !disparoElemental.ativo());
-            this.alien.removeIf(alien -> !alien.isVisible());
+            // quem atravessou a tela conta para o avanco do setor, mas nao da ponto
+            this.alien.removeIf(alien -> { if (!alien.isVisible() && alien.escapou() && !intercepcao) ++eliminados; return !alien.isVisible(); });
             this.tirosInimigos.removeIf(projetilInimigo -> !projetilInimigo.isVisible());
             this.asteroides.removeIf(asteroide -> !asteroide.isVisible());
             this.tirosChefes.removeIf(tiroChefe -> !tiroChefe.isVisible());
@@ -1982,6 +1989,20 @@ implements ActionListener {
      * Uma revoada do enxame que atravessa a tela: trem na altura da nave, cobra, tesoura (cima e baixo
      * cruzando), V e parede com um buraco. Todas passam pelo lugar da nave para obrigar a desviar.
      */
+    private void configurarPassagem(Alien a,int padrao,int i,int quantidade,double vel){configurarPassagem(a,padrao,i,quantidade,vel,buracoPassagem(i,quantidade));}
+    private int buracoDaOnda;
+    private int buracoPassagem(int i,int q){if(i==0)buracoDaOnda=aleatorio.nextInt(Math.max(1,q-1));return buracoDaOnda;}
+    /** Formatos de travessia: trem na altura da nave, cobra, tesoura, V apontado para a nave e parede com um buraco. */
+    private void configurarPassagem(Alien a,int padrao,int i,int quantidade,double vel,int buraco){
+        double ny=Math.max(110,Math.min(510,nave.getY()+18)),meio=(quantidade-1)/2.0;
+        switch(padrao){
+            case 0: a.iniciarPassagem(1000+i*62,ny,vel,18,3,i*.7,0); break;
+            case 1: a.iniciarPassagem(1000+i*48,310,vel*.9,150,2.4,-i*.55,0); break;
+            case 2: {boolean cima=i%2==0;a.iniciarPassagem(1000+(i/2)*70,cima?120:500,vel,10,4,i,cima?95:-95);break;}
+            case 3: a.iniciarPassagem(1000+Math.abs(i-meio)*55,ny+(i-meio)*48,vel,8,3,i,0); break;
+            default: {int slot=i>=buraco?i+2:i;a.iniciarPassagem(1010+(i%2)*14,118+slot*40,vel*.8,6,2,i,0);break;}
+        }
+    }
     private void lancarEnxame(){
         int vivos=(int)alien.stream().filter(Alien::isVisible).count();
         int estagio=miniChefe!=null?miniChefe.estagio():0;
@@ -1991,20 +2012,13 @@ implements ActionListener {
         ultimaFormacaoEnxame=padrao;
         Alien.Classe[] classes={Alien.Classe.INTERCEPTADOR,Alien.Classe.TANQUE,Alien.Classe.KAMIKAZE,Alien.Classe.KAMIKAZE,Alien.Classe.LASER,Alien.Classe.ESQUADRAO};
         int especieBase=aleatorio.nextInt(6);
-        double ny=Math.max(110,Math.min(510,nave.getY()+18)),vel=270+estagio*25+aleatorio.nextInt(40);
+        double vel=270+estagio*25+aleatorio.nextInt(40);
         int buraco=aleatorio.nextInt(6);
         for(int i=0;i<quantidade;i++){
             int especie=(especieBase+i+aleatorio.nextInt(3))%6;
             Alien a=new Alien(1020,300,Alien.Tipo.PIRATA,classes[especie]);
             a.definirEnxame(especie);
-            double meio=(quantidade-1)/2.0;
-            switch(padrao){
-                case 0: a.iniciarPassagem(1000+i*62,ny,vel,18,3,i*.7,0); break;                                   // trem na altura da nave
-                case 1: a.iniciarPassagem(1000+i*48,310,vel*.9,150,2.4,-i*.55,0); break;                          // cobra
-                case 2: {boolean cima=i%2==0;a.iniciarPassagem(1000+(i/2)*70,cima?120:500,vel,10,4,i,cima?95:-95);break;} // tesoura
-                case 3: a.iniciarPassagem(1000+Math.abs(i-meio)*55,ny+(i-meio)*48,vel,8,3,i,0); break;            // V
-                default: {int slot=i>=buraco?i+2:i;a.iniciarPassagem(1010+(i%2)*14,118+slot*40,vel*.8,6,2,i,0);break;} // parede com buraco
-            }
+            configurarPassagem(a,padrao,i,quantidade,vel,buraco);
             alien.add(a);
         }
         reforcosEnxame-=quantidade;esperaEnxame=Math.max(1.6,(miniChefe!=null?4.6:3.0)-estagio*.4);

@@ -48,6 +48,12 @@ public class Alien {
         y = Math.max(80, Math.min(540, baseY + Math.sin(fase) * amp)); recarga = .5 + (x0 % 7) * .12;
     }
     boolean emPassagem() { return passagem; }
+    /** Saiu pela esquerda sem ser abatido (conta para o avanco do setor, sem pontos). */
+    private boolean escapou;
+    boolean escapou() { return escapou; }
+    /** Segundos que o esquadrao fica estacionado antes de levantar voo e atravessar a tela (-1: fica). */
+    private double permanencia = -1;
+    void definirPermanencia(double s) { permanencia = s; }
     private boolean posicionado;
     private double tempoAnimacao;
     private double tempoDesvio;
@@ -237,7 +243,7 @@ public class Alien {
             // atravessa reto para o outro lado, ondulando; quem sai pela esquerda vai embora
             x -= velPassagem * d; baseYPassagem += derivaPassagem * d;
             y = Math.max(80, Math.min(540, baseYPassagem + Math.sin(tempoAnimacao * freqPassagem + fasePassagem) * ampPassagem));
-            if (x < -90) visivel = false;
+            if (x < -90) { visivel = false; escapou = true; }
             recarga -= d;
             return;
         }
@@ -253,6 +259,8 @@ public class Alien {
                     this.posicionado = true;
                 }
             } else {
+                // tempo de formacao acabou: levanta voo e passa por cima do piloto indo embora
+                if (permanencia > 0 && classe != Classe.KAMIKAZE) { permanencia -= d; if (permanencia <= 0) { iniciarPassagem(x, y, 230 + faseMovimento % 1 * 60, 22, 2.2, 0, 0); return; } }
                 double d5 = this.tempoAnimacao + this.faseMovimento;
                 d3 = Math.sin(d5 * (1.25 + (double)this.padrao * 0.11)) * (double)(9 + this.padrao * 2);
                 d2 = this.tipo == Tipo.ALIENIGENA_ORIGINAL && this.variante == 3 ? -Math.max(0.0, Math.sin(d5 * 1.2)) * 165.0 : (this.padrao == 4 ? Math.max(0.0, Math.sin(d5 * 0.72)) * -100.0 : (this.padrao == 3 ? -Math.max(0.0, Math.sin(d5 * 0.64)) * 77.0 : (this.padrao == 6 ? -Math.max(0.0, Math.sin(d5 * 0.81)) * 95.0 : (this.padrao == 7 ? -Math.max(0.0, Math.sin(d5 * 0.95 + this.faseMovimento)) * 116.0 : 0.0))));
