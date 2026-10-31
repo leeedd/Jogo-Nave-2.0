@@ -284,8 +284,9 @@ implements ActionListener {
     }
     private boolean dispararElemental(boolean gelo){
         if(recargaElemental>0 || !(gelo?geloColetado:fogoColetado))return false;
-        int i=gelo?0:1;energia.selecionar(i);
+        int i=gelo?0:1;if(energia.superaquecida(i))return false;energia.selecionar(i);
         if(!energia.gastar(i,gelo?4:3))return false;
+        if(energia.esquentar(i)){SomJogo.tocar(SomJogo.Efeito.ALERTA);mostrarAviso((gelo?"CANHAO CRIOGENICO":"LANCA-CHAMAS")+" SUPERAQUECEU! "+(int)Energia098.TRAVA+"s");}
         SomJogo.tocar(gelo?SomJogo.Efeito.GELO:SomJogo.Efeito.FOGO);
         int nivel=Math.max(1,gelo?inventario.gelo():inventario.fogo());
         tirosElementais.add(new DisparoElemental(gelo?DisparoElemental.Tipo.GELO:DisparoElemental.Tipo.FOGO,nave.getX()+42,nave.getY()+16,nivel));
@@ -783,7 +784,13 @@ implements ActionListener {
         graphics2D.setColor(new Color(2,5,14,225));graphics2D.fillRect(630,chefe!=null?78:575,330,25);
         Arte095.desenhar(graphics2D,8,635,chefe!=null?80:577,20,20);
         graphics2D.setColor(Color.WHITE);graphics2D.setFont(new Font("Monospaced",1,12));
-        graphics2D.drawString("CR "+inventario.saldo()+"  Q "+energia.carga(0)+"% E "+energia.carga(1)+"%",630,chefe!=null?95:592);
+        {int hy=chefe!=null?95:592;graphics2D.drawString("CR "+inventario.saldo(),630,hy);
+            // barras de calor do gelo (Q) e do fogo (E): vermelho piscando quando superaquecidas
+            for(int i=0;i<2;i++){int bx=730+i*112;if(!(i==0?geloColetado:fogoColetado))continue;boolean trava=energia.superaquecida(i);
+                graphics2D.setColor(Color.WHITE);graphics2D.drawString((i==0?"Q ":"E ")+energia.carga(i)+"%",bx,hy);
+                graphics2D.setColor(new Color(24,28,40));graphics2D.fillRect(bx+52,hy-8,52,7);
+                graphics2D.setColor(trava?((int)(tempoTotal*6)%2==0?Color.RED:new Color(120,20,20)):i==0?new Color(90,200,255):new Color(255,140,50));
+                graphics2D.fillRect(bx+52,hy-8,(int)(52*energia.calor(i)/100),7);}}
         graphics2D.drawString("R: RESERVAS "+inventario.carga(0)+"/"+inventario.carga(1)+"/"+inventario.carga(2)+"/"+inventario.carga(3),16,572);
         graphics2D.drawString(inventario.temChaveIndice(poderes.selecionado)?"PODER: "+Poderes099.NOMES[poderes.selecionado]+"  (C USAR / X TROCAR / 1-8)":"",16,592);
         // Energia do poder equipado em gomos (estilo arcade), abaixo do painel superior; cadeado enquanto nao houver poder.
@@ -1106,7 +1113,7 @@ implements ActionListener {
         if(efeitoFusao!=null){efeitoFusao.atualizar(d);if(!efeitoFusao.ativa())efeitoFusao=null;}
         if(laser!=null){laser.atualizar(d);if(!laser.ativo())laser=null;}
         atualizarSegredo(d);
-        this.recargaElemental = Math.max(0.0, this.recargaElemental - d);
+        this.recargaElemental = Math.max(0.0, this.recargaElemental - d);energia.esfriar(d);
         if(emJogo&&(etapa==Etapa.COMBATE||etapa==Etapa.BATALHA_CHEFE)&&recargaElemental<=0){
             if(geloPressionado&&geloColetado){dispararElemental(true);}
             else if(fogoPressionado&&fogoColetado){dispararElemental(false);}
@@ -1672,7 +1679,9 @@ implements ActionListener {
         this.gerarParticulas(this.nave.getX() + 25, this.nave.getY() + 20, 24);
         this.explosoes.add(new ExplosaoCurta(this.nave.getX() + 25, this.nave.getY() + 18, 11));
         Item.Tipo perdido=null;
-        if(fogoColetado&&!inventario.retencao()){fogoColetado=false;perdido=Item.Tipo.ARMA_FOGO;}else if(geloColetado&&!inventario.retencao()){geloColetado=false;perdido=Item.Tipo.ARMA_GELO;}
+        // O amuleto segura a arma, mas se desgasta a cada golpe e acaba se despedacando.
+        if(inventario.retencao()&&(fogoColetado||geloColetado)){if(inventario.desgastarAmuleto()){SomJogo.tocar(SomJogo.Efeito.ESCUDO_QUEBRA);mostrarAviso("AMULETO DO METAL GOD DESPEDACADO!");}else mostrarAviso("AMULETO PROTEGEU A ARMA ("+inventario.cargasAmuleto()+" RESTANTES)");}
+        else if(fogoColetado){fogoColetado=false;perdido=Item.Tipo.ARMA_FOGO;}else if(geloColetado){geloColetado=false;perdido=Item.Tipo.ARMA_GELO;}
         int n2=perdido==null?nave.perderModulo():1;
         if(perdido==null&&n2>=0)perdido=n2==1?Item.Tipo.ARMA_2:Item.Tipo.MELHORIA;
         if (n2 >= 0) {
