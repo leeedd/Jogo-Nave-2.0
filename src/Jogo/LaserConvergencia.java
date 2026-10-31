@@ -24,6 +24,10 @@ final class LaserConvergencia {
     static { for (int i = -1; i < 8; i++) { java.net.URL u = LaserConvergencia.class.getResource("/ImagemIcon/fusao_" + (i < 0 ? "base" : String.valueOf(i)) + ".png");
         if (u != null) try { ARTE[i + 1] = javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { System.err.println("Fusao ilegivel: " + i); } } }
     /** Feixes esticam ate a borda; os demais sao projeteis que atravessam a tela. */
+    /** Arte opcional so da carga: carga_base.png / carga_0..7.png (4 quadros); carga_base serve para todas. */
+    private static final java.awt.image.BufferedImage[] CARGA = new java.awt.image.BufferedImage[9];
+    static { for (int i = -1; i < 8; i++) { java.net.URL u = LaserConvergencia.class.getResource("/ImagemIcon/carga_" + (i < 0 ? "base" : String.valueOf(i)) + ".png");
+        if (u != null) try { CARGA[i + 1] = javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { System.err.println("Carga ilegivel: " + i); } } }
     private static boolean feixe(int tipo) { return tipo < 0 || tipo == 0 || tipo == 1 || tipo == 4; }
 
     private boolean desenharArte(Graphics2D g, int ox, int cy, double t, double forca) {
@@ -57,6 +61,26 @@ final class LaserConvergencia {
         Graphics2D g = (Graphics2D) original.create();
         Color cor = tipo < 0 ? new Color(190, 90, 255) : Poderes099.CORES_SIMBOLO[tipo];
         int cx = naveX + 46, cy = naveY + 20;
+        java.awt.image.BufferedImage arte = ARTE[tipo + 1];
+        java.awt.image.BufferedImage carga = CARGA[tipo + 1] != null ? CARGA[tipo + 1] : CARGA[0];
+        if (carga != null || arte != null) {
+            // carga em pixel art: arte propria de carga (carga_*.png) ou o 1o quadro do disparo, crescendo e pulsando
+            Graphics2D q = (Graphics2D) g.create();
+            q.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            int fw, fh, sx; java.awt.image.BufferedImage img;
+            if (carga != null) { img = carga; fw = carga.getWidth() / 4; fh = carga.getHeight(); sx = ((int) (t * 12) % 4) * fw; }
+            else { img = arte; fw = arte.getWidth() / 4; fh = arte.getHeight(); sx = 0; }
+            int h = (int) ((40 + 90 * p) * (1 + .08 * Math.sin(t * 24))), w = fw * h / fh;
+            q.setComposite(AlphaComposite.SrcOver.derive((float) (.55 + .45 * p)));
+            int x0 = carga != null ? cx - w / 2 : cx - w / 5;
+            q.drawImage(img, x0, cy - h / 2, x0 + w, cy + h / 2, sx, 0, sx + Math.min(fw, carga != null ? fw : fw * 2 / 5), fh, null);
+            q.dispose();
+            for (int k = 0; k < 18; k++) {
+                double an = k * 2.399 + t * 3, dist = (1 - ((t * 1.8 + k * .07) % 1)) * 110;
+                g.setColor(c(cor.getRed(), cor.getGreen(), cor.getBlue(), .5 + .5 * p)); g.fillRect(cx + (int) (Math.cos(an) * dist), cy + (int) (Math.sin(an) * dist), 3, 3);
+            }
+            g.dispose(); return;
+        }
         for (int k = 0; k < 24; k++) {
             double an = k * 2.399 + t * 3, dist = (1 - ((t * 1.8 + k * .07) % 1)) * 120 * (1 - p * .5);
             g.setColor(c(cor.getRed(), cor.getGreen(), cor.getBlue(), .4 + .6 * p)); g.fillRect(cx + (int) (Math.cos(an) * dist), cy + (int) (Math.sin(an) * dist), 4, 4);
@@ -90,9 +114,11 @@ final class LaserConvergencia {
         }
         // esfera de carga na ponta da nave, na cor do disparo
         Color nucleo = tipo < 0 ? new Color(190, 90, 255) : Poderes099.CORES_SIMBOLO[tipo];
-        int r = (int) (10 + 22 * forca + Math.sin(tempo * 40) * 3);
-        g.setColor(c(nucleo.getRed(), nucleo.getGreen(), nucleo.getBlue(), Math.max(.3, forca))); g.fillOval(ox - r, cy - r, r * 2, r * 2);
-        g.setColor(c(255, 255, 255, Math.max(.3, forca))); g.fillOval(ox - r / 2, cy - r / 2, r, r);
+        if (ARTE[tipo + 1] == null) {
+            int r = (int) (10 + 22 * forca + Math.sin(tempo * 40) * 3);
+            g.setColor(c(nucleo.getRed(), nucleo.getGreen(), nucleo.getBlue(), Math.max(.3, forca))); g.fillOval(ox - r, cy - r, r * 2, r * 2);
+            g.setColor(c(255, 255, 255, Math.max(.3, forca))); g.fillOval(ox - r / 2, cy - r / 2, r, r);
+        }
         g.dispose();
     }
 
