@@ -13,7 +13,7 @@ import java.util.Random;
 final class LaserConvergencia {
     static final double DURACAO = 1.6;
     static final String[] NOMES = {"MARE ABISSAL", "HELL PATROL", "THE TROOPER", "ACE OF SPADES",
-            "MASTER OF PUPPETS", "RAINING BLOOD", "NATIVE BLOOD", "BARK AT THE MOON"};
+            "MASTER OF PUPPETS", "RAINING BLOOD", "NATIVE BLOOD", "CRAZY TRAIN"};
     static final String[] EFEITO_CHEFE = {"Congela o chefe", "Dano dobrado no chefe", "Corta todos os tiros", "Quatro feixes",
             "Paralisa o chefe", "Queima o chefe", "Aguia de trovao", "Rouba vida: +3 casco"};
     /** Dano no chefe/mini-chefe por tipo (-1 = laser base). */
@@ -56,7 +56,9 @@ final class LaserConvergencia {
     private boolean desenharArte(Graphics2D g, int ox, int cy, double t, double forca) {
         java.awt.image.BufferedImage a = ARTE[tipo + 1]; if (a == null) return false;
         int fw = a.getWidth() / 4, fh = a.getHeight();
-        int k = t < .14 ? 0 : t < .2 ? 1 : 2 + (int) (tempo * 12) % 2;
+        // Crazy Train: o trem fantasma surge, cresce e passa; o ultimo quadro e o rastro de quem ja passou
+        int k = tipo == 7 ? (t < .16 ? 0 : t < .24 ? 1 : t < .62 ? 2 : 3)
+                : t < .14 ? 0 : t < .2 ? 1 : 2 + (int) (tempo * 12) % 2;
         Graphics2D q = (Graphics2D) g.create();
         q.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         q.setComposite(AlphaComposite.SrcOver.derive((float) Math.max(.15, forca)));

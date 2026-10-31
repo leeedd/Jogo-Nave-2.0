@@ -66,6 +66,7 @@ public final class Recompensas {
             case 6: return "RainingBlood";
             case 7: return "OverTheWall";
             case 1: return "Paranoid";
+            case 9: return "Hellraiser";
             default: throw new IllegalArgumentException("chefe invalido: " + chefe);
         }
     }

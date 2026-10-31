@@ -13,6 +13,8 @@ import java.util.Random;
 public final class Chefe {
     private final int fase, largura, altura, vidaMaxima;
     private final ChefeMetal artista;
+    /** Fase 9: setor Hellraiser (van, Ozzy + Lemmy, dragao). */
+    private final ChefeHellraiser hell;
     private final BufferedImage[] quadros;
     private int vida, ataques;
     private double x, y, tempo, entrada = 0, recarga = 1.1, avisoTiro, flashDano;
@@ -57,8 +59,9 @@ public final class Chefe {
     boolean paralisado() { return paralisia > 0; }
 
     public Chefe(int fase, Dificuldade dificuldade) {
-        if (fase < 1 || fase > 8) throw new IllegalArgumentException("fase invalida");
+        if (fase < 1 || fase > 9) throw new IllegalArgumentException("fase invalida");
         this.artista = fase <= 7 ? new ChefeMetal(fase, dificuldade) : null;
+        this.hell = fase == 9 ? new ChefeHellraiser(dificuldade) : null;
         this.fase = fase;
         this.largura = fase <= 7 ? 412 : 420;
         this.altura = fase <= 7 ? 385 : 426;
@@ -77,6 +80,7 @@ public final class Chefe {
             artista.atualizar(dt, naveX, naveY, dificuldade, tiros);
             return;
         }
+        if (hell != null) { hell.atualizar(dt, naveX, naveY, dificuldade, tiros); return; }
         if (dt <= 0) return;
         tempo += dt;
         if (fase == 8) atualizarPiscada(dt);
@@ -246,6 +250,7 @@ public final class Chefe {
     /** Hitbox de cada ponta; no maximo um dano por tentaculo em cada investida. */
     public boolean consumirAcertoTentaculo(Rectangle nave) {
         if (artista != null) return artista.consumirColisaoCorporal(nave);
+        if (hell != null) return false;
         if (fase != 8 || !estaVivo() || entrada < 1 || nave == null) return false;
         Rectangle2D.Double area = new Rectangle2D.Double(nave.x-13,nave.y-13,
                 nave.width+26,nave.height+26);
@@ -335,6 +340,7 @@ public final class Chefe {
 
     public boolean receberDano(int dano) {
         if (artista != null) return artista.receberDano(dano);
+        if (hell != null) return hell.receberDano(dano);
         if (vida <= 0) return false;
         vida = Math.max(0, vida - Math.max(0, dano));
         flashDano = 0.15;
@@ -378,6 +384,7 @@ public final class Chefe {
 
     private void desenharCorpo(Graphics2D g) {
         if(artista!=null){artista.desenhar(g);return;}
+        if(hell!=null){hell.desenhar(g);return;}
         Graphics2D a=(Graphics2D)g.create();
         a.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         a.translate((int)x,(int)y);
@@ -388,21 +395,30 @@ public final class Chefe {
 
     public void desenharVida(Graphics2D g) {
         if(artista!=null){artista.desenharVida(g);return;}
+        if(hell!=null){hell.desenharVida(g);return;}
         HudMetal.chefe(g,getNome(),vida,vidaMaxima);
     }
 
     public Rectangle getBounds() {
         if (artista != null) return artista.getBounds();
+        if (hell != null) return hell.getBounds();
         return new Rectangle((int) x + 118, (int) y + 50, 238, 320);
     }
-    public boolean estaVivo() { return artista != null ? artista.estaVivo() : vida > 0; }
-    public int getVida() { return artista != null ? artista.getVida() : vida; }
-    public int getVidaMaxima() { return artista != null ? artista.getVidaMaxima() : vidaMaxima; }
+    public boolean estaVivo() { return artista != null ? artista.estaVivo() : hell != null ? hell.estaVivo() : vida > 0; }
+    public int getVida() { return artista != null ? artista.getVida() : hell != null ? hell.getVida() : vida; }
+    public int getVidaMaxima() { return artista != null ? artista.getVidaMaxima() : hell != null ? hell.getVidaMaxima() : vidaMaxima; }
     public int getFase() { return fase; }
-    public int getX() { return artista != null ? artista.getX() : (int) x; }
-    public int getY() { return artista != null ? artista.getY() : (int) y; }
-    public String getNome() { return artista != null ? artista.getNome() : "LULA DO ABISMO"; }
+    public int getX() { return artista != null ? artista.getX() : hell != null ? hell.getX() : (int) x; }
+    public int getY() { return artista != null ? artista.getY() : hell != null ? hell.getY() : (int) y; }
+    public String getNome() { return artista != null ? artista.getNome() : hell != null ? hell.getNome() : "LULA DO ABISMO"; }
+    /** Acerto de um tiro: no Hellraiser cada corpo da dupla responde por si. */
+    boolean colide(Rectangle r) { return hell != null ? hell.colide(r) : r.intersects(getBounds()); }
+    /** Encosto da nave no corpo do chefe. */
+    boolean tocaNave(Rectangle r) { return hell != null ? hell.tocaNave(r) : r.intersects(getBounds()); }
+    /** Cutscene pedida no meio da luta (Ozzy virando Principe, dragao). */
+    String consumirCena() { return artista != null ? artista.consumirCena() : hell != null ? hell.consumirCena() : null; }
+    int getAtoHellraiserTeste() { return hell == null ? 0 : hell.ato(); }
     int getTotalQuadros() { return quadros.length; }
     int getFormaMetalTeste() { return artista == null ? 0 : artista.getForma(); }
-    double getEntrada() { return artista != null ? artista.getEntrada() : entrada; }
+    double getEntrada() { return artista != null ? artista.getEntrada() : hell != null ? hell.getEntrada() : entrada; }
 }

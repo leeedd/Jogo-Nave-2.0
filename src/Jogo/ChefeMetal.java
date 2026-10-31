@@ -27,6 +27,10 @@ public final class ChefeMetal {
     private double proximaManobra = 4.1;
     private double manobraAtiva;
     private double destinoManobraY;
+    /** Ozzy tem tres atos: Crazy Train, morcego gigante e Principe das Trevas. */
+    private final int ultimaForma;
+    private String cenaPendente;
+    private final Trem trem;
 
 
     public ChefeMetal(int artista, Dificuldade dificuldade) {
@@ -35,9 +39,15 @@ public final class ChefeMetal {
         Sprites16Bits.preparar(artista, 1);
         Sprites16Bits.preparar(artista, 2);
         this.vidaPorForma = (int) Math.round((artista == 1 ? 345 : artista == 2 ? 190 : artista == 3 ? 215 : 180 + artista * 12)
-                * dificuldade.resistenciaChefe);
+                * dificuldade.resistenciaChefe * (artista == 1 ? .85 : 1));
         this.vida = vidaPorForma;
+        this.ultimaForma = artista == 1 ? 3 : 2;
+        this.trem = artista == 1 ? new Trem() : null;
     }
+    /** Cutscene pedida pela luta (lida uma unica vez pela Fase). */
+    String consumirCena() { String c = cenaPendente; cenaPendente = null; return c; }
+    /** Forma desenhada pelos sprites: no Ozzy o ato I e o trem, entao morcego = 1 e principe = 2. */
+    private int formaSprite() { return artista == 1 ? Math.max(1, forma - 1) : forma; }
 
     public void atualizar(double dt, int naveX, int naveY, Dificuldade dificuldade,
                           List<TiroChefe> tiros) {
@@ -45,6 +55,7 @@ public final class ChefeMetal {
         tempo += dt;
         flash = Math.max(0, flash - dt);
         gestoDisparo = Math.max(0, gestoDisparo - dt);
+        if (trem != null && forma == 1) { trem.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = trem.entrada(); return; }
         entrada = Math.min(1.0, entrada + dt / 1.35);
         double suavizar = 1 - Math.pow(1 - entrada, 3);
         double baseX = (Config.LARGURA + 40) * (1 - suavizar)
@@ -114,10 +125,15 @@ public final class ChefeMetal {
         switch (artista) {
             case 1: // Ozzy: morcegos ondulantes -> ondas sonoras concentradas.
                 if (forma == 1) {
+                    trem.disparar(naveX, naveY, tiros);
+                } else if (forma == 2) {
                     for (int i = -3; i <= 3; i++)
                         tiro(tiros, ox, oy + i * 12, Math.PI + i * .115, 220, false,
                                 TiroChefe.Movimento.ONDA);
                 } else {
+                    // revoada: um anel de morcegos abre em volta do Principe a cada terceira rajada
+                    if (rajadas % 3 == 2)
+                        for (int i = 0; i < 10; i++) tiro(tiros, ox + 80, oy - 40, i * Math.PI / 5, 150, false, TiroChefe.Movimento.ONDA);
                     for (int i = -4; i <= 4; i++)
                         tiro(tiros, ox, oy, mira + i * .145, 275, i == 0,
                                 TiroChefe.Movimento.PULSANTE);
@@ -214,11 +230,14 @@ public final class ChefeMetal {
         vida = Math.max(0, vida - Math.max(0, dano));
         flash = .16;
         if (vida != 0) return false;
-        if (forma == 1) {
-            forma = 2;
+        if (forma < ultimaForma) {
+            forma++;
             vida = vidaPorForma;
             transformando = 1.45;
             intervalo = 1.7;
+            // o morcego vira o Principe das Trevas numa cutscene propria
+            if (trem != null && forma == 2) trem.parar();
+            if (artista == 1 && forma == 3) { cenaPendente = CenaChefe.TRANSFORMACAO; transformando = .3; }
             return false;
         }
         return true;
@@ -248,13 +267,16 @@ public final class ChefeMetal {
                 : entrada >= 1 && transformando <= 0 && intervalo < .38
                     ? -(1 - Math.max(0, intervalo) / .38) : 0;
         // Transformacao dissolve as duas formas; nenhuma bolha cobre o personagem.
+        if (trem != null && forma == 1) { g.dispose(); trem.desenhar(tela, flash); return; }
         if (transformando > 0) {
             float transicao = (float)Math.max(0, Math.min(1, 1 - transformando / 1.45));
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1-transicao));
-            Sprites16Bits.desenhar(g, artista, 1, largura, altura, tempo, 0);
+            // o trem explode e o morcego sai da fumaca
+            if (trem != null && forma == 2) { Graphics2D t = (Graphics2D) tela.create(); t.setComposite(g.getComposite()); trem.desenhar(t, 0); t.dispose(); }
+            else Sprites16Bits.desenhar(g, artista, formaSprite() - 1, largura, altura, tempo, 0);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, transicao));
         }
-        Sprites16Bits.desenhar(g, artista, forma, largura, altura, tempo, gesto);
+        Sprites16Bits.desenhar(g, artista, formaSprite(), largura, altura, tempo, gesto);
         g.setComposite(AlphaComposite.SrcOver);
         if (manobraAtiva > 0 && manobraAtiva < 1.45 && manobraAtiva > .98) {
             // Aviso compacto, fora da silhueta e sem esconder os tiros.
@@ -277,7 +299,7 @@ public final class ChefeMetal {
     public void desenharVida(Graphics2D g) {
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         g.setColor(Color.WHITE);
-        String nome = getNome() + (forma == 1 ? "  [ATO I]" : "  [ATO II]");
+        String nome = getNome() + "  [ATO " + (forma == 1 ? "I" : forma == 2 ? "II" : "III") + "]";
         g.drawString(nome, 217, Config.HUD + 24);
         g.setColor(new Color(8, 22, 34, 222));
         g.fillRoundRect(218, Config.HUD + 31, 526, 22, 10, 10);
@@ -293,17 +315,20 @@ public final class ChefeMetal {
         g.drawRoundRect(218, Config.HUD + 31, 526, 22, 10, 10);
     }
 
-    public Rectangle getBounds() { return new Rectangle((int)x + 42, (int)y + 30, largura - 87, altura - 74); }
+    public Rectangle getBounds() {
+        if (trem != null && forma == 1) return trem.getBounds();
+        return new Rectangle((int)x + 42, (int)y + 30, largura - 87, altura - 74);
+    }
     public boolean estaVivo() { return vida > 0; }
     public int getVida() { return vida; }
     public int getVidaMaxima() { return vidaPorForma; }
-    public int getX() { return (int)x; }
-    public int getY() { return (int)y; }
+    public int getX() { return trem != null && forma == 1 ? trem.getBounds().x : (int)x; }
+    public int getY() { return trem != null && forma == 1 ? trem.getBounds().y : (int)y; }
     public int getForma() { return forma; }
     public double getEntrada() { return entrada; }
     public String getNome() {
         switch (artista) {
-            case 1: return "OZZY - PRINCIPE DAS TREVAS";
+            case 1: return forma == 1 ? "OZZY - CRAZY TRAIN" : forma == 2 ? "OZZY - MORCEGO DA NOITE" : "OZZY - PRINCIPE DAS TREVAS";
             case 2: return "ROB HALFORD - PAINKILLER";
             case 3: return "BRUCE - EDDIE VOADOR";
             case 4: return "LEMMY - BOMBER";
@@ -312,5 +337,106 @@ public final class ChefeMetal {
             case 7: return "CHUCK BILLY - TESTAMENT";
             default: throw new IllegalStateException("Artista invalido");
         }
+    }
+
+    /**
+     * Ato I do Ozzy: o Crazy Train. Corre nos trilhos da direita, troca de faixa, solta baforadas
+     * roxas pela chamine, arranca vagoes de espinhos contra a nave e, de tempos em tempos,
+     * atravessa a tela inteira na faixa da nave depois de um aviso.
+     */
+    private final class Trem {
+        private final java.awt.image.BufferedImage arte = lerArte("ozzy_trem.png");
+        private final int h = 175, w;
+        private double tx = Config.LARGURA + 40, ty, alvoY, entrar, relogio = 1.4, sopro, aviso, investidaTrem = 6.5;
+        private boolean investindo, voltando;
+        private int golpes;
+        Trem() {
+            w = arte != null ? arte.getWidth() / 3 * h / arte.getHeight() : 540;
+            ty = alvoY = Config.HUD + (Config.ALTURA - Config.HUD - h) / 2.0;
+        }
+        double entrada() { return entrar; }
+        void parar() { aviso = 0; investindo = false; if (tx < 0 || tx > base()) tx = base(); }
+        private double base() { return Config.LARGURA - w - 8; }
+        void atualizar(double dt, int naveX, int naveY, Dificuldade dif, List<TiroChefe> tiros) {
+            sopro = Math.max(0, sopro - dt);
+            double furia = vida < vidaPorForma * .4 ? 1.3 : 1;
+            if (investindo) {
+                tx -= 980 * furia * dt;
+                if (tx < -w - 30) { investindo = false; voltando = true; tx = Config.LARGURA + 40; alvoY = faixa(naveY); ty = alvoY; }
+                return;
+            }
+            if (aviso > 0) {
+                aviso = Math.max(0, aviso - dt);
+                if (aviso == 0) { investindo = true; SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA); }
+                return;
+            }
+            double chegada = voltando ? .9 : 1.35;
+            if (tx > base()) tx = Math.max(base(), tx - (Config.LARGURA + 40 - base()) / chegada * dt);
+            else voltando = false;
+            if (!voltando) entrar = Math.min(1, entrar + dt / 1.35);
+            // troca de faixa suave, perseguindo a nave com atraso
+            ty += (alvoY - ty) * Math.min(1, dt * 1.6);
+            if (entrar < 1 || voltando) return;
+            relogio -= dt * dif.cadenciaInimigos * furia;
+            investidaTrem -= dt * dif.cadenciaInimigos * furia;
+            if (investidaTrem <= 0 && sopro <= 0) {
+                investidaTrem = 6.2 + golpes % 2 * 1.3;
+                alvoY = ty = faixa(naveY); aviso = .95;
+                return;
+            }
+            if (relogio > 0 || tiros.size() > 46) return;
+            golpes++;
+            if (golpes % 3 == 0) vagao(naveX, naveY, tiros); else baforada(tiros);
+            alvoY = faixa(naveY + (golpes % 2 == 0 ? -120 : 120));
+            relogio = (golpes % 3 == 0 ? 1.6 : 1.25);
+        }
+        void disparar(int naveX, int naveY, List<TiroChefe> tiros) { if (golpes++ % 2 == 0) baforada(tiros); else vagao(naveX, naveY, tiros); }
+        private double faixa(double naveY) { return Math.max(Config.HUD + 14, Math.min(Config.ALTURA - h - 10, naveY - h * .55)); }
+        private void baforada(List<TiroChefe> tiros) {
+            sopro = .7; gestoDisparo = DURACAO_GESTO;
+            double cx = tx + w * .09, cy = ty + h * .12;
+            for (int i = -2; i <= 2; i++)
+                tiros.add(new TiroChefe(cx, cy, Math.cos(Math.PI + i * .16) * (230 - Math.abs(i) * 15), Math.sin(Math.PI + i * .16) * 230 + i * 25,
+                        false, TiroChefe.FUMACA, TiroChefe.Movimento.ONDA));
+        }
+        private void vagao(int naveX, int naveY, List<TiroChefe> tiros) {
+            double ox = tx + 40, oy = ty + h * .55, a = Math.atan2(naveY + 18 - oy, naveX + 22 - ox);
+            tiros.add(new TiroChefe(ox, oy, Math.cos(a) * 360, Math.sin(a) * 360, true, TiroChefe.VAGAO, TiroChefe.Movimento.RETO));
+        }
+        Rectangle getBounds() { return new Rectangle((int) tx + 12, (int) (ty + h * .3), w - 24, (int) (h * .66)); }
+        void desenhar(Graphics2D tela, double flashDano) {
+            Graphics2D g = (Graphics2D) tela.create();
+            int x = (int) tx, y = (int) ty + ((int) (tempo * 14) % 2);
+            if (aviso > 0) {
+                // faixa da investida: a nave tem menos de um segundo para sair dos trilhos
+                boolean pisca = (int) (aviso * 10) % 2 == 0;
+                g.setColor(new Color(200, 60, 255, pisca ? 70 : 35)); g.fillRect(0, (int) (ty + h * .3), Config.LARGURA, (int) (h * .66));
+                g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22)); g.setColor(new Color(235, 170, 255, pisca ? 255 : 140));
+                g.drawString("ALL ABOARD!", 40, (int) (ty + h * .62));
+            }
+            int q = sopro > 0 ? 1 : vida < vidaPorForma * .4 ? 2 : 0;
+            if (arte != null) {
+                int fw = arte.getWidth() / 3;
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g.drawImage(arte, x, y, x + w, y + h, q * fw, 0, q * fw + fw, arte.getHeight(), null);
+            } else {
+                g.setColor(new Color(36, 30, 42)); g.fillRect(x, y + h / 3, w, h / 2);
+                g.setColor(new Color(190, 80, 255)); for (int k = 0; k < 8; k++) g.fillOval(x + 20 + k * w / 8, y + h * 3 / 4, 26, 26);
+            }
+            // olho da caveira acende no aviso e em investida
+            if (aviso > 0 || investindo) {
+                int ex = x + (int) (w * .045), ey = y + (int) (h * .56), r = 9 + (int) (Math.sin(tempo * 30) * 3);
+                g.setColor(new Color(230, 140, 255, 200)); g.fillOval(ex - r, ey - r, r * 2, r * 2);
+                g.setColor(Color.WHITE); g.fillOval(ex - r / 3, ey - r / 3, r * 2 / 3, r * 2 / 3);
+            }
+            if (investindo) for (int k = 0; k < 12; k++) { g.setColor(new Color(200, 90, 255, 150 - k * 10)); g.fillRect(x + w + k * 18, y + h / 2 + (k % 3 - 1) * 26, 40, 3); }
+            if (flashDano > 0) { g.setColor(new Color(255, 255, 255, (int) (flashDano / .16 * 70))); g.fill(getBounds()); }
+            g.dispose();
+        }
+    }
+    private static java.awt.image.BufferedImage lerArte(String n) {
+        java.net.URL u = ChefeMetal.class.getResource("/ImagemIcon/" + n);
+        if (u == null) return null;
+        try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; }
     }
 }

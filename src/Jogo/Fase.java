@@ -144,6 +144,11 @@ implements ActionListener {
     private final boolean[] trofeusOutrasLendas = new boolean[4];
     private final boolean[] trofeusAdquiridos = new boolean[9];
     private int trofeuPendente;
+    /** Cutscene no meio da luta (Ozzy virando Principe, dragao, van do Hellraiser): congela o combate. */
+    private CenaChefe cenaChefe;
+    /** Setor Hellraiser: obrigatorio depois dos oito chefes, antes dos creditos. */
+    private boolean emHellraiser, hellraiserVencido;
+    static final int HELLRAISER = 9;
     private boolean novoJogoMais;
     private boolean usarLendaria;
     private int modeloVisual;
@@ -266,7 +271,7 @@ implements ActionListener {
         for (ProjetilInimigo t : tirosInimigos) if (t.isVisible() && r.intersects(t.getBounds())) t.setVisible(false);
         for (TiroChefe t : tirosChefes) if (t.isVisible() && r.intersects(t.getBounds())) t.setVisible(false);
         if (miniChefe != null && r.intersects(miniChefe.getBounds()) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (miniChefe.receberDano(6)) derrotarMiniChefe(); }
-        if (chefe != null && r.intersects(chefe.getBounds()) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (chefe.receberDano(8)) derrotarChefao(); }
+        if (chefe != null && chefe.colide(r) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (chefe.receberDano(8)) derrotarChefao(); }
     }
     private void atualizarPoderes(double d){
         atualizarCapsulas(d); atualizarInvestida();
@@ -290,7 +295,7 @@ implements ActionListener {
         if(miniChefe!=null&&poderes.atinge(miniChefe.getBounds())&&miniChefe.receberDano(dano))derrotarMiniChefe();
         if(chefe!=null&&poderes.atinge(chefe.getBounds())){
             // Ponto fraco: o poder certo causa dano dobrado, como numa tabela de fraquezas.
-            boolean critico=FRAQUEZA[chefe.getFase()]==poderes.ativo;
+            boolean critico=chefe.getFase()<FRAQUEZA.length&&FRAQUEZA[chefe.getFase()]==poderes.ativo;
             if(critico){dano*=2;tempoCritico=.6;}
             chefe.reagir(poderes.ativo,critico);
             if(chefe.receberDano(dano))derrotarChefao();
@@ -358,6 +363,7 @@ implements ActionListener {
         MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(setorAtual));
         base = null; esperaProximoEsquadrao = 2.5; nave.tornarIntangivel(2);
         mostrarAviso("DE VOLTA A BASE ALIADA"); ultimoQuadroNanos = System.nanoTime();
+        if (r.length > 14 && r[14] > 0) { esperaProximoEsquadrao = 99; iniciarHellraiser(); }
     }
     /** Troca de nave no hangar: so entre as desbloqueadas; a nova mantem o nivel e a porcentagem do casco. */
     private void trocarNaveNaBase(int passo) {
@@ -840,6 +846,7 @@ implements ActionListener {
             graphics2D.setColor(new Color(255, 230, 60, (int) (255 * Math.min(1, tempoCritico / .3))));
             graphics2D.drawString("PONTO FRACO! x2", chefe.getBounds().x - 40, chefe.getBounds().y - 12 - (int) ((.6 - tempoCritico) * 40));
         }
+        if (cenaChefe != null) cenaChefe.desenhar(graphics2D);
         if (naBase && !pausado) EstacaoAliada.desenharMenu(graphics2D, menuBase, cursorBase, nave, inventario, modeloVisual, avisoBase, tempoTotal);
         if (escolhendoSetor || this.pausado && !painelTeste) this.desenharMenuPausa(graphics2D);
         graphics2D.setColor(Color.CYAN);
@@ -1103,7 +1110,8 @@ implements ActionListener {
                 tirosInimigos.clear(); tirosElementais.clear(); nave.getMisseis().clear(); itens.clear();
             }
         }
-        if(etapa==Etapa.DERROTA_CHEFE){cenaDerrota.atualizar(d);if(cenaDerrota.terminou()){cenaDerrota=null;etapa=Etapa.INTERLUDIO;itens.add(new Item(Recompensas.tipo(trofeuPendente),550,280,true));tempoEtapa=.8;}repaint();return;}
+        if(etapa==Etapa.DERROTA_CHEFE){cenaDerrota.atualizar(d);if(cenaDerrota.terminou()){cenaDerrota=null;etapa=Etapa.INTERLUDIO;if(trofeuPendente!=0)itens.add(new Item(Recompensas.tipo(trofeuPendente),550,280,true));tempoEtapa=.8;}repaint();return;}
+        if(cenaChefe!=null){cenaChefe.atualizar(d);if(cenaChefe.terminou()){cenaChefe=null;nave.tornarIntangivel(1);}repaint();return;}
         if (this.etapa == Etapa.DOBRA) {
             if (this.cenaNave != null) {
                 this.cenaNave.atualizar(d);
@@ -1166,6 +1174,7 @@ implements ActionListener {
                 }
             } else if (this.etapa == Etapa.BATALHA_CHEFE && this.chefe != null) {
                 int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, alvoX(), alvoY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
+                String pedido=chefe.consumirCena();if(pedido!=null)abrirCenaChefe(pedido);
                 for (TiroChefe tiroChefe2 : this.tirosChefes) {
                     if (!tiroChefe2.isVisible()) continue;
                     tiroChefe2.mexer(d);
@@ -1257,6 +1266,7 @@ implements ActionListener {
             return;
         }
         if(trofeuPendente!=0)return;
+        if(chefesDerrotados==TOTAL_SETORES&&!hellraiserVencido){iniciarHellraiser();return;}
         if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal();MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
         this.itens.clear(); capsulas.clear();
         this.tempoAviso = 0.0;
@@ -1449,7 +1459,7 @@ implements ActionListener {
                 if (this.emJogo) continue;
                 return;
             }
-            if (this.chefe != null && rectangle.intersects(this.chefe.getBounds())) {
+            if (this.chefe != null && this.chefe.tocaNave(rectangle)) {
                 this.processarDano(this.dificuldade.ajustarDano(3), null);
                 if (!this.emJogo) {
                     return;
@@ -1490,7 +1500,7 @@ implements ActionListener {
             if (!disparoElemental.ativo()) continue;
             object = disparoElemental.getBounds();
             if (this.chefe != null) {
-                if (!((Rectangle)object).intersects(this.chefe.getBounds())) continue;
+                if (!this.chefe.colide((Rectangle)object)) continue;
                 SomJogo.tocar(SomJogo.Efeito.IMPACTO);disparoElemental.apagar();
                 if (!this.chefe.receberDano(disparoElemental.dano())) continue;
                 this.derrotarChefao();
@@ -1526,7 +1536,7 @@ implements ActionListener {
             object = missel.getBounds();
             if (this.chefe != null) {
                 int n;
-                if (!((Rectangle)object).intersects(this.chefe.getBounds())) continue;
+                if (!this.chefe.colide((Rectangle)object)) continue;
                 n = missel.getTipo() == 2 ? 43 : ((missel.getTipo() == 1 ? 5 : 2) * this.nave.danoBalistico());
                 if (missel.getTipo() == 2) {
                     this.explosaoX = missel.getX();
@@ -1588,6 +1598,21 @@ implements ActionListener {
         if (!intercepcao && etapa == Etapa.COMBATE) { base = new EstacaoAliada(); mostrarAviso("SENTINELA DESTRUIDA! BASE ALIADA SE APROXIMANDO"); }
     }
 
+    private void abrirCenaChefe(String nome) {
+        CenaChefe c = CenaChefe.criar(nome); if (c == null) return;
+        cenaChefe = c; tirosChefes.clear(); tirosInimigos.clear();
+        nave.soltarTeclas(); espacoPressionado = geloPressionado = fogoPressionado = false;
+    }
+    /** Depois do oitavo chefe nao tem mapa: Ozzy e Lemmy chegam de van. O casco e reparado antes e a retomada fica aqui. */
+    private void iniciarHellraiser() {
+        itens.clear(); capsulas.clear(); alien.clear(); asteroides.clear(); tirosInimigos.clear(); tirosElementais.clear(); nave.getMisseis().clear();
+        emHellraiser = true; base = null; miniChefe = null;
+        nave.definirVida(nave.getVidaMaxima());
+        gravarRetomada(); if (retomada != null) retomada[14] = 1;
+        iniciarChefao(HELLRAISER);
+        abrirCenaChefe(CenaChefe.VAN);
+        mostrarAviso("SETOR FINAL: HELLRAISER");
+    }
     private void iniciarChefao(int n) {SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA);
         this.etapa = Etapa.BATALHA_CHEFE;
         this.chefePendente = 0;
@@ -1605,7 +1630,9 @@ implements ActionListener {
             return;
         }
         int id=chefe.getFase();cenaDerrota=new CenaDerrotaChefe(chefe);
-        premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;chefe=null;
+        if(id==HELLRAISER){premiar(30000);hellraiserVencido=true;emHellraiser=false;trofeuPendente=0;}
+        else{premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;}
+        chefe=null;cenaChefe=null;
         tirosChefes.clear();tirosInimigos.clear();tirosElementais.clear();nave.getMisseis().clear();itens.clear();asteroides.clear();
         etapa=Etapa.DERROTA_CHEFE;espacoPressionado=false;geloPressionado=false;fogoPressionado=false;tempoAviso=0;
     }
@@ -1922,7 +1949,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
@@ -2295,6 +2322,7 @@ implements ActionListener {
         @Override
         public void keyPressed(KeyEvent keyEvent) {
             int codigo = keyEvent.getKeyCode();
+            if (cenaChefe != null && !pausado && (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE)) { cenaChefe.pular(); return; }
             if (naBase && !pausado) {
                 if (!teclasTeste.add(codigo)) return;
                 boolean esq = codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_A, dir = codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_D;

@@ -34,13 +34,17 @@ public final class TiroChefe {
         x += vx * dt * velocidade + perpx * curva;
         y += vy * dt * velocidade + perpy * curva;
         tempo += dt;
-        if (x < -40 || x > Config.LARGURA + 40 || y < Config.HUD - 40 || y > Config.ALTURA + 40)
+        int margem = estilo == VAGAO ? 130 : 40;
+        if (x < -margem || x > Config.LARGURA + margem || y < Config.HUD - margem || y > Config.ALTURA + margem)
             visivel = false;
     }
     public void desenhar(Graphics2D g) {
         int px = (int) x, py = (int) y;
         // Cada artista tem um projetil com forma propria, combinando com o golpe da prancha.
         switch (estilo) {
+            case FUMACA: desenharFumaca(g, px, py); return;
+            case VAGAO: desenharVagao(g, px, py); return;
+            case FOGO_ROXO: desenharFogoRoxo(g, px, py); return;
             case 1: desenharMorcego(g, px, py); return;
             case 2: desenharFogo(g, px, py); return;
             case 3: desenharRaioCruzado(g, px, py); return;
@@ -250,10 +254,57 @@ public final class TiroChefe {
     double getVxTeste() { return vx; }
     double getVyTeste() { return vy; }
     public Rectangle getBounds() {
-        int r = pesado ? 11 : 6;
+        if (estilo == VAGAO) return new Rectangle((int) x - 70, (int) y - 26, 150, 52);
+        int r = estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
         return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2);
     }
-    public int dano() { return pesado ? 3 : 2; }
+    public int dano() { return estilo == VAGAO ? 5 : estilo == FOGO_ROXO ? 3 : pesado ? 3 : 2; }
+
+    // ---- Ozzy (Crazy Train e dragao) ----
+    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22;
+    private static final java.awt.image.BufferedImage ARTE_VAGAO = ler("ozzy_trem_vagao.png");
+    private static java.awt.image.BufferedImage ler(String n) { java.net.URL u = TiroChefe.class.getResource("/ImagemIcon/" + n); if (u == null) return null; try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; } }
+    /** Baforada da chamine: nuvem roxa que cresce e se desfaz enquanto anda. */
+    private void desenharFumaca(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        int r = (int) (16 + Math.min(14, tempo * 16));
+        for (int k = 0; k < 6; k++) {
+            double a = k * 1.05 + tempo * 2.2; int ox = (int) (Math.cos(a) * r * .55), oy = (int) (Math.sin(a) * r * .45), rr = r * (k % 2 == 0 ? 7 : 5) / 9;
+            g.setColor(new Color(k % 3 == 0 ? 190 : 130, 60, k % 3 == 0 ? 240 : 190, 95));
+            g.fillOval(px + ox - rr, py + oy - rr, rr * 2, rr * 2);
+        }
+        g.setColor(new Color(240, 200, 255, 150)); g.fillOval(px - r / 4, py - r / 4, r / 2, r / 2);
+        g.dispose();
+    }
+    /** Vagao de espinhos arrancado do Crazy Train, voando de nariz para a nave. */
+    private void desenharVagao(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        double ang = Math.atan2(vy, vx) - Math.PI; // a arte ja aponta para a esquerda
+        g.rotate(ang * .6, px, py);
+        if (ARTE_VAGAO != null) {
+            int w = 190, h = ARTE_VAGAO.getHeight() * w / ARTE_VAGAO.getWidth();
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(ARTE_VAGAO, px - w / 2 + 10, py - h / 2, w, h, null);
+        } else {
+            g.setColor(new Color(40, 34, 44)); g.fillRect(px - 60, py - 22, 130, 44);
+            g.setColor(new Color(200, 80, 255)); for (int k = 0; k < 5; k++) g.fillRect(px - 40 + k * 22, py - 10, 10, 14);
+            g.setColor(new Color(170, 170, 180)); g.fillPolygon(new int[]{px - 60, px - 90, px - 60}, new int[]{py - 18, py, py + 18}, 3);
+        }
+        g.dispose();
+    }
+    /** Labareda roxa do dragao: nucleo claro, borda violeta, rastro curto. */
+    private void desenharFogoRoxo(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        double d = Math.atan2(vy, vx);
+        for (int k = 4; k >= 0; k--) {
+            int tx = px - (int) (Math.cos(d) * k * 7), ty = py - (int) (Math.sin(d) * k * 7), r = 13 - k * 2;
+            g.setColor(new Color(150 + k * 10, 40, 230, 200 - k * 35)); g.fillRect(tx - r, ty - r, r * 2, r * 2);
+        }
+        int f = (int) (tempo * 20) % 2;
+        g.setColor(new Color(225, 150, 255)); g.fillRect(px - 7 + f, py - 7, 14, 14);
+        g.setColor(new Color(255, 235, 255)); g.fillRect(px - 3, py - 3, 6, 6);
+        g.dispose();
+    }
     public boolean isVisible() { return visivel; }
     public void setVisible(boolean v) { visivel = v; }
 }
