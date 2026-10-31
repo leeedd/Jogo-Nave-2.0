@@ -38,4 +38,12 @@ e.getNave().teleportar(100,480);Asteroide perto=new Asteroide(120,495,12,1).lanc
   Contrato g=new Contrato(Contrato.Tipo.MINERACAO,2,1,1,-1,"GARIMPO");g.minerio();ok(!g.cumprido,"falta minerio");g.minerio();ok(g.cumprido,"garimpo cumprido");
   ok(Contrato.ofertas(4,4,false,new java.util.Random(1),true).stream().anyMatch(x->x.tipo==Contrato.Tipo.MINERACAO),"quadro oferece garimpo com campo a frente");
   ok(Turne.instrumento("LARS ULRICH")=='D'&&Turne.instrumento("ROBERT TRUJILLO")=='B'&&Turne.instrumento("KIRK HAMMETT")=='G'&&Turne.instrumento("NICKO MCBRAIN")=='D',"cada integrante tem o seu instrumento");
+  // fortaleza: depois do Hellraiser, cada banda reunida, todas as 8, e so entao o final
+  Fase z=TesteInvasao093.fase(80);TesteInvasao093.set(z,"partidaTeste",true);TesteInvasao093.set(z,"chefesDerrotados",8);TesteInvasao093.set(z,"hellraiserVencido",true);
+  Method ir=Fase.class.getDeclaredMethod("iniciarReuniao",int.class);ir.setAccessible(true);ir.invoke(z,0);
+  for(int b=0;b<8;b++){MiniChefe gr=(MiniChefe)TesteInvasao093.get(z,"miniChefe");ok(gr!=null&&gr.bandaReunida(),"fortaleza "+(b+1)+": banda reunida em campo");
+   java.util.List<?> mem=(java.util.List<?>)TesteInvasao093.get(gr,"banda");ok(mem.size()==Turne.integrantes(b),"todos os "+mem.size()+" integrantes juntos");
+   while(!gr.receberDano(50)){}call(z,"derrotarMiniChefe");TesteInvasao093.set(z,"base",null);
+   if(b<7){for(int i=0;i<300&&TesteInvasao093.get(z,"miniChefe")==null;i++)z.atualizarSimulacao(1/60.0);}}
+  ok(z.getEtapaTeste().equals("CREDITOS"),"depois da oitava banda vem o final");
   System.out.println("OK turne");}}

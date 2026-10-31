@@ -60,9 +60,12 @@ public final class MiniChefe {
     }
     java.util.List<TiroChefe> projeteisTeste() { return projeteis; }
     void definirIntegrante(String nome,int risco){integrante=nome==null?"":nome;vida=vidaMaxima=(int)Math.round(vidaMaxima*Turne.premio(risco));}
-    String nome(){if(comandante==null&&!integrante.isEmpty())return integrante;return comandante==null?"SENTINELA":comandante.rainha?"RAINHA DO ENXAME":"PIRATA DOMADOR";}
+    String nome(){if(banda!=null)return "BANDA REUNIDA";if(comandante==null&&!integrante.isEmpty())return integrante;return comandante==null?"SENTINELA":comandante.rainha?"RAINHA DO ENXAME":"PIRATA DOMADOR";}
     ComandanteEnxame comandanteTeste(){return comandante;}
-    boolean receberImpacto(Rectangle r,int dano){return comandante==null?receberDano(dano):comandante.impacto(r,dano);}
+    boolean receberImpacto(Rectangle r,int dano){
+        if(banda!=null){for(MiniChefe m:vivos())if(m.getBounds().intersects(r)){m.receberMembro(dano);return vivos().isEmpty();}return receberDano(dano);}
+        return comandante==null?receberDano(dano):comandante.impacto(r,dano);}
+    private void receberMembro(int dano){vida=Math.max(0,vida-Math.max(0,dano));if(vida==0)SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE);}
     MiniChefe(int n,boolean invasor,boolean rainha){this(n,invasor);if(invasor)comandante=new ComandanteEnxame(rainha,n);}
 
     public MiniChefe(int n) { this(n, false); }
@@ -76,21 +79,43 @@ public final class MiniChefe {
 
     void posicionarInterdicao() { x=740; y=314; }
 
+    // ---- banda reunida (fortaleza): varios integrantes ao mesmo tempo, cada um com o seu ataque ----
+    private java.util.List<MiniChefe> banda;
+    private double casaX = 700, casaY = 305, amplitude = 82;
+    /** Membro da banda reunida: fica no proprio posto e atira de la, sem descer ate a nave. */
+    private boolean membro;
+    /** Todos os integrantes do setor juntos, espalhados pela direita da tela. */
+    static MiniChefe banda(int setor) {
+        MiniChefe g = new MiniChefe(setor + 1); g.banda = new java.util.ArrayList<>();
+        int n = Turne.integrantes(setor);
+        for (int k = 0; k < n; k++) {
+            MiniChefe m = new MiniChefe(setor + 1, "membro"); m.definirIntegrante(Turne.integrante(setor, k), 3);
+            m.casaX = 830 - (k % 2) * 230; m.casaY = n == 1 ? 330 : 205 + k * 270.0 / (n - 1); m.amplitude = 60.0 / n; m.x = 1060 + k * 60; m.y = m.casaY;
+            m.carga = 1.5 + k * .7; g.banda.add(m);
+        }
+        return g;
+    }
+    boolean bandaReunida() { return banda != null; }
+    private java.util.List<MiniChefe> vivos() { java.util.List<MiniChefe> l = new java.util.ArrayList<>(); for (MiniChefe m : banda) if (m.vida > 0) l.add(m); return l; }
+    /** Construtor silencioso para membros da banda (sem o som de entrada repetido). */
+    private MiniChefe(int n, String membro) { this.membro = true; this.invasor = false; this.setor = n; this.vida = this.vidaMaxima = 24 + n * 7; }
+
     public void atualizar(double d, int n) {
         if(comandante!=null){comandante.atualizar(d,n);return;}
+        if(banda!=null){for(MiniChefe m:vivos())m.atualizar(d,n);return;}
         d = Math.max(0.0, Math.min(0.05, d));
         this.tempo += d;
         for (TiroChefe t : projeteis) t.mexer(d);
         projeteis.removeIf(t -> !t.isVisible());
-        this.x += (700.0 - this.x) * (1.0 - Math.exp(-1.7 * d));
-        double destino = (this.carregando || this.disparando) ? this.raioAlvo
-                : 305.0 + Math.sin(this.tempo * 1.15) * 82.0;
+        this.x += (casaX - this.x) * (1.0 - Math.exp(-1.7 * d));
+        double destino = (this.carregando || this.disparando) && !membro ? this.raioAlvo
+                : casaY + Math.sin(this.tempo * 1.15) * amplitude;
         double deslocamento = (destino - this.y) * (1.0 - Math.exp(-4.5 * d));
         this.y += Math.max(-260 * d, Math.min(260 * d, deslocamento));
         if (!this.carregando && !this.disparando) {
             this.carga -= d;
             if (this.carga <= 0.0) {
-                this.raioAlvo = Math.max(172, Math.min(505, n + 18));
+                this.raioAlvo = membro ? (int) this.y : Math.max(172, Math.min(505, n + 18));
                 this.carregando = true;SomJogo.tocar(SomJogo.Efeito.ALERTA);
                 this.relogioRaio = 1.05;
                 this.atingiu = false;
@@ -119,6 +144,7 @@ public final class MiniChefe {
     }
 
     public boolean consumirDano(Rectangle rectangle) {
+        if (banda != null) { for (MiniChefe m : vivos()) if (m.consumirDano(rectangle)) return true; return false; }
         if(comandante!=null)return comandante.consumirDano(rectangle);
         for (TiroChefe t : projeteis) if (t.isVisible() && t.getBounds().intersects(rectangle)) { t.setVisible(false); return true; }
         if (!this.disparando || this.atingiu) {
@@ -171,6 +197,7 @@ public final class MiniChefe {
 
     public boolean receberDano(int n) {
         if(comandante!=null){comandante.dano(n);return comandante.terminou();}
+        if(banda!=null){java.util.List<MiniChefe> v=vivos();if(!v.isEmpty())v.get(0).receberMembro(n);return vivos().isEmpty();}
         this.vida = Math.max(0, this.vida - Math.max(0, n));
         return this.vida == 0;
     }
@@ -183,14 +210,17 @@ public final class MiniChefe {
 
     public Rectangle getBounds() {
         if(comandante!=null)return comandante.corpo();
+        if(banda!=null){Rectangle r=null;for(MiniChefe m:vivos())r=r==null?m.getBounds():r.union(m.getBounds());return r!=null?r:new Rectangle((int)x-70,(int)y-48,140,96);}
         return new Rectangle((int)this.x - 70, (int)this.y - 48, 140, 96);
     }
 
     public int getVida() {
+        if(banda!=null){int t=0;for(MiniChefe m:banda)t+=m.vida;return t;}
         return comandante==null?this.vida:comandante.vida();
     }
 
     public int getVidaMaxima() {
+        if(banda!=null){int t=0;for(MiniChefe m:banda)t+=m.vidaMaxima;return t;}
         return comandante==null?this.vidaMaxima:comandante.max();
     }
 
@@ -208,6 +238,7 @@ public final class MiniChefe {
 
     public void desenhar(Graphics2D graphics2D) {
         if(comandante!=null){comandante.desenhar(graphics2D);return;}
+        if(banda!=null){for(MiniChefe m:vivos())m.desenhar(graphics2D);return;}
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
         // sem linha de aviso: enquanto carrega, o aviso e o proprio olho arregalado; o raio so aparece no disparo
         if (this.disparando && !atiraProjetil()) desenharRaio(graphics2D2);

@@ -162,10 +162,23 @@ implements ActionListener {
     private int abatesSeguidos; private boolean avisouSangrando;
     /** Emboscada do enxame: primeiro as ondas atravessam a tela, depois chega a rainha (ou a nave comandante). */
     private boolean rainhaChegou;
+    /** Fortaleza (depois do Hellraiser): cada banda reunida, todos os integrantes juntos, uma fase por banda. */
+    private boolean reuniao, reuniaoVencida; private int bandaReuniao; private double esperaReuniao;
+    static final String[] BANDAS = {"CRIAS DO ABISMO", "JUDAS PRIEST", "IRON MAIDEN", "MOTORHEAD", "METALLICA", "SLAYER", "TESTAMENT", "BLACK SABBATH"};
+    private void iniciarReuniao(int b) {
+        itens.clear(); capsulas.clear(); alien.clear(); asteroides.clear(); tirosInimigos.clear(); tirosChefes.clear(); tirosElementais.clear(); nave.getMisseis().clear();
+        reuniao = true; emHellraiser = false; chefe = null; cenaChefe = null; base = null; bandaReuniao = b; esperaReuniao = 0;
+        etapa = Etapa.COMBATE; setorAtual = Turne.setor(b); planetaAtual = Turne.integrantes(setorAtual);
+        fundoEspacial.definirProgresso(0, setorAtual); MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(setorAtual));
+        miniChefe = MiniChefe.banda(setorAtual);
+        gravarRetomada(); if (retomada != null) { retomada[14] = 2; retomada[24] = b; }
+        mostrarAviso("FORTALEZA " + (b + 1) + "/8: " + BANDAS[b] + " REUNIDA!");
+        if (!partidaTeste) radio.urgente("A " + BANDAS[b] + " inteira voltou. Ninguem passa daqui!");
+    }
     /** Levas de guardas que ja vieram socorrer a sentinela atual (uma em 50% e outra em 25% da vida). */
     private int levasGuarda; private MiniChefe sentinelaGuardada;
     private void atualizarGuardas() {
-        if (miniChefe == null || miniChefe.invasor() || intercepcao) return;
+        if (miniChefe == null || miniChefe.invasor() || intercepcao || miniChefe.bandaReunida()) return;
         if (sentinelaGuardada != miniChefe) { sentinelaGuardada = miniChefe; levasGuarda = 0; }
         double f = miniChefe.getVida() / (double) Math.max(1, miniChefe.getVidaMaxima());
         if ((levasGuarda == 0 && f < .5) || (levasGuarda == 1 && f < .25)) {
@@ -431,7 +444,7 @@ implements ActionListener {
     /** Retomada: setor, progresso do setor, pontos, nivel, casco e energia dos poderes no momento da atracagem. */
     private void gravarRetomada() {
         if (partidaTeste) return;
-        double[] r = new double[16 + 8];
+        double[] r = new double[16 + 8 + 1];
         r[0] = setorAtual; r[1] = setoresVencidos; r[2] = chefesDerrotados; r[3] = eliminados; r[4] = pontos;
         r[5] = nave.getNivel(); r[6] = nave.getVida(); r[7] = nave.temArmaSecundaria() ? 1 : 0; r[8] = geloColetado ? 1 : 0; r[9] = fogoColetado ? 1 : 0;
         r[10] = lancadosNoSetor; r[11] = numeroEsquadrao; r[12] = modeloVisual; r[13] = creditos; r[15] = planetaAtual;
@@ -455,7 +468,8 @@ implements ActionListener {
         base = null; esperaProximoEsquadrao = 2.5; nave.tornarIntangivel(2);
         mostrarAviso("DE VOLTA A BASE ALIADA"); ultimoQuadroNanos = System.nanoTime();
         if (comandoSalvo != null) comando = comandoSalvo.copia(); // o inimigo nao esquece o que aprendeu
-        if (r.length > 14 && r[14] > 0) { esperaProximoEsquadrao = 99; iniciarHellraiser(); }
+        if (r.length > 14 && r[14] == 1) { esperaProximoEsquadrao = 99; iniciarHellraiser(); }
+        else if (r.length > 24 && r[14] == 2) { esperaProximoEsquadrao = 99; hellraiserVencido = true; iniciarReuniao((int) r[24]); }
     }
     /** Troca de nave no hangar: so entre as desbloqueadas; a nova mantem o nivel e a porcentagem do casco. */
     private void trocarNaveNaBase(int passo) {
@@ -778,12 +792,17 @@ implements ActionListener {
             }
             return;
         }
+        if (reuniao && miniChefe == null) {
+            // entre uma banda e outra: respiro curto e a proxima entra
+            esperaReuniao -= d; if (esperaReuniao <= 0 && base == null) iniciarReuniao(bandaReuniao);
+            return;
+        }
         if (this.miniChefe != null) {
             this.miniChefe.atualizar(d, this.nave.getY());
             atualizarGuardas();
             if(this.miniChefe.derrotado()){derrotarMiniChefe();return;}
             if(intercepcao && !miniChefe.morrendo()){esperaEnxame-=d;if(esperaEnxame<=0)lancarEnxame();}
-            else if(!intercepcao && esperaProximoEsquadrao<=0 && alien.stream().filter(Alien::isVisible).count()+TAMANHOS[proximaFormacao]<=18)lancarProximoEsquadrao();
+            else if(!intercepcao && !reuniao && esperaProximoEsquadrao<=0 && alien.stream().filter(Alien::isVisible).count()+TAMANHOS[proximaFormacao]<=18)lancarProximoEsquadrao();
             return;
         }
         if (intercepcao) return;
@@ -843,6 +862,7 @@ implements ActionListener {
         graphics2D2.setColor(this.avisoMini >= 0.0 ? new Color(255, 128, 100) : Color.WHITE);
         graphics2D2.drawString(string, 375, 85);
         graphics2D2.setColor(new Color(162, 186, 213));
+        if (reuniao) { graphics2D2.drawString("FORTALEZA " + (bandaReuniao + 1) + "/8: " + BANDAS[Math.min(7, bandaReuniao)] + " REUNIDA", 375, 100); graphics2D2.dispose(); return; }
         int pr = riscoAtual(); boolean chefePlaneta = planetaAtual >= Turne.integrantes(setorAtual);
         graphics2D2.drawString("PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual) + ": " + (chefePlaneta ? MapaEstelar.CHEFES[Turne.setor(setorAtual)] : Turne.integrante(setorAtual, planetaAtual)) + "  RISCO ", 375, 100);
         int rx = 375 + graphics2D2.getFontMetrics().stringWidth("PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual) + ": " + (chefePlaneta ? MapaEstelar.CHEFES[Turne.setor(setorAtual)] : Turne.integrante(setorAtual, planetaAtual)) + "  RISCO ");
@@ -1385,6 +1405,7 @@ implements ActionListener {
     }
 
     private void verificarProgressao() {
+        if (reuniao) return;
         if (intercepcao || !this.emJogo || this.etapa != Etapa.COMBATE || this.chefesDerrotados >= TOTAL_SETORES) {
             return;
         }
@@ -1425,6 +1446,7 @@ implements ActionListener {
         }
         if(trofeuPendente!=0)return;
         if(chefesDerrotados==TOTAL_SETORES&&!hellraiserVencido){iniciarHellraiser();return;}
+        if(chefesDerrotados==TOTAL_SETORES&&!reuniaoVencida){iniciarReuniao(0);return;}
         if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal();MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
         this.itens.clear(); capsulas.clear();
         this.tempoAviso = 0.0;
@@ -1783,7 +1805,12 @@ implements ActionListener {
         this.miniChefe = null;
         ++this.totalMiniChefesDerrotados;
         premiar((int) (1500 * Turne.premio(riscoAtual())));
-        if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
+        if (reuniao) {
+            // banda reunida derrotada: proxima banda da fortaleza, ou o final
+            bandaReuniao++;
+            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; emJogo = false; venceu = true; etapa = Etapa.CREDITOS; cenaFinal = new CenaFinal(); MusicaJogo.trocarSeDisponivel("GoGoPowerRangers"); return; }
+            esperaReuniao = 4; mostrarAviso(BANDAS[bandaReuniao - 1] + " DERROTADA! PROXIMA: " + BANDAS[bandaReuniao]);
+        } else if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
             // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta
             String quem = Turne.integrante(setorAtual, planetaAtual); planetaAtual++; miniChefeEnfrentado = false;
             mostrarAviso(quem + " CANCELADO! PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual) + (Turne.anel(setorAtual, planetaAtual) ? ": CAMPO DE METEOROS!" : ""));
@@ -2178,7 +2205,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
