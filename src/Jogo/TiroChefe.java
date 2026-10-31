@@ -51,6 +51,7 @@ public final class TiroChefe {
             case FOGO_ROXO: desenharFogoRoxo(g, px, py); return;
             case BARRIL: desenharBarril(g, px, py); return;
             case RASTRO: desenharRastro(g, px, py); return;
+            case ONDA_SOM: desenharOndaLemmy(g, px, py); return;
             case 1: desenharMorcego(g, px, py); return;
             case 2: desenharFogo(g, px, py); return;
             case 3: desenharRaioCruzado(g, px, py); return;
@@ -261,13 +262,28 @@ public final class TiroChefe {
     double getVyTeste() { return vy; }
     public Rectangle getBounds() {
         if (estilo == VAGAO) return new Rectangle((int) x - 70, (int) y - 26, 150, 52);
+        if (estilo == ONDA_SOM) { int h = alturaOnda() * 3 / 4; return new Rectangle((int) x - 16, (int) y - h / 2, 32, h); }
         int r = estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
         return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2);
     }
-    public int dano() { return estilo == VAGAO ? 5 : estilo == FOGO_ROXO ? 3 : pesado ? 3 : 2; }
+    public int dano() { return estilo == ONDA_SOM ? 1 : estilo == VAGAO ? 5 : estilo == FOGO_ROXO ? 3 : pesado ? 3 : 2; }
 
     // ---- Ozzy (Crazy Train e dragao) ----
-    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24;
+    static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24, ONDA_SOM = 25;
+    private static final java.awt.image.BufferedImage ARTE_ONDA = ler("onda_som_lemmy.png");
+    /** A onda do paredao de caixas empurra a nave em vez de so ferir. */
+    boolean empurra() { return estilo == ONDA_SOM; }
+    private int alturaOnda() { return 58 + (int) (Math.min(1, tempo * 1.2) * 46); }
+    private void desenharOndaLemmy(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create();
+        int h = alturaOnda();
+        if (ARTE_ONDA != null) {
+            int fw = ARTE_ONDA.getWidth() / 4, k = Math.min(3, (int) (tempo * 5)), w = fw * h / ARTE_ONDA.getHeight();
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(ARTE_ONDA, px - w / 3, py - h / 2, px - w / 3 + w, py + h / 2, k * fw, 0, k * fw + fw, ARTE_ONDA.getHeight(), null);
+        } else { g.setColor(new Color(255, 150, 40)); g.setStroke(new java.awt.BasicStroke(5)); g.drawArc(px - 20, py - h / 2, 40, h, 90, 180); }
+        g.dispose();
+    }
     double getX() { return x; }
     double getY() { return y; }
     double idade() { return tempo; }

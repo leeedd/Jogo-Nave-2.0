@@ -148,6 +148,8 @@ implements ActionListener {
     private CenaChefe cenaChefe;
     /** Setor Hellraiser: obrigatorio depois dos oito chefes, antes dos creditos. */
     private boolean emHellraiser, hellraiserVencido;
+    /** Empurrao das ondas do paredao (px/s para a esquerda, decai sozinho). */
+    private double empurraoNave;
     static final int HELLRAISER = 9;
     private boolean novoJogoMais;
     private boolean usarLendaria;
@@ -1175,6 +1177,10 @@ implements ActionListener {
             } else if (this.etapa == Etapa.BATALHA_CHEFE && this.chefe != null) {
                 int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, alvoX(), alvoY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
                 String pedido=chefe.consumirCena();if(pedido!=null)abrirCenaChefe(pedido);
+                // empurrao das caixas de som e puxao do gancho da van
+                if(empurraoNave>0){nave.teleportar(nave.getX()-empurraoNave*d,nave.getY());empurraoNave=Math.max(0,empurraoNave-1300*d);}
+                double[] puxao=chefe!=null?chefe.puxaoNave():null;
+                if(puxao!=null){double ddx=puxao[0]-(nave.getX()+22),ddy=puxao[1]-(nave.getY()+18),dist=Math.max(1,Math.hypot(ddx,ddy));nave.teleportar(nave.getX()+ddx/dist*330*d,nave.getY()+ddy/dist*330*d);}
                 for (TiroChefe tiroChefe2 : this.tirosChefes) {
                     if (!tiroChefe2.isVisible()) continue;
                     tiroChefe2.mexer(d);
@@ -1455,6 +1461,7 @@ implements ActionListener {
             for (TiroChefe tiroChefe : this.tirosChefes) {
                 if (!tiroChefe.isVisible() || !rectangle.intersects(tiroChefe.getBounds())) continue;
                 tiroChefe.setVisible(false);
+                if (tiroChefe.empurra()) empurraoNave = 520;
                 this.processarDano(this.dificuldade.ajustarDano(tiroChefe.dano()), null);
                 if (this.emJogo) continue;
                 return;
@@ -1949,7 +1956,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());

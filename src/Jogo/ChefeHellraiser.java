@@ -17,7 +17,8 @@ import java.util.List;
  */
 final class ChefeHellraiser {
     static final int VAN = 1, DUO = 2, DRAGAO = 3;
-    private static final BufferedImage ARTE_VAN = ler("hellraiser_van.png"), ARTE_DRAGAO = ler("ozzy_dragao.png");
+    private static final BufferedImage ARTE_VAN = ler("hellraiser_van.png"), VAN_GANCHO = ler("hellraiser_van_gancho.png"), VAN_AMPS = ler("hellraiser_van_amps.png"),
+            GANCHO_ABERTO = ler("hellraiser_gancho_aberto.png"), GANCHO_FECHADO = ler("hellraiser_gancho_fechado.png"), ELO = ler("hellraiser_corrente_elo.png"), ARTE_DRAGAO = ler("ozzy_dragao.png");
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD;
 
     private int ato = VAN;
@@ -29,16 +30,21 @@ final class ChefeHellraiser {
     /** Quem levou o ultimo tiro no ato II (0 Ozzy, 1 Lemmy), escolhido em colide(). */
     private int alvoDuo = -1;
 
-    // van
-    private final int vanH = 200, vanW;
-    private double vx = W + 40, vy, vAlvoY, aviso, proximaInvestida = 3.2, faixaTravada, percorrido, ultimoRastro;
+    // van: as tres pranchas tem celulas de 700x380 (paredao 700x470) com a caveira da lateral no mesmo ponto
+    private static final double E = .62;
+    private final int vanW = (int) (700 * E), vanH = (int) (380 * E);
+    private double vx = W + 40, vy, vAlvoY, aviso, proximaManobra = 2.6, percorrido, ultimoRastro;
     private boolean investindo, voltando;
-    /** Manobras da van: rasante reto com pista em chamas, zigue-zague, volta por tras e chuva de barris. */
-    private static final int RASANTE = 0, ZIGUE = 1, POR_TRAS = 2, BARRIS = 3;
-    private static final int[] ROTEIRO = {RASANTE, BARRIS, ZIGUE, BARRIS, RASANTE, POR_TRAS, BARRIS, ZIGUE};
-    private int manobra = RASANTE, passoRoteiro, barrisFaltando;
-    private double sentido = -1, proximoBarril;
-    private final java.util.List<TiroChefe> barris = new java.util.ArrayList<>();
+    /** Manobras: paredao de caixas (empurra), gancho (puxa) e, so na furia, o rasante. */
+    private static final int NADA = 0, PAREDAO = 1, GANCHO = 2, RASANTE = 3;
+    private int manobra = NADA, passoRoteiro;
+    private double fase;
+    private int ondasFaltando;
+    // gancho: 1 mirando, 2 voando, 3 preso na nave, 4 recolhendo
+    private int gancho;
+    private double hx, hy, hvx, hvy, tempoPreso, faiscaCorrente;
+    private int vidaCorrente;
+    private boolean acertouCorrente;
     // dupla: cada um com posicao propria; trocam de lugar em arco
     private final double[] px = new double[2], py = new double[2];
     private double troca = 6, trocando, gesto;
@@ -54,9 +60,8 @@ final class ChefeHellraiser {
         double r = dif.resistenciaChefe;
         vidaVan = (int) Math.round(260 * r); vidaDuo = (int) Math.round(170 * r); vidaDragao = (int) Math.round(430 * r);
         vida = vidaVan;
-        vanW = ARTE_VAN != null ? ARTE_VAN.getWidth() / 4 * vanH / ARTE_VAN.getHeight() : 280;
         dragW = ARTE_DRAGAO != null ? ARTE_DRAGAO.getWidth() / 4 * dragH / ARTE_DRAGAO.getHeight() : 300;
-        vy = vAlvoY = TOPO + (H - TOPO - vanH) / 2.0;
+        vy = vAlvoY = TOPO + (H - TOPO) / 2.0 - 137 * E;
         dy = TOPO + (H - TOPO - dragH) / 2.0;
         Sprites16Bits.preparar(1, 2); Sprites16Bits.preparar(4, 2);
     }
@@ -76,24 +81,20 @@ final class ChefeHellraiser {
     }
 
     // ---------------- ato I: a van ----------------
-    private double baseVan() { return W - vanW - 30; }
-    private double faixaVan(double naveY) { return Math.max(TOPO + 12, Math.min(H - vanH - 8, naveY - vanH * .5)); }
+    private double baseVan() { return W - 470 * E - 20; }
+    private double faixaVan(double naveY) { return Math.max(TOPO - 60 * E, Math.min(H - 330 * E, naveY + 18 - 137 * E)); }
+    private double bocaArpaoX() { return vx + 145 * E; }
+    private double bocaArpaoY() { return vy + 248 * E; }
     private void van(double dt, int naveX, int naveY, double cad, List<TiroChefe> tiros) {
         boolean furia = vida < vidaVan * .4;
-        estourarBarris(tiros);
+        faiscaCorrente = Math.max(0, faiscaCorrente - dt);
+        atualizarGancho(dt, naveX, naveY);
         if (investindo) {
-            double vel = (furia ? 1150 : 980) * (manobra == ZIGUE ? .72 : 1);
-            vx += sentido * vel * dt; percorrido += vel * dt;
-            if (manobra == ZIGUE) vy = Math.max(TOPO + 6, Math.min(H - vanH - 6, faixaTravada + Math.sin(percorrido / (W + vanW) * Math.PI * 3) * 150));
-            // pneus em chamas: a pista fica pegando fogo atras da van
-            if (manobra != ZIGUE && percorrido - ultimoRastro > 34) { ultimoRastro = percorrido;
-                for (int r = 0; r < 2; r++) tiros.add(new TiroChefe(vx + vanW * (sentido < 0 ? .3 + r * .45 : .7 - r * .45), vy + vanH * .86, 0, 0, false, TiroChefe.RASTRO, TiroChefe.Movimento.RETO)); }
-            boolean saiu = sentido < 0 ? vx < -vanW - 30 : vx > W + 30;
-            if (!saiu) return;
-            investindo = false;
-            // na furia o rasante emenda direto na volta por tras
-            if (furia && manobra == RASANTE) { iniciarManobra(POR_TRAS, naveY); return; }
-            sentido = -1; voltando = true; vx = W + 40; vy = vAlvoY = faixaVan(naveY);
+            // rasante da furia: atravessa a tela e os pneus deixam a pista pegando fogo
+            double vel = 1150; vx -= vel * dt; percorrido += vel * dt;
+            if (percorrido - ultimoRastro > 34) { ultimoRastro = percorrido;
+                for (int r = 0; r < 2; r++) tiros.add(new TiroChefe(vx + (190 + r * 190) * E, vy + 330 * E, 0, 0, false, TiroChefe.RASTRO, TiroChefe.Movimento.RETO)); }
+            if (vx < -vanW) { investindo = false; voltando = true; manobra = NADA; vx = W + 40; vy = vAlvoY = faixaVan(naveY); }
             return;
         }
         if (aviso > 0) {
@@ -104,52 +105,76 @@ final class ChefeHellraiser {
         if (vx > baseVan()) vx = Math.max(baseVan(), vx - (voltando ? 700 : 520) * dt);
         else voltando = false;
         if (!voltando) entrada = Math.min(1, entrada + dt / 1.3);
-        vAlvoY += (faixaVan(naveY) - vAlvoY) * Math.min(1, dt * .9);
-        vy += (vAlvoY + Math.sin(tempo * 2.2) * 40 - vy) * Math.min(1, dt * 2.5);
+        // presa no gancho, a van segura a faixa; no resto do tempo persegue a nave devagar
+        if (gancho != 3) vAlvoY += (faixaVan(naveY) - vAlvoY) * Math.min(1, dt * .9);
+        vy += (vAlvoY + (gancho == 0 ? Math.sin(tempo * 2.2) * 30 : 0) - vy) * Math.min(1, dt * 2.5);
         if (entrada < 1 || voltando) return;
-        if (barrisFaltando > 0) {
-            // Lemmy joga os barris pela janela, um atras do outro, em arco
-            proximoBarril -= dt;
-            if (proximoBarril <= 0) {
-                barrisFaltando--; proximoBarril = furia ? .3 : .42; gesto = .4;
-                double ox = vx + vanW * .35, oy = vy + vanH * .3, alcance = Math.max(80, ox - naveX - 22 + (barrisFaltando - 1) * 90);
-                double sobe = (naveY + 18 - oy) / 1.05 - .5 * 560 * 1.05; // cai em cima da nave quando estoura
-                TiroChefe b = new TiroChefe(ox, oy, -alcance / 1.05, sobe, true, TiroChefe.BARRIL, TiroChefe.Movimento.ARCO);
-                tiros.add(b); barris.add(b);
-            }
-            return;
-        }
-        proximaInvestida -= dt * cad * (furia ? 1.35 : 1);
-        if (proximaInvestida <= 0) {
-            int m = ROTEIRO[passoRoteiro++ % ROTEIRO.length];
-            proximaInvestida = m == BARRIS ? 2.6 : 3.6;
-            if (m == BARRIS) { barrisFaltando = furia ? 4 : 3; proximoBarril = .2; }
-            else iniciarManobra(m, naveY);
+        if (manobra == PAREDAO) { paredao(dt, furia, tiros); return; }
+        if (manobra == GANCHO) { if (gancho == 0) manobra = NADA; return; }
+        proximaManobra -= dt * cad * (furia ? 1.3 : 1);
+        if (proximaManobra <= 0) {
+            int m = furia && passoRoteiro % 3 == 2 ? RASANTE : passoRoteiro % 2 == 0 ? PAREDAO : GANCHO;
+            passoRoteiro++; manobra = m; proximaManobra = furia ? 1.6 : 2.2;
+            if (m == PAREDAO) { fase = 0; ondasFaltando = furia ? 5 : 4; }
+            else if (m == GANCHO) { gancho = 1; fase = 0; }
+            else { aviso = .7; vy = vAlvoY = faixaVan(naveY); }
             return;
         }
         intervalo -= dt * cad * (furia ? 1.3 : 1);
         if (intervalo > 0 || tiros.size() > 46) return;
         rajadas++; gesto = .4;
-        double ox = vx + vanW * .3, oy = vy + vanH * .4, mira = Math.atan2(naveY + 18 - oy, naveX + 22 - ox);
-        if (rajadas % 2 == 0) for (int i = -2; i <= 2; i++) tiro(tiros, ox, oy, mira + i * .2, 240, i == 0, 1, TiroChefe.Movimento.PULSANTE);
-        else for (int i = -3; i <= 3; i++) tiro(tiros, ox + vanW * .2, oy, Math.PI + i * .17, 190, i % 3 == 0, 4, TiroChefe.Movimento.ONDA);
-        intervalo = 1.45;
+        double ox = vx + 155 * E, oy = vy + 105 * E, mira = Math.atan2(naveY + 18 - oy, naveX + 22 - ox);
+        for (int i = -2; i <= 2; i++) tiro(tiros, ox, oy, mira + i * .2, 240, i == 0, 1, TiroChefe.Movimento.PULSANTE);
+        intervalo = 1.6;
     }
-    private void iniciarManobra(int m, int naveY) {
-        manobra = m; aviso = m == POR_TRAS ? 1.0 : .85;
-        faixaTravada = faixaVan(naveY); vy = vAlvoY = faixaTravada;
-        if (m == POR_TRAS) { sentido = 1; vx = -vanW - 30; SomJogo.tocar(SomJogo.Efeito.ALERTA); } // buzina antes de vir por tras
-        else sentido = -1;
-    }
-    /** Barril estoura no ar ou ao cair: oito labaredas para todos os lados. */
-    private void estourarBarris(List<TiroChefe> tiros) {
-        for (java.util.Iterator<TiroChefe> it = barris.iterator(); it.hasNext();) {
-            TiroChefe b = it.next();
-            if (!b.isVisible()) { it.remove(); continue; }
-            if (b.idade() < 1.05 && b.getY() < H - 24) continue;
-            b.setVisible(false); it.remove();
-            for (int k = 0; k < 8; k++) tiros.add(new TiroChefe(b.getX(), b.getY(), Math.cos(k * Math.PI / 4) * 210, Math.sin(k * Math.PI / 4) * 210, false, 2, TiroChefe.Movimento.RETO));
+    /** Paredao: o teto abre, as Marshall sobem e o Lemmy toca; cada nota e uma onda que empurra a nave. */
+    private void paredao(double dt, boolean furia, List<TiroChefe> tiros) {
+        fase += dt;
+        if (fase < .55) return; // teto abrindo (quadro 1)
+        if (ondasFaltando > 0) {
+            intervalo -= dt;
+            if (intervalo <= 0) {
+                ondasFaltando--; intervalo = furia ? .42 : .55; gesto = .3;
+                double ox = vx + 364 * E, oy = vy + 104 * E;
+                for (int i = -1; i <= 1; i++) tiros.add(new TiroChefe(ox, oy + 40 + i * 62 + (ondasFaltando % 2) * 30, -330, i * 35, false, TiroChefe.ONDA_SOM, TiroChefe.Movimento.RETO));
+            }
+            return;
         }
+        if (fase > 99) return;
+        fase = 100; // marca o fim; a proxima atualizacao fecha o teto
+        manobra = NADA; intervalo = 1.2;
+    }
+    private void atualizarGancho(double dt, int naveX, int naveY) {
+        if (gancho == 0) return;
+        double bx = bocaArpaoX(), by = bocaArpaoY(), nx = naveX + 22, ny = naveY + 18;
+        if (gancho == 1) {
+            fase += dt; hx = bx; hy = by;
+            if (fase >= .6) { // dispara no ponto onde a nave estava
+                double a = Math.atan2(ny - by, nx - bx); hvx = Math.cos(a) * 640; hvy = Math.sin(a) * 640;
+                gancho = 2; fase = 0; vidaCorrente = 12; SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
+            }
+        } else if (gancho == 2) {
+            fase += dt; hx += hvx * dt; hy += hvy * dt;
+            if (Math.hypot(hx - nx, hy - ny) < 30) { gancho = 3; tempoPreso = 0; SomJogo.tocar(SomJogo.Efeito.IMPACTO); }
+            else if (fase > 1.4 || hx < -20 || hy < TOPO - 20 || hy > H + 20) gancho = 4;
+        } else if (gancho == 3) {
+            hx = nx; hy = ny; tempoPreso += dt;
+            // chegou nos espinhos do para-choque ou cansou de puxar: solta
+            if (Math.hypot(nx - bx, ny - by) < 70 || tempoPreso > 4.5) gancho = 4;
+        } else {
+            double d = Math.hypot(bx - hx, by - hy);
+            if (d < 30) { gancho = 0; return; }
+            hx += (bx - hx) / d * 900 * dt; hy += (by - hy) / d * 900 * dt;
+        }
+    }
+    /** Para onde a nave esta sendo arrastada (ou null): a Fase move a nave ate la. */
+    double[] puxaoNave() { return ato == VAN && gancho == 3 ? new double[]{bocaArpaoX(), bocaArpaoY()} : null; }
+    /** Tiro na corrente: distancia do ponto ao segmento boca-gancho. */
+    private boolean naCorrente(Rectangle r) {
+        if (gancho != 2 && gancho != 3) return false;
+        double ax = bocaArpaoX(), ay = bocaArpaoY(), dx2 = hx - ax, dy2 = hy - ay, l2 = dx2 * dx2 + dy2 * dy2;
+        double t = l2 == 0 ? 0 : Math.max(0, Math.min(1, ((r.getCenterX() - ax) * dx2 + (r.getCenterY() - ay) * dy2) / l2));
+        return Math.hypot(r.getCenterX() - (ax + dx2 * t), r.getCenterY() - (ay + dy2 * t)) < 16 && t < .92;
     }
 
     // ---------------- ato II: Ozzy e Lemmy juntos ----------------
@@ -238,13 +263,21 @@ final class ChefeHellraiser {
     // ---------------- dano e colisao ----------------
     /** Acerto pontual: no ato II guarda quem foi atingido para o dano cair no certo. */
     boolean colide(Rectangle r) {
+        if (ato == VAN && naCorrente(r)) { acertouCorrente = true; return true; }
         if (ato != DUO) return r.intersects(getBounds());
         for (int k = 0; k < 2; k++) if ((k == 0 ? vidaOzzy : vidaLemmy) > 0 && r.intersects(corpoDuo(k))) { alvoDuo = k; return true; }
         return false;
     }
     boolean receberDano(int dano) {
         if (entrada < 1 && ato != DUO || transicao > 0 || cenaPendente != null) return false;
-        dano = Math.max(0, dano); flash = .16;
+        dano = Math.max(0, dano);
+        if (acertouCorrente) {
+            // cada tiro na corrente quebra um elo; doze e a nave se solta
+            acertouCorrente = false; faiscaCorrente = .12;
+            if (--vidaCorrente <= 0 && (gancho == 2 || gancho == 3)) { gancho = 4; SomJogo.tocar(SomJogo.Efeito.IMPACTO); }
+            return false;
+        }
+        flash = .16;
         if (ato == DUO) {
             int k = alvoDuo >= 0 ? alvoDuo : vidaOzzy >= vidaLemmy ? 0 : 1;
             if (k == 0 && vidaOzzy <= 0) k = 1; else if (k == 1 && vidaLemmy <= 0) k = 0;
@@ -260,7 +293,8 @@ final class ChefeHellraiser {
         if (vida > 0) return false;
         if (ato == VAN) {
             ato = DUO; vidaOzzy = vidaLemmy = vidaDuo; transicao = 1.3; intervalo = 1.6; rajadas = 0; investindo = false; aviso = 0;
-            for (int k = 0; k < 2; k++) { px[k] = vx + vanW * .3; py[k] = vy; }
+            gancho = 0; manobra = NADA;
+            for (int k = 0; k < 2; k++) { px[k] = vx + 200 * E; py[k] = vy; }
             return false;
         }
         return true;
@@ -270,7 +304,7 @@ final class ChefeHellraiser {
     int getVidaMaxima() { return ato == VAN ? vidaVan : ato == DUO ? vidaDuo * 2 : vidaDragao; }
     String getNome() { return ato == VAN ? "HELLRAISER - A VAN DO INFERNO" : ato == DUO ? "OZZY + LEMMY - HELLRAISER" : "OZZY - O DRAGAO"; }
     Rectangle getBounds() {
-        if (ato == VAN) return new Rectangle((int) vx + 16, (int) vy + vanH / 4, vanW - 40, vanH * 3 / 5);
+        if (ato == VAN) return new Rectangle((int) (vx + 150 * E), (int) (vy + 110 * E), (int) (320 * E), (int) (215 * E));
         if (ato == DUO) {
             Rectangle r = null;
             for (int k = 0; k < 2; k++) if ((k == 0 ? vidaOzzy : vidaLemmy) > 0 || transicao > 0) r = r == null ? corpoDuo(k) : r.union(corpoDuo(k));
@@ -281,6 +315,7 @@ final class ChefeHellraiser {
     /** Contato com o corpo: no ato II so conta quem esta de pe. */
     boolean tocaNave(Rectangle nave) {
         if (ato == DRAGAO && sopro > 0 && naChama(nave.getCenterX(), nave.getCenterY())) return true;
+        if (ato == VAN && gancho == 3 && nave.intersects(getBounds())) return true;
         if (ato != DUO) return nave.intersects(getBounds());
         for (int k = 0; k < 2; k++) if ((k == 0 ? vidaOzzy : vidaLemmy) > 0 && nave.intersects(corpoDuo(k))) return true;
         return false;
@@ -315,15 +350,40 @@ final class ChefeHellraiser {
     }
     private void desenharVan(Graphics2D g) {
         int x = (int) vx, y = (int) vy + ((int) (tempo * 16) % 2);
-        // sem faixa na tela: o aviso e a propria van tremendo no turbo (quadro 1)
-        int q = investindo ? 2 : aviso > 0 ? 1 : vida < vidaVan * .4 ? 3 : (int) (tempo * 6) % 4 == 0 ? 1 : 0;
-        boolean virada = sentido > 0;
-        if (ARTE_VAN != null) {
-            int fw = ARTE_VAN.getWidth() / 4;
-            if (virada) g.drawImage(ARTE_VAN, x + vanW, y, x, y + vanH, q * fw, 0, q * fw + fw, ARTE_VAN.getHeight(), null);
-            else g.drawImage(ARTE_VAN, x, y, x + vanW, y + vanH, q * fw, 0, q * fw + fw, ARTE_VAN.getHeight(), null);
-        } else { g.setColor(new Color(30, 30, 34)); g.fillRoundRect(x, y + 40, vanW, vanH - 70, 20, 20); }
-        if (investindo) for (int k = 0; k < 10; k++) { g.setColor(new Color(255, 150, 40, 160 - k * 14)); int lx = virada ? x - 44 - k * 20 : x + vanW + k * 20; g.fillRect(lx, y + vanH / 3 + (k % 3) * 30, 44, 3); }
+        BufferedImage arte = ARTE_VAN; int q, ch = 380, oy = 0;
+        boolean furia = vida < vidaVan * .4;
+        if (manobra == PAREDAO && VAN_AMPS != null) {
+            arte = VAN_AMPS; ch = 470; oy = -93;
+            q = fase < .55 ? 1 : ondasFaltando > 0 || fase < 100 ? (furia ? 3 : 2) : 1;
+        } else if (gancho != 0 && VAN_GANCHO != null) {
+            arte = VAN_GANCHO; q = gancho == 1 ? 1 : gancho == 2 ? 2 : gancho == 3 ? 3 : 0;
+        } else q = investindo ? 2 : aviso > 0 ? 1 : furia ? 3 : (int) (tempo * 6) % 4 == 0 ? 1 : 0;
+        if (arte != null) {
+            int fw = arte.getWidth() / 4, dy0 = y + (int) (oy * E);
+            g.drawImage(arte, x, dy0, x + vanW, dy0 + (int) (ch * E), q * fw, 0, q * fw + fw, arte.getHeight(), null);
+        } else { g.setColor(new Color(30, 30, 34)); g.fillRoundRect(x + 90, y + 70, 200, 120, 20, 20); }
+        if (investindo) for (int k = 0; k < 10; k++) { g.setColor(new Color(255, 150, 40, 160 - k * 14)); g.fillRect(x + (int) (470 * E) + k * 20, y + (int) (150 * E) + (k % 3) * 30, 44, 3); }
+        if (gancho >= 2) desenharCorrente(g);
+    }
+    private void desenharCorrente(Graphics2D tela) {
+        Graphics2D g = (Graphics2D) tela.create();
+        double ax = bocaArpaoX(), ay = bocaArpaoY(), d = Math.hypot(hx - ax, hy - ay), a = Math.atan2(hy - ay, hx - ax);
+        if (ELO != null) {
+            // elos repetidos ao longo da corrente, girados na direcao do gancho
+            int ew = ELO.getWidth() * 3 / 4, eh = ELO.getHeight() * 3 / 4;
+            Graphics2D c = (Graphics2D) g.create(); c.translate(ax, ay); c.rotate(a);
+            for (double t = 0; t < d - 20; t += ew * .8) c.drawImage(ELO, (int) t, -eh / 2, ew, eh, null);
+            c.dispose();
+        } else { g.setColor(new Color(90, 80, 70)); g.setStroke(new java.awt.BasicStroke(4)); g.drawLine((int) ax, (int) ay, (int) hx, (int) hy); }
+        if (faiscaCorrente > 0) { g.setColor(new Color(255, 220, 120)); for (int k = 0; k < 6; k++) g.fillRect((int) (ax + (hx - ax) * (.3 + k * .1)) + (k % 2) * 6 - 3, (int) (ay + (hy - ay) * (.3 + k * .1)) - 3, 4, 4); }
+        BufferedImage gc = gancho == 3 ? GANCHO_FECHADO : GANCHO_ABERTO;
+        if (gc != null) {
+            // a arte aponta para a esquerda: gira para seguir a corrente
+            Graphics2D h = (Graphics2D) g.create(); h.translate(hx, hy); h.rotate(a + Math.PI);
+            int w = (int) (gc.getWidth() * .6), hh = (int) (gc.getHeight() * .6);
+            h.drawImage(gc, -w / 3, -hh / 2, w, hh, null); h.dispose();
+        }
+        g.dispose();
     }
     /** O jato engrossa com a distancia: pega a nave se o centro dela cair dentro do cone. */
     private boolean naChama(double cx, double cy) {
