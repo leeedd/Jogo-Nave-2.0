@@ -81,7 +81,19 @@ public final class AtlasInimigos {
     private static final java.util.Map<String, BufferedImage> INTEGRANTES = new java.util.HashMap<>();
     static BufferedImage integrante(String nome) {
         if (nome == null || nome.isEmpty()) return null;
-        return INTEGRANTES.computeIfAbsent(nome, n -> imagemOpcional("integrante_" + n.toLowerCase().replace(' ', '_') + ".png"));
+        return INTEGRANTES.computeIfAbsent(nome, n -> {
+            BufferedImage a = imagemOpcional("integrante_" + n.toLowerCase().replace(' ', '_') + ".png");
+            int id = Turne.idVocalista(n);
+            if (a == null && id > 0 && PosesChefes.temNovaArte(id)) {
+                // vocalista: monta a tira com os 4 quadros do ato II do chefe (ja virados para a esquerda)
+                BufferedImage[] q = new BufferedImage[4]; int w = 0, h = 0;
+                for (int k = 0; k < 4; k++) { q[k] = PosesChefes.obter(id, 2, k); w = Math.max(w, q[k].getWidth()); h = Math.max(h, q[k].getHeight()); }
+                a = new BufferedImage(w * 4, h, BufferedImage.TYPE_INT_ARGB); Graphics2D g = a.createGraphics();
+                for (int k = 0; k < 4; k++) g.drawImage(q[k], k * w + (w - q[k].getWidth()) * 2 / 3, h - q[k].getHeight(), null);
+                g.dispose();
+            }
+            return a;
+        });
     }
     /** Desenha o integrante com o corpo centrado em (x, y); o golpe sai para a esquerda, fora do corpo. */
     static void integrante(Graphics2D g, BufferedImage arte, int x, int y, int quadro) {

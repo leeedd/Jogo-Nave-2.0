@@ -87,9 +87,12 @@ public final class MiniChefe {
     /** Todos os integrantes do setor juntos, espalhados pela direita da tela. */
     static MiniChefe banda(int setor) {
         MiniChefe g = new MiniChefe(setor + 1); g.banda = new java.util.ArrayList<>();
-        int n = Turne.integrantes(setor);
+        boolean vocal = !Turne.VOCALISTAS[Turne.setor(setor)].isEmpty();
+        int n = Turne.integrantes(setor) + (vocal ? 1 : 0);
         for (int k = 0; k < n; k++) {
-            MiniChefe m = new MiniChefe(setor + 1, "membro"); m.definirIntegrante(Turne.integrante(setor, k), 3);
+            // o vocalista fica no meio da banda, o mais protegido
+            int meio = n / 2; boolean eVocal = vocal && k == meio; int idx = vocal && k > meio ? k - 1 : k;
+            MiniChefe m = new MiniChefe(setor + 1, "membro"); m.definirIntegrante(eVocal ? Turne.VOCALISTAS[Turne.setor(setor)] : Turne.integrante(setor, idx), eVocal ? 4 : 3);
             m.casaX = 830 - (k % 2) * 230; m.casaY = n == 1 ? 330 : 205 + k * 270.0 / (n - 1); m.amplitude = 60.0 / n; m.x = 1060 + k * 60; m.y = m.casaY;
             m.carga = 1.5 + k * .7; g.banda.add(m);
         }
@@ -252,7 +255,8 @@ public final class MiniChefe {
             InimigosUniversos.desenhar(monstro,6,Alien.Classe.ORGANICO,0,0,tempo,false);monstro.dispose();
         } else if (AtlasInimigos.integrante(integrante) != null) {
             // o integrante toca o tempo todo: alterna tocar e bate-cabeca; arregala no preparo e solta o golpe
-            int q = this.disparando ? 2 : this.carregando ? 1 : (int) (this.tempo * 2.2) % 2 == 0 ? 0 : 3;
+            // criatura: o quadro 4 e ela ferida, so com pouca vida; musicos alternam tocar e bate-cabeca
+            int q = this.disparando ? 2 : this.carregando ? 1 : instrumento() == 'C' ? (vida < vidaMaxima * .35 ? 3 : 0) : (int) (this.tempo * 2.2) % 2 == 0 ? 0 : 3;
             AtlasInimigos.integrante(graphics2D2, AtlasInimigos.integrante(integrante), n, n2 + 5, q);
         } else if (AtlasInimigos.temSentinelaOlho()) {
             AtlasInimigos.sentinelaOlho(graphics2D2, n, n2 - 11, this.disparando ? 2 : this.carregando ? 1 : vida < vidaMaxima * .35 ? 3 : 0);

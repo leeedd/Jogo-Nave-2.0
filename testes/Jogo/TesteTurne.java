@@ -42,7 +42,7 @@ e.getNave().teleportar(100,480);Asteroide perto=new Asteroide(120,495,12,1).lanc
   Fase z=TesteInvasao093.fase(80);TesteInvasao093.set(z,"partidaTeste",true);TesteInvasao093.set(z,"chefesDerrotados",8);TesteInvasao093.set(z,"hellraiserVencido",true);
   Method ir=Fase.class.getDeclaredMethod("iniciarReuniao",int.class);ir.setAccessible(true);ir.invoke(z,0);
   for(int b=0;b<8;b++){MiniChefe gr=(MiniChefe)TesteInvasao093.get(z,"miniChefe");ok(gr!=null&&gr.bandaReunida(),"fortaleza "+(b+1)+": banda reunida em campo");
-   java.util.List<?> mem=(java.util.List<?>)TesteInvasao093.get(gr,"banda");ok(mem.size()==Turne.integrantes(b),"todos os "+mem.size()+" integrantes juntos");
+   java.util.List<?> mem=(java.util.List<?>)TesteInvasao093.get(gr,"banda");ok(mem.size()==Turne.integrantes(b)+(b>0?1:0),"banda completa com o vocalista: "+mem.size());
    while(!gr.receberDano(50)){}call(z,"derrotarMiniChefe");TesteInvasao093.set(z,"base",null);
    if(b<7){for(int i=0;i<300&&TesteInvasao093.get(z,"miniChefe")==null;i++)z.atualizarSimulacao(1/60.0);}}
   ok(z.getEtapaTeste().equals("CREDITOS"),"depois da oitava banda vem o final");
