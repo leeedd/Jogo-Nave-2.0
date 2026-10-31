@@ -12,7 +12,7 @@ onda do Lemmy, vans do Hellraiser, trem e dragão do Ozzy.
 
 # 1. EMBLEMAS DAS BANDAS (aviso do ataque combinado) - PRIORIDADE
 
-### Emblema 1: CRIAS DO ABISMO (emblema_banda_0.png)
+### [FEITO] Emblema 1: CRIAS DO ABISMO (emblema_banda_0.png)
 ```
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores ciano e azul-petróleo, com tentáculos, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
