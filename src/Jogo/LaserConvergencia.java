@@ -28,6 +28,15 @@ final class LaserConvergencia {
     private static final java.awt.image.BufferedImage[] CARGA = new java.awt.image.BufferedImage[9];
     static { for (int i = -1; i < 8; i++) { java.net.URL u = LaserConvergencia.class.getResource("/ImagemIcon/carga_" + (i < 0 ? "base" : String.valueOf(i)) + ".png");
         if (u != null) try { CARGA[i + 1] = javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { System.err.println("Carga ilegivel: " + i); } } }
+    private static final java.util.Map<Integer, java.awt.image.BufferedImage> TINTAS = new java.util.HashMap<>();
+    private static java.awt.image.BufferedImage tingir(java.awt.image.BufferedImage b, Color cor) {
+        return TINTAS.computeIfAbsent(cor.getRGB(), k -> { java.awt.image.BufferedImage o = new java.awt.image.BufferedImage(b.getWidth(), b.getHeight(), java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            for (int y = 0; y < b.getHeight(); y++) for (int x = 0; x < b.getWidth(); x++) { int c = b.getRGB(x, y), a = c >>> 24; double l = ((c >> 16 & 255) + (c >> 8 & 255) + (c & 255)) / 765.0;
+                double mix = Math.max(0, l - .93) * 10; // so o miolo fica branco; o resto ganha a cor da fusao
+                double k2 = Math.min(1, l * 1.25); int r = (int) Math.min(255, cor.getRed() * k2 * (1 - mix) + 255 * mix), g = (int) Math.min(255, cor.getGreen() * k2 * (1 - mix) + 255 * mix), bl = (int) Math.min(255, cor.getBlue() * k2 * (1 - mix) + 255 * mix);
+                o.setRGB(x, y, a << 24 | r << 16 | g << 8 | bl); }
+            return o; });
+    }
     private static boolean feixe(int tipo) { return tipo < 0 || tipo == 0 || tipo == 1 || tipo == 4; }
 
     private boolean desenharArte(Graphics2D g, int ox, int cy, double t, double forca) {
@@ -68,6 +77,7 @@ final class LaserConvergencia {
             Graphics2D q = (Graphics2D) g.create();
             q.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
             int fw, fh, sx; java.awt.image.BufferedImage img;
+            if (carga != null && CARGA[tipo + 1] == null) carga = tingir(carga, cor); // a carga base e branca: ganha a cor da fusao
             if (carga != null) { img = carga; fw = carga.getWidth() / 4; fh = carga.getHeight(); sx = ((int) (t * 12) % 4) * fw; }
             else { img = arte; fw = arte.getWidth() / 4; fh = arte.getHeight(); sx = 0; }
             int h = (int) ((40 + 90 * p) * (1 + .08 * Math.sin(t * 24))), w = fw * h / fh;
