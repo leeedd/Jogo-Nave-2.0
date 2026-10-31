@@ -430,7 +430,13 @@ public final class ChefeMetal {
                 g.setColor(Color.WHITE); g.fillOval(ex - r / 3, ey - r / 3, r * 2 / 3, r * 2 / 3);
             }
             if (investindo) for (int k = 0; k < 12; k++) { g.setColor(new Color(200, 90, 255, 150 - k * 10)); g.fillRect(x + w + k * 18, y + h / 2 + (k % 3 - 1) * 26, 40, 3); }
-            if (flashDano > 0) { g.setColor(new Color(255, 255, 255, (int) (flashDano / .16 * 70))); g.fill(getBounds()); }
+            if (flashDano > 0 && arte != null) {
+                // brilho so na silhueta do trem, sem caixa por cima
+                int fw = arte.getWidth() / 3; Graphics2D b = (Graphics2D) g.create();
+                b.setComposite(AlphaComposite.SrcOver.derive((float) Math.min(.45, flashDano / .16 * .45)));
+                b.setXORMode(new Color(0, 0, 0)); b.setPaintMode();
+                b.drawImage(arte, x, y + 2, x + w, y + h + 2, q * fw, 0, q * fw + fw, arte.getHeight(), null); b.dispose();
+            }
             g.dispose();
         }
     }
