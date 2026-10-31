@@ -113,6 +113,15 @@ public final class MiniChefe {
             g.setColor(claro); g.fillRect(px, y - 2, 4, 4);
             if (r.nextInt(7) == 0) { g.setColor(claro); g.fillRect(px, y + (r.nextBoolean() ? -h - 4 : h), 4, 4); } // faisca solta
         }
+        // dois raios eletricos serpenteando em volta do laser, em sentidos opostos
+        for (int fio = 0; fio < 2; fio++) {
+            int ant = y;
+            for (int px = fim; px > 0; px -= 4) {
+                int yy = y + (int) (Math.sin(px * .045 + this.tempo * (fio == 0 ? 26 : -22) + fio * Math.PI) * 17) + r.nextInt(3) - 1;
+                g.setColor(fio == 0 ? Color.WHITE : claro);
+                g.fillRect(px - 4, Math.min(ant, yy), 4, Math.abs(yy - ant) + 3); ant = yy;
+            }
+        }
     }
 
     public boolean receberDano(int n) {

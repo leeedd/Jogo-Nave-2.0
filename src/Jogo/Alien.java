@@ -103,6 +103,11 @@ public class Alien {
     private boolean procurado; private String nomeProcurado=""; private int reliquia=-1;
     void marcarProcurado(String nome,int nave,int forca){procurado=true;nomeProcurado=nome;reliquia=nave;resistencia*=forca;adaptacao|=ComandoInimigo.DESVIO;permanencia=Math.max(permanencia,22);}
     boolean procurado(){return procurado;}
+    /** Guarda da sentinela: fica entre o piloto e ela, seguindo a sentinela, e toma os tiros por ela. */
+    private boolean guarda;
+    void tornarGuarda(){guarda=true;permanencia=-1;}
+    boolean guarda(){return guarda;}
+    void posicaoGuarda(double gx,double gy){if(guarda){alvoX=gx;alvoY=gy;}}
     /** Mira vermelha e etiqueta do procurado, desenhadas depois de todos os inimigos para ficar por cima. */
     void desenharMarcaProcurado(Graphics2D graphics2D){if(!procurado||!visivel)return;
         {int pul=(int)(Math.sin(tempoAnimacao*8)*3);graphics2D.setColor(new Color(255,60,60,200));graphics2D.drawOval((int)x-8-pul,(int)y-8-pul,76+pul*2,72+pul*2);

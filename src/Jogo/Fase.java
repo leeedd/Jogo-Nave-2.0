@@ -162,6 +162,25 @@ implements ActionListener {
     private int abatesSeguidos; private boolean avisouSangrando;
     /** Emboscada do enxame: primeiro as ondas atravessam a tela, depois chega a rainha (ou a nave comandante). */
     private boolean rainhaChegou;
+    /** Levas de guardas que ja vieram socorrer a sentinela atual (uma em 50% e outra em 25% da vida). */
+    private int levasGuarda; private MiniChefe sentinelaGuardada;
+    private void atualizarGuardas() {
+        if (miniChefe == null || miniChefe.invasor() || intercepcao) return;
+        if (sentinelaGuardada != miniChefe) { sentinelaGuardada = miniChefe; levasGuarda = 0; }
+        double f = miniChefe.getVida() / (double) Math.max(1, miniChefe.getVidaMaxima());
+        if ((levasGuarda == 0 && f < .5) || (levasGuarda == 1 && f < .25)) {
+            levasGuarda++;
+            for (int k = 0; k < 3; k++) {
+                Alien g = new Alien(1000 + k * 40, 150 + k * 140, Alien.Tipo.PIRATA, k == 1 ? Alien.Classe.TANQUE : Alien.Classe.ESQUADRAO);
+                g.definirSetor(setorAtual, aleatorio); g.entrarEmEsquadrao(miniChefe.getBounds().x - 130, miniChefe.getBounds().getCenterY() - 28 + (k - 1) * 62, k, 0, 1.4);
+                g.tornarGuarda(); alien.add(g);
+            }
+            mostrarAviso("NAVES PROTEGENDO " + miniChefe.nome() + "!");
+            if (!partidaTeste) radio.urgente("Protejam a sentinela! Entrem na frente do tiro!");
+        }
+        Rectangle b = miniChefe.getBounds(); int k = 0;
+        for (Alien g : alien) if (g.isVisible() && g.guarda()) g.posicaoGuarda(b.x - 130 - (k % 2) * 30, b.getCenterY() - 28 + ((k++ % 3) - 1) * 62);
+    }
     /** Cacador de recompensas: contrato ativo, ofertas do quadro da base e o tempo da luta de chefe. */
     private Contrato contrato;
     private java.util.List<Contrato> ofertasContrato = new java.util.ArrayList<>();
@@ -761,6 +780,7 @@ implements ActionListener {
         }
         if (this.miniChefe != null) {
             this.miniChefe.atualizar(d, this.nave.getY());
+            atualizarGuardas();
             if(this.miniChefe.derrotado()){derrotarMiniChefe();return;}
             if(intercepcao && !miniChefe.morrendo()){esperaEnxame-=d;if(esperaEnxame<=0)lancarEnxame();}
             else if(!intercepcao && esperaProximoEsquadrao<=0 && alien.stream().filter(Alien::isVisible).count()+TAMANHOS[proximaFormacao]<=18)lancarProximoEsquadrao();
