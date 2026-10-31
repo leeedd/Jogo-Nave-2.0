@@ -18,7 +18,9 @@ final class Contrato {
     final Tipo tipo;
     final int alvo, premioCR, premioXP, nave;
     final String titulo;
-    int progresso;
+    int progresso, golpes;
+    /** Golpes que o piloto pode levar antes de perder o contrato (abates e vaporizar). */
+    static final int GOLPES_MAX = 2;
     boolean falhou, cumprido;
 
     Contrato(Tipo tipo, int alvo, int cr, int xp, int nave, String titulo) {
@@ -27,19 +29,19 @@ final class Contrato {
 
     String descricao() {
         switch (tipo) {
-            case ABATES: return "Abater " + alvo + " inimigos antes do chefe";
+            case ABATES: return "Abater " + alvo + " antes do chefe, levando no maximo " + GOLPES_MAX + " golpes";
             case SEM_DANO_CHEFE: return "Vencer o chefe sem levar dano";
             case CHEFE_RAPIDO: return "Vencer o chefe em ate " + alvo + " s";
-            default: return "Vaporizar " + alvo + " com o laser (V)";
+            default: return "Vaporizar " + alvo + " com o laser, levando no maximo " + GOLPES_MAX + " golpes";
         }
     }
     /** Texto curto para o HUD durante o combate. */
     String hud() {
         switch (tipo) {
-            case ABATES: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " ABATES";
+            case ABATES: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " ABATES  GOLPES " + golpes + "/" + GOLPES_MAX;
             case SEM_DANO_CHEFE: return titulo + ": CHEFE SEM DANO";
             case CHEFE_RAPIDO: return titulo + ": CHEFE EM " + alvo + "s";
-            default: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " VAPORIZADOS";
+            default: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " VAPORIZADOS  GOLPES " + golpes + "/" + GOLPES_MAX;
         }
     }
     boolean terminado() { return falhou || cumprido; }
@@ -47,6 +49,8 @@ final class Contrato {
     // ---- eventos do combate ----
     void abate() { if (tipo == Tipo.ABATES && !terminado() && ++progresso >= alvo) cumprido = true; }
     void vaporizou(int n) { if (tipo == Tipo.VAPORIZAR && !terminado() && (progresso += n) >= alvo) cumprido = true; }
+    /** Piloto levou um golpe em qualquer momento do contrato. */
+    void golpe() { if ((tipo == Tipo.ABATES || tipo == Tipo.VAPORIZAR) && !terminado() && ++golpes > GOLPES_MAX) falhou = true; }
     void danoNoChefe() { if (tipo == Tipo.SEM_DANO_CHEFE && !terminado()) falhou = true; }
     /** Chefe caiu: resolve quem depende dele; quem nao chegou no alvo expira. */
     void chefeDerrotado(double segundos) {
@@ -67,9 +71,9 @@ final class Contrato {
     static Contrato daNave(int modelo) {
         switch (modelo) {
             case 1: return new Contrato(Tipo.SEM_DANO_CHEFE, 0, 1500, 400, 1, "FANTASMA");
-            case 2: return new Contrato(Tipo.ABATES, 45, 1800, 500, 2, "ESCUDO DE OURO");
-            case 3: return new Contrato(Tipo.CHEFE_RAPIDO, 60, 2500, 700, 3, "FURIA VERDE");
-            case 4: return new Contrato(Tipo.VAPORIZAR, 25, 5000, 1200, 4, "FORJA FINAL");
+            case 2: return new Contrato(Tipo.ABATES, 60, 1800, 500, 2, "ESCUDO DE OURO");
+            case 3: return new Contrato(Tipo.CHEFE_RAPIDO, 45, 2500, 700, 3, "FURIA VERDE");
+            case 4: return new Contrato(Tipo.VAPORIZAR, 35, 5000, 1200, 4, "FORJA FINAL");
             default: return null;
         }
     }
@@ -77,11 +81,11 @@ final class Contrato {
     /** Tres contratos comuns sorteados para o setor, mais o contrato de nave que estiver liberado. */
     static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r) {
         List<Contrato> l = new ArrayList<>();
-        int abates = 18 + chefes * 4 + r.nextInt(8);
+        int abates = 30 + chefes * 6 + r.nextInt(10);
         l.add(new Contrato(Tipo.ABATES, abates, 300 + abates * 15, 60 + abates * 3, -1, "LIMPEZA"));
         l.add(new Contrato(Tipo.SEM_DANO_CHEFE, 0, 900 + chefes * 150, 220 + chefes * 30, -1, "INTOCAVEL"));
-        if (reator && r.nextBoolean()) { int v = 10 + chefes * 2; l.add(new Contrato(Tipo.VAPORIZAR, v, 700 + v * 30, 160 + v * 6, -1, "DESINTEGRADOR")); }
-        else { int t = Math.max(45, 100 - chefes * 6); l.add(new Contrato(Tipo.CHEFE_RAPIDO, t, 700 + chefes * 120, 180 + chefes * 25, -1, "RELAMPAGO")); }
+        if (reator && r.nextBoolean()) { int v = 15 + chefes * 3; l.add(new Contrato(Tipo.VAPORIZAR, v, 700 + v * 30, 160 + v * 6, -1, "DESINTEGRADOR")); }
+        else { int t = Math.max(35, 75 - chefes * 5); l.add(new Contrato(Tipo.CHEFE_RAPIDO, t, 700 + chefes * 120, 180 + chefes * 25, -1, "RELAMPAGO")); }
         for (int m = 1; m <= 4; m++) if (ProgressoJogo.podeTentarNave(m)) { l.add(daNave(m)); break; }
         return l;
     }

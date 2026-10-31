@@ -7,6 +7,7 @@ public class TesteContratos{static void ok(boolean b,String m){if(!b)throw new A
   ok(Contrato.patente(0)==0&&Contrato.patente(299)==0&&Contrato.patente(300)==1&&Contrato.patente(99999)==5,"patentes por XP");
   List<Contrato> of=Contrato.ofertas(2,2,false,new Random(1));ok(of.size()>=3,"quadro oferece pelo menos tres contratos");
   Contrato c=new Contrato(Contrato.Tipo.ABATES,3,500,80,-1,"T");c.abate();c.abate();ok(!c.cumprido,"ainda falta abate");c.abate();ok(c.cumprido,"abates cumprem");
+  Contrato g=new Contrato(Contrato.Tipo.ABATES,50,1,1,-1,"G");g.golpe();g.golpe();ok(!g.falhou,"dois golpes ainda valem");g.golpe();ok(g.falhou,"terceiro golpe perde o contrato");
   Contrato s=new Contrato(Contrato.Tipo.SEM_DANO_CHEFE,0,1,1,-1,"S");s.danoNoChefe();s.chefeDerrotado(10);ok(s.falhou&&!s.cumprido,"levou dano no chefe: falhou");
   Contrato s2=new Contrato(Contrato.Tipo.SEM_DANO_CHEFE,0,1,1,-1,"S");s2.chefeDerrotado(10);ok(s2.cumprido,"chefe sem dano: cumprido");
   Contrato r=new Contrato(Contrato.Tipo.CHEFE_RAPIDO,60,1,1,-1,"R");r.chefeDerrotado(75);ok(r.falhou,"chefe lento: falhou");

@@ -1831,7 +1831,7 @@ implements ActionListener {
         this.gerarParticulas(this.nave.getX() + 25, this.nave.getY() + 20, 24);
         this.explosoes.add(new ExplosaoCurta(this.nave.getX() + 25, this.nave.getY() + 18, 11));
         abatesSeguidos = 0;
-        if (contrato != null && etapa == Etapa.BATALHA_CHEFE) { contrato.danoNoChefe(); resolverContrato(); }
+        if (contrato != null) { contrato.golpe(); if (etapa == Etapa.BATALHA_CHEFE) contrato.danoNoChefe(); resolverContrato(); }
         if (!avisouSangrando && !partidaTeste && etapa == Etapa.COMBATE && nave.getVida() > 0 && nave.getVida() * 4 <= nave.getVidaMaxima()) { avisouSangrando = true; radio.urgente("Ele ta sangrando! Todos em cima dele, AGORA!"); }
         Item.Tipo perdido=null;
         // O amuleto segura a arma, mas se desgasta a cada golpe e acaba se despedacando.
