@@ -52,11 +52,17 @@ public class Alien {
     private int armaRoubada = -1;
     private int resistencia;
     private double congelado, queimando, pulsoQueimadura;
-    void congelarPor(double s){congelado=Math.max(congelado,s);enrolado=false;}
+    /** Adaptacoes vindas do ComandoInimigo (casco contra fogo/gelo, desvio, recuo). */
+    private int adaptacao;
+    void adaptar(int a){adaptacao=a;}
+    boolean adaptado(int f){return (adaptacao&f)!=0;}
+    /** Casco adaptado: a arma que o piloto mais usa faz metade do dano. */
+    int danoElemental(boolean fogo,int dano){return adaptado(fogo?ComandoInimigo.CASCO_FOGO:ComandoInimigo.CASCO_GELO)?Math.max(1,dano/2):dano;}
+    void congelarPor(double s){congelado=Math.max(congelado,adaptado(ComandoInimigo.CASCO_GELO)?s*.3:s);enrolado=false;}
     /** Preso pelos tentaculos: fica imovel como congelado, mas sem o gelo (o tentaculo e desenhado por cima). */
     private boolean enrolado;
     void agarrarPor(double s){if(congelado<=0)enrolado=true;congelado=Math.max(congelado,s);}
-    void incendiarPor(double s){queimando=Math.max(queimando,s);}
+    void incendiarPor(double s){queimando=Math.max(queimando,adaptado(ComandoInimigo.CASCO_FOGO)?s*.3:s);}
 
     public Alien(int n, int n2) {
         this(n, n2, Tipo.PIRATA, Classe.INTERCEPTADOR);
@@ -235,6 +241,8 @@ public class Alien {
                 d2 = this.tipo == Tipo.ALIENIGENA_ORIGINAL && this.variante == 3 ? -Math.max(0.0, Math.sin(d5 * 1.2)) * 165.0 : (this.padrao == 4 ? Math.max(0.0, Math.sin(d5 * 0.72)) * -100.0 : (this.padrao == 3 ? -Math.max(0.0, Math.sin(d5 * 0.64)) * 77.0 : (this.padrao == 6 ? -Math.max(0.0, Math.sin(d5 * 0.81)) * 95.0 : (this.padrao == 7 ? -Math.max(0.0, Math.sin(d5 * 0.95 + this.faseMovimento)) * 116.0 : 0.0))));
                 double d6 = (this.tipo == Tipo.ALIENIGENA_ORIGINAL && this.variante == 4 ? 0.5 : 1.0) * Math.sin(d5 * (this.padrao >= 6 ? 2.1 : 1.45)) * (double)(this.padrao == 5 ? 17 : (this.padrao == 6 ? 23 : (this.padrao == 7 ? 19 : 8)));
                 double d7 = Double.isNaN(this.alvoColetaX) ? this.alvoX + d3 + d2 : this.alvoColetaX;
+                // ferido e treinado para recuar: volta para o fundo e atira de longe
+                if (adaptado(ComandoInimigo.RECUO) && resistencia <= 1 && Double.isNaN(this.alvoColetaX)) d7 = Math.min(880, d7 + 150);
                 double d8 = Double.isNaN(this.alvoColetaY) ? this.alvoY + d6 : this.alvoColetaY;
                 this.x += (d7 - this.x) * Math.min(1.0, 2.2 * d);
                 this.y += (d8 - this.y) * Math.min(1.0, 3.6 * d);
@@ -250,7 +258,7 @@ public class Alien {
         }
         this.tempoDesvio = Math.max(0.0, this.tempoDesvio - d);
         this.descansoDesvio = Math.max(0.0, this.descansoDesvio - d);
-        if (this.classe == Classe.INTERCEPTADOR && this.descansoDesvio == 0.0 && this.tempoDesvio == 0.0 && this.x > 20.0 && this.x < 1030.0) {
+        if ((this.classe == Classe.INTERCEPTADOR || adaptado(ComandoInimigo.DESVIO)) && this.descansoDesvio == 0.0 && this.tempoDesvio == 0.0 && this.x > 20.0 && this.x < 1030.0) {
             for (Missel missel : list) {
                 if (!missel.isVisible()) continue;
                 d3 = this.x - (double)missel.getX();
@@ -365,6 +373,8 @@ public class Alien {
         } else {
             ArteNaves.desenharOrganico(graphics2D, this.variante, (int)this.x, (int)this.y, this.tempoAnimacao, this.congelado > 0.0);
         }
+        // casco adaptado: brilho fraco na cor da arma que ele resiste
+        if(adaptado(ComandoInimigo.CASCO_FOGO)||adaptado(ComandoInimigo.CASCO_GELO)){int a=(int)(60+40*Math.sin(tempoAnimacao*5));graphics2D.setColor(adaptado(ComandoInimigo.CASCO_FOGO)?new Color(255,150,60,a):new Color(120,220,255,a));graphics2D.drawRoundRect((int)x-3,(int)y-3,66,62,18,18);}
         if(queimando>0){for(int f=0;f<5;f++){graphics2D.setColor(f%2==0?Color.ORANGE:Color.RED);int yy=(int)y+45-(int)((tempoAnimacao*35+f*9)%40);graphics2D.fillRect((int)x+8+f*9,yy,4,8);}}
         if(escudoCapturado>0){graphics2D.setColor(new Color(110,225,255,170));graphics2D.drawPolygon(new int[]{(int)x-5,(int)x+10,(int)x+55,(int)x+70,(int)x+55,(int)x+10},new int[]{(int)y+28,(int)y-5,(int)y-5,(int)y+28,(int)y+62,(int)y+62},6);}
         if (this.congelado > 0.0 && !enrolado) {

@@ -150,6 +150,8 @@ implements ActionListener {
     private boolean emHellraiser, hellraiserVencido;
     /** Empurrao das ondas do paredao (px/s para a esquerda, decai sozinho). */
     private double empurraoNave;
+    /** Comando inimigo: aprende com o piloto e adapta os esquadroes (sem mostrar numero na tela). */
+    private ComandoInimigo comando = new ComandoInimigo(), comandoSalvo;
     static final int HELLRAISER = 9;
     private boolean novoJogoMais;
     private boolean usarLendaria;
@@ -347,7 +349,7 @@ implements ActionListener {
         r[5] = nave.getNivel(); r[6] = nave.getVida(); r[7] = nave.temArmaSecundaria() ? 1 : 0; r[8] = geloColetado ? 1 : 0; r[9] = fogoColetado ? 1 : 0;
         r[10] = lancadosNoSetor; r[11] = numeroEsquadrao; r[12] = modeloVisual; r[13] = creditos;
         for (int i = 0; i < 8; i++) r[16 + i] = poderes.energia[i];
-        retomada = r;
+        retomada = r; comandoSalvo = comando.copia();
     }
     private void voltarParaBase() {
         double[] r = retomada; if (r == null) return;
@@ -365,6 +367,7 @@ implements ActionListener {
         MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(setorAtual));
         base = null; esperaProximoEsquadrao = 2.5; nave.tornarIntangivel(2);
         mostrarAviso("DE VOLTA A BASE ALIADA"); ultimoQuadroNanos = System.nanoTime();
+        if (comandoSalvo != null) comando = comandoSalvo.copia(); // o inimigo nao esquece o que aprendeu
         if (r.length > 14 && r[14] > 0) { esperaProximoEsquadrao = 99; iniciarHellraiser(); }
     }
     /** Troca de nave no hangar: so entre as desbloqueadas; a nova mantem o nivel e a porcentagem do casco. */
@@ -582,6 +585,7 @@ implements ActionListener {
             n6=n4==0?(int)d6:n4==1?110+aleatorio.nextInt(80):440+aleatorio.nextInt(80);
             Alien novo = new Alien(1045 + i * 54, n6, tipo, classe);
             novo.definirSetor(setorAtual,aleatorio);
+            if(!partidaTeste)novo.adaptar(comando.adaptacoes(aleatorio));
             novo.entrarEmEsquadrao(d5, d6, i, n3, d4);
             this.alien.add(novo);
         }
@@ -603,7 +607,9 @@ implements ActionListener {
             int n = Math.min(3, 1 + this.chefesDerrotados / 3);
             for (int i = 0; i < n && !arrayList.isEmpty() && this.tirosInimigos.size() < 52; ++i) {
                 Alien alien = arrayList.get((this.indiceRajada + i) % arrayList.size());
-                atirarInimigo(alien);
+                double favorita=comando.faixaFavorita();
+                if(i==n-1&&!Double.isNaN(favorita)&&Math.abs(favorita-(nave.getY()+18))>60){alien.animarAtaqueEnxame();tirosInimigos.add(new ProjetilInimigo(alien,nave.getX()+20,(int)favorita));}
+                else atirarInimigo(alien);
                 alien.resetarRecarga(this.aleatorio);
             }
             ++this.indiceRajada;
@@ -620,7 +626,9 @@ implements ActionListener {
     private int alvoX(){return poderes.cloneAtivo()?(int)poderes.cloneX():nave.camuflada()?(int)nave.camuflagemX():nave.getX();}
     private int alvoY(){return poderes.cloneAtivo()?(int)poderes.cloneY():nave.camuflada()?(int)nave.camuflagemY():nave.getY();}
     private void atirarInimigo(Alien a){a.animarAtaqueEnxame();SomJogo.tocar(SomJogo.Efeito.INIMIGO,a.getX());
-        tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()+18));
+        double[] m={alvoX()+20,alvoY()+18};
+        if(!poderes.cloneAtivo()&&!nave.camuflada())m=comando.mira(m[0],m[1],a.getX(),a.getY()+28,aleatorio);
+        tirosInimigos.add(new ProjetilInimigo(a,(int)m[0],(int)m[1]));
         if(a.getEquipamento()==Item.Tipo.ARMA_2){tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()-100));tirosInimigos.add(new ProjetilInimigo(a,alvoX()+20,alvoY()+136));}
     }
     private void atualizarEsquadroes(double d) {
@@ -628,6 +636,10 @@ implements ActionListener {
             miniChefe.comandanteTeste().observar(nave.getMisseis());
             int guarda=0;for(Alien a:alien)if(a.isVisible()&&a.especieEnxame()==1&&guarda<2)a.escoltar(miniChefe.getBounds(),guarda++);
         }
+        if(!intercepcao){comando.observar(d,nave.getX(),nave.getY());
+            comando.atualizarNivel(chefesDerrotados,nave.getNivel(),inventario.reator(),inventario.blindagem(),nave.getVida()/(double)Math.max(1,nave.getVidaMaxima()));
+            if(comando.pedirKamikaze())for(Alien k:alien)if(k.isVisible()&&k.getClasse()==Alien.Classe.KAMIKAZE&&k.estaNaFormacao()&&!k.kamikazeArmado()){k.prepararKamikaze(nave.getY()+18);break;}
+            String radio=comando.radio();if(radio!=null&&!partidaTeste)mostrarAviso("RADIO PIRATA: "+radio);}
         block0: for (Alien alien : this.alien) {
             if (!alien.isVisible()) continue;
             alien.verificarKamikaze(this.nave.getY() + 18);
@@ -1534,7 +1546,8 @@ implements ActionListener {
                 SomJogo.tocar(SomJogo.Efeito.IMPACTO);disparoElemental.apagar();
                 int n2 = n = disparoElemental.getTipo() == DisparoElemental.Tipo.FOGO ? 1 : 2;
                 if(disparoElemental.getTipo()==DisparoElemental.Tipo.FOGO)alien.incendiarPor(3);else alien.congelarPor(2.8);
-                if (alien.receberImpacto(0,disparoElemental.dano())) {
+                comando.registrarAcerto(n==1?2:1); // n: 1 fogo, 2 gelo
+                if (alien.receberImpacto(0,alien.danoElemental(n==1,disparoElemental.dano()))) {
                     this.eliminarAlien(alien, false);
                     continue block9;
                 }
@@ -1577,6 +1590,7 @@ implements ActionListener {
                     missel.setVisible(false);
                     this.explodirBombaNaTela(missel);
                 } else {
+                    comando.registrarAcerto(0);
                     if (alien.receberImpacto(0, this.nave.danoBalistico())) {
                         this.eliminarAlien(alien, false);
                     } else {
@@ -1961,7 +1975,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;comando=new ComandoInimigo();emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
