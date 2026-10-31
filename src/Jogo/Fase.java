@@ -332,7 +332,8 @@ implements ActionListener {
         if(falta<=0&&!inventario.reservaDisponivel())return false;
         SomJogo.tocar(SomJogo.Efeito.REPARO);int unidade=(int)Math.ceil(nave.getVidaMaxima()*.10);
         int cura=Math.min(falta,unidade);nave.curar(cura);
-        int sobra=(int)Math.floor(10.0*(unidade-cura)/unidade);
+        // o que sobra do reparo vai para os subtanques: um reparo inteiro enche 1/4 de tanque
+        int sobra=(int)Math.floor(25.0*(unidade-cura)/unidade);
         inventario.abastecerAutomatico(sobra);
         mostrarAviso(cura>0?"CASCO REPARADO / EXCEDENTE NOS SUBTANQUES":"SUBTANQUES ABASTECIDOS");return true;
     }
