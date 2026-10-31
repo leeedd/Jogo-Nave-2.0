@@ -12,8 +12,8 @@ import java.util.Random;
  */
 final class LaserConvergencia {
     static final double DURACAO = 1.6;
-    static final String[] NOMES = {"MARE ABISSAL", "LANCA PAINKILLER", "LAMINAS DO EDDIE", "LEQUE DE ASES",
-            "TEMPESTADE DE RAIOS", "PENTAGRAMA INFERNAL", "NATIVE BLOOD", "ECLIPSE DO PRINCIPE"};
+    static final String[] NOMES = {"MARE ABISSAL", "HELL PATROL", "THE TROOPER", "ACE OF SPADES",
+            "MASTER OF PUPPETS", "RAINING BLOOD", "NATIVE BLOOD", "BARK AT THE MOON"};
     static final String[] EFEITO_CHEFE = {"Congela o chefe", "Dano dobrado no chefe", "Corta todos os tiros", "Quatro feixes",
             "Paralisa o chefe", "Queima o chefe", "Aguia de trovao", "Rouba vida: +3 casco"};
     /** Dano no chefe/mini-chefe por tipo (-1 = laser base). */
@@ -23,6 +23,20 @@ final class LaserConvergencia {
     private static final java.awt.image.BufferedImage[] ARTE = new java.awt.image.BufferedImage[9];
     static { for (int i = -1; i < 8; i++) { java.net.URL u = LaserConvergencia.class.getResource("/ImagemIcon/fusao_" + (i < 0 ? "base" : String.valueOf(i)) + ".png");
         if (u != null) try { ARTE[i + 1] = javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { System.err.println("Fusao ilegivel: " + i); } } }
+    /** Pentagrama (tipo 5): circulo de cada quadro (cx, cy, diametro) achado na propria arte, para girar so ele. */
+    private static final int[][] CIRCULO = circulos(ARTE[6]);
+    private static int[][] circulos(java.awt.image.BufferedImage a) {
+        if (a == null) return null; int fw = a.getWidth() / 4, h = a.getHeight(); int[][] r = new int[4][];
+        for (int k = 0; k < 4; k++) {
+            int re = 0; for (int x = k * fw; x < k * fw + fw; x++) for (int y = 0; y < h; y++) if ((a.getRGB(x, y) >>> 24) > 150) re = Math.max(re, x - k * fw);
+            int[] melhor = {re - h / 3, h / 2, h * 2 / 3};
+            for (int d = 40; d < h * 95 / 100; d++) { int c = k * fw + re - d / 2; if (c < k * fw) break; int y0 = -1, y1 = -1;
+                for (int y = 0; y < h; y++) if ((a.getRGB(c, y) >>> 24) > 150) { if (y0 < 0) y0 = y; y1 = y; }
+                if (y0 >= 0 && Math.abs((y1 - y0) - d) < 6) melhor = new int[]{re - d / 2, (y0 + y1) / 2, d}; }
+            r[k] = melhor;
+        }
+        return r;
+    }
     /** Feixes esticam ate a borda; os demais sao projeteis que atravessam a tela. */
     /** Arte opcional so da carga: carga_base.png / carga_0..7.png (4 quadros); carga_base serve para todas. */
     private static final java.awt.image.BufferedImage[] CARGA = new java.awt.image.BufferedImage[9];
@@ -54,7 +68,17 @@ final class LaserConvergencia {
             int h = tipo == 7 ? 300 : tipo == 3 ? 260 : 230, w = fw * h / fh;
             double voo = Math.max(0, (t - .14) / .66);
             int x = ox - w / 4 + (int) (voo * (Config.LARGURA + w));
-            q.drawImage(a, x - w / 2, cy - h / 2, x + w / 2, cy + h / 2, k * fw, 0, k * fw + fw, fh, null);
+            if (tipo == 5 && CIRCULO != null) {
+                // rastro de fogo parado; o pentagrama gira em torno do proprio centro
+                double e = h / (double) fh; int[] c = CIRCULO[k];
+                double ccx = x - w / 2 + c[0] * e, ccy = cy - h / 2 + c[1] * e, rr = c[2] * e / 2 + 2;
+                java.awt.geom.Area fora = new java.awt.geom.Area(new java.awt.Rectangle(x - w / 2, cy - h / 2, w, h));
+                java.awt.geom.Ellipse2D disco = new java.awt.geom.Ellipse2D.Double(ccx - rr, ccy - rr, rr * 2, rr * 2);
+                fora.subtract(new java.awt.geom.Area(disco));
+                Graphics2D t2 = (Graphics2D) q.create(); t2.clip(fora); t2.drawImage(a, x - w / 2, cy - h / 2, x + w / 2, cy + h / 2, k * fw, 0, k * fw + fw, fh, null); t2.dispose();
+                Graphics2D gi = (Graphics2D) q.create(); gi.rotate(tempo * 9, ccx, ccy); gi.clip(disco);
+                gi.drawImage(a, x - w / 2, cy - h / 2, x + w / 2, cy + h / 2, k * fw, 0, k * fw + fw, fh, null); gi.dispose();
+            } else q.drawImage(a, x - w / 2, cy - h / 2, x + w / 2, cy + h / 2, k * fw, 0, k * fw + fw, fh, null);
         }
         q.dispose(); return true;
     }
