@@ -24,7 +24,7 @@ public class Item {
     private final boolean recuperado;
 
     public boolean podeSerCapturado() {
-        return this.idade >= 2.0 && tipo!=Tipo.ENERGIA && tipo!=Tipo.NUCLEO_CASCO && tipo!=Tipo.SUBTANQUE && tipo!=Tipo.REPARO && tipo!=Tipo.REATOR_CONVERGENCIA && tipo!=Tipo.RELIQUIA_NAVE;
+        return this.idade >= 2.0 && tipo!=Tipo.ENERGIA && tipo!=Tipo.NUCLEO_CASCO && tipo!=Tipo.SUBTANQUE && tipo!=Tipo.REPARO && tipo!=Tipo.REATOR_CONVERGENCIA && tipo!=Tipo.RELIQUIA_NAVE && tipo!=Tipo.MINERIO;
     }
 
     public Item(Tipo tipo, int n, int n2, boolean bl) { this(tipo,n,n2,bl,-1); }
@@ -51,6 +51,7 @@ public class Item {
         Color color = this.tipo == Tipo.REPARO ? new Color(98, 255, 153) : (this.tipo == Tipo.MELHORIA ? new Color(255, 214, 91) : (this.tipo == Tipo.ARMA_2 ? new Color(255, 113, 222) : (this.tipo == Tipo.ARMA_GELO ? new Color(90, 222, 255) : (this.tipo == Tipo.ARMA_FOGO ? new Color(255, 104, 53) : (this.tipo == Tipo.PEROLA_ABISSAL ? new Color(47, 234, 229) : (this.tipo == Tipo.OCULOS_OZZY ? new Color(192, 129, 253) : (this.tipo == Tipo.EMBLEMA_HALFORD ? new Color(255, 171, 75) : (this.tipo == Tipo.INSIGNIA_EDDIE ? new Color(109, 235, 214) : (this.tipo == Tipo.CHAPEU_LEMMY ? new Color(255, 166, 77) : (this.tipo == Tipo.PALHETA_JAMES ? new Color(80, 166, 255) : (this.tipo == Tipo.MICROFONE_TOM ? new Color(249, 69, 82) : (this.tipo == Tipo.MEDALHA_TESTAMENT ? new Color(113, 246, 120) : new Color(84, 215, 255)))))))))))));
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
         if(tipo==Tipo.NUCLEO_CASCO){nucleo(graphics2D2,n+9,n2+10,d);graphics2D2.dispose();return;}
+        if(tipo==Tipo.MINERIO){int b=(int)(Math.sin(d*8)*2);graphics2D2.setColor(new Color(80,230,255,70));graphics2D2.fillOval(n-4,n2-4,32,32);graphics2D2.setColor(new Color(60,150,255));graphics2D2.fillPolygon(new int[]{n+12,n+20,n+12,n+4},new int[]{n2-2+b,n2+12,n2+26-b,n2+12},4);graphics2D2.setColor(new Color(190,250,255));graphics2D2.fillPolygon(new int[]{n+12,n+16,n+12,n+8},new int[]{n2+3,n2+12,n2+20,n2+12},4);graphics2D2.dispose();return;}
         if(tipo==Tipo.RELIQUIA_NAVE){reliquia(graphics2D2,n+12,n2+12,d,origem);graphics2D2.dispose();return;}
         if(tipo==Tipo.ENERGIA||tipo==Tipo.SUBTANQUE||tipo==Tipo.REPARO||tipo==Tipo.REATOR_CONVERGENCIA){
             Arte098.item(graphics2D2,tipo==Tipo.SUBTANQUE?0:tipo==Tipo.REPARO?4:8,n-9,n2-9,44);
@@ -163,7 +164,9 @@ public class Item {
         MEDALHA_TESTAMENT,
         NUCLEO_CASCO,
         /** Reliquia de caca: solta pelo alvo procurado; origem = nave que ela libera. */
-        RELIQUIA_NAVE;
+        RELIQUIA_NAVE,
+        /** Minerio raro dos meteoros dos campos com anel. */
+        MINERIO;
 
     }
 }

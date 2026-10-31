@@ -121,6 +121,8 @@ implements ActionListener {
     int riscoAtual() { return Turne.risco(setorAtual, planetaAtual); }
     private int totalMiniChefesDerrotados;
     private double proximoAsteroide = 8.0;
+    /** Pedacos de meteoro gigante quebrado: entram na lista depois do laco de colisao. */
+    private final java.util.List<Asteroide> fragmentos = new java.util.ArrayList<>();
     private double tempoOndaEscudo;
     private double ondaX;
     private double ondaY;
@@ -378,7 +380,8 @@ implements ActionListener {
         nave.soltarTeclas(); espacoPressionado = geloPressionado = fogoPressionado = false;
         tirosInimigos.clear(); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
         quadroBase = false; cursorQuadro = 0;
-        if (contrato == null) ofertasContrato = Contrato.ofertas(setorAtual, chefesDerrotados, inventario.reator(), aleatorio);
+        boolean campo = false; for (int p = planetaAtual; p < Turne.planetas(setorAtual); p++) campo |= Turne.anel(setorAtual, p);
+        if (contrato == null) ofertasContrato = Contrato.ofertas(setorAtual, chefesDerrotados, inventario.reator(), aleatorio, campo);
         gravarRetomada();
     }
     private void aceitarContrato() {
@@ -1312,10 +1315,14 @@ implements ActionListener {
             }
             if (this.etapa == Etapa.COMBATE && !intercepcao) {
                 this.proximoAsteroide -= d;
-                if (this.proximoAsteroide <= 0.0 && this.asteroides.size() < 6) {
-                    int n = 18 + this.aleatorio.nextInt(19);
-                    this.asteroides.add(new Asteroide(960 + n, 142 + this.aleatorio.nextInt(378), n, (++meteorosGerados%3==1?7:this.aleatorio.nextInt(7))));
-                    this.proximoAsteroide = 5.5 + this.aleatorio.nextDouble() * 4.5;
+                // planeta com anel: campo de meteoros, mais denso e com minerio raro
+                boolean campo = Turne.anel(setorAtual, planetaAtual);
+                if (this.proximoAsteroide <= 0.0 && this.asteroides.size() < (campo ? 12 : 6)) {
+                    boolean gigante = campo && aleatorio.nextInt(6) == 0;
+                    int n = gigante ? 60 + aleatorio.nextInt(30) : 18 + this.aleatorio.nextInt(19);
+                    int variante = campo && aleatorio.nextInt(4) == 0 ? Asteroide.MINERIO : ++meteorosGerados%3==1?7:this.aleatorio.nextInt(7);
+                    this.asteroides.add(new Asteroide(960 + n, gigante ? 170 + aleatorio.nextInt(320) : 142 + this.aleatorio.nextInt(378), n, gigante ? aleatorio.nextInt(7) : variante));
+                    this.proximoAsteroide = campo ? 1.2 + this.aleatorio.nextDouble() * 1.6 : 5.5 + this.aleatorio.nextDouble() * 4.5;
                 }
                 for (Asteroide asteroide2 : this.asteroides) {
                     if (!asteroide2.isVisible()) continue;
@@ -1340,7 +1347,7 @@ implements ActionListener {
             // quem atravessou a tela conta para o avanco do setor, mas nao da ponto
             this.alien.removeIf(alien -> { if (!alien.isVisible() && alien.escapou() && !intercepcao) ++eliminados; return !alien.isVisible(); });
             this.tirosInimigos.removeIf(projetilInimigo -> !projetilInimigo.isVisible());
-            this.asteroides.removeIf(asteroide -> !asteroide.isVisible());
+            this.asteroides.removeIf(asteroide -> !asteroide.isVisible()); this.asteroides.addAll(fragmentos); fragmentos.clear();
             this.tirosChefes.removeIf(tiroChefe -> !tiroChefe.isVisible());
             this.itens.removeIf(item -> !item.isVisible());
             this.verificarProgressao();
@@ -1518,6 +1525,9 @@ implements ActionListener {
                 if(!recolherReparo()){item.setVisible(true);continue;}
                 continue;
             }
+            if(item.getTipo()==Item.Tipo.MINERIO){SomJogo.tocar(SomJogo.Efeito.COLETA);
+                if(contrato!=null&&contrato.tipo==Contrato.Tipo.MINERACAO){contrato.minerio();mostrarAviso("MINERIO RARO: "+Math.min(contrato.progresso,contrato.alvo)+"/"+contrato.alvo);resolverContrato();}
+                else{inventario.creditar(60);mostrarAviso("MINERIO RARO VENDIDO: +60 CR");}continue;}
             if(item.getTipo()==Item.Tipo.RELIQUIA_NAVE){if(!partidaTeste)ProgressoJogo.guardarReliquia(item.origem());SomJogo.tocar(SomJogo.Efeito.RELIQUIA);
                 if(contrato!=null){contrato.recuperou();resolverContrato();}else mostrarAviso(Contrato.RELIQUIA_NAVE[item.origem()]+" RECUPERADO!");continue;}
             if(item.getTipo()==Item.Tipo.NUCLEO_CASCO){if(inventario.coletarNucleo(item.origem())){nave.aplicarNucleos(inventario.quantidadeNucleos());SomJogo.tocar(SomJogo.Efeito.EVOLUCAO);}mostrarAviso("NUCLEO DE CASCO: +2 CASCO MAXIMO ("+inventario.quantidadeNucleos()+"/8)");continue;}
@@ -1559,7 +1569,7 @@ implements ActionListener {
                 if (!asteroide.isVisible()) continue;
                 if (rectangle.intersects(asteroide.getBounds())) {
                     asteroide.setVisible(false);
-                    this.processarDano(this.dificuldade.ajustarDano(1), null);
+                    this.processarDano(this.dificuldade.ajustarDano(asteroide.danoColisao()), null);
                     if (!this.emJogo) {
                         return;
                     }
@@ -1569,6 +1579,9 @@ implements ActionListener {
                     if (asteroide.receberTiro()) {
                         premiar(50);
                         if(asteroide.temSuprimento())itens.add(new Item(Item.Tipo.REPARO,asteroide.getX(),asteroide.getY(),false));
+                        if(asteroide.temMinerio())itens.add(new Item(Item.Tipo.MINERIO,asteroide.getX(),asteroide.getY(),false));
+                        if(asteroide.gigante()){premiar(200);for(int k=0;k<3;k++)fragmentos.add(new Asteroide(asteroide.getX()+aleatorio.nextInt(40)-20,asteroide.getY()+(k-1)*38,18+aleatorio.nextInt(8),k==1&&aleatorio.nextBoolean()?Asteroide.MINERIO:aleatorio.nextInt(7)));
+                            this.explosoes.add(new ExplosaoCurta(asteroide.getX(), asteroide.getY(), 30));}
                         this.explosoes.add(new ExplosaoCurta(asteroide.getX(), asteroide.getY(), 14));
                         this.gerarParticulas(asteroide.getX(), asteroide.getY(), 18);
                     }
@@ -1732,7 +1745,7 @@ implements ActionListener {
         if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
             // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta
             String quem = Turne.integrante(setorAtual, planetaAtual); planetaAtual++; miniChefeEnfrentado = false;
-            mostrarAviso(quem + " CANCELADO! PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual));
+            mostrarAviso(quem + " CANCELADO! PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual) + (Turne.anel(setorAtual, planetaAtual) ? ": CAMPO DE METEOROS!" : ""));
             if (!partidaTeste) radio.falar(quem + " caiu. A turne ta desmoronando, segurem esse cacador!");
         }
         if (this.aleatorio.nextInt(5) == 0) {

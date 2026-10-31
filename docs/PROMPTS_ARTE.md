@@ -57,6 +57,37 @@ Opcional: hoje o procurado e uma nave comum com a mira vermelha por cima.
 Pixel art 16-bit estilo arcade, fundo branco liso, 4 naves inimigas de elite lado a lado do mesmo tamanho, vistas de lado e viradas para a ESQUERDA, cada uma com aura própria: 1) O ESPECTRO, nave negra semitransparente com névoa roxa e caveira na proa; 2) A HARPIA DOURADA, nave com asas de penas douradas e garras; 3) O CARNICEIRO VERDE, nave tosca de sucata com presas e veias verdes brilhantes; 4) O FERREIRO, nave pesada de forja com bigorna na frente e brasas laranja. Contorno escuro marcado.
 ```
 
+## 7. Mapa estelar (mapa_estrelas.png, mapa_planetas.png, mapa_nave.png)
+Hoje o mapa e todo desenhado em codigo: estrela e uma bolinha, planetas sao esferas geradas,
+a nave e um triangulo.
+
+Estrelas (uma por sistema, nas cores dos setores):
+```
+Pixel art 16-bit, fundo preto liso, 8 estrelas lado a lado do mesmo tamanho, vistas de longe como num mapa espacial, cada uma com coroa de luz e raios: 1) azul, 2) laranja-fogo, 3) turquesa cristalina, 4) amarelo-ferrugem, 5) branco-gelo, 6) verde-ácido, 7) roxa com vórtice, 8) vermelha pulsante. Brilho suave, contorno limpo.
+```
+
+Planetas (12 tipos variados, para sortear nos sistemas):
+```
+Pixel art 16-bit, fundo preto liso, grade de 12 planetas pequenos do mesmo tamanho, estilo mapa de jogo espacial: rochoso cinza com crateras, lava com rachaduras, gelo azul, oceano, gasoso listrado tipo Júpiter, cristalino roxo, tóxico verde, deserto laranja, metálico com cidades acesas, sombrio com névoa, e 2 planetas com ANEL tipo Saturno (um dourado, um gelo). Iluminação vindo da esquerda, contorno marcado.
+```
+
+Marcador da nave no mapa:
+```
+Pixel art 16-bit, fundo preto liso, 4 quadros pequenos do mesmo tamanho: ícone de mapa da nave do jogador vista de cima, caça vermelho e branco com propulsores azuis, dentro de um anel de mira ciano que pulsa (o anel cresce um pouco a cada quadro). Estilo HUD de jogo arcade.
+```
+
+## 8. Meteoros (meteoros.png)
+Hoje sao 4 sprites pequenos repetidos; o minerio e o gigante sao desenhados por cima em codigo.
+
+```
+Pixel art 16-bit, fundo preto liso, folha de meteoros espaciais do mesmo estilo, lado a lado: 4 meteoros pequenos rochosos diferentes; 2 meteoros com VEIOS DE MINÉRIO azul-ciano brilhante saindo das rachaduras; 1 METEORO GIGANTE (3 vezes maior) com crateras fundas e rachaduras incandescentes; 3 fragmentos do gigante quebrado. Iluminação vinda da esquerda, contorno escuro marcado.
+```
+
+Minerio coletavel:
+```
+Pixel art 16-bit, fundo preto liso, 4 quadros do mesmo tamanho: um cristal de minério raro azul-ciano flutuando e girando devagar, com brilho e faíscas pequenas. Contorno marcado.
+```
+
 ---
 
 ## Turne ao contrario (depois do polimento)

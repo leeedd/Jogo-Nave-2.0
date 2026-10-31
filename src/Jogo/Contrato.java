@@ -13,7 +13,7 @@ import java.util.Random;
  * Os contratos especiais de nave (Fantasma, Escudo de Ouro, Furia Verde, Forja Final) liberam a nave.
  */
 final class Contrato {
-    enum Tipo { ABATES, SEM_DANO_CHEFE, CHEFE_RAPIDO, VAPORIZAR, CACADA, TROCA }
+    enum Tipo { ABATES, SEM_DANO_CHEFE, CHEFE_RAPIDO, VAPORIZAR, CACADA, TROCA, MINERACAO }
 
     final Tipo tipo;
     final int alvo, premioCR, premioXP, nave;
@@ -36,6 +36,7 @@ final class Contrato {
             case SEM_DANO_CHEFE: return "Vencer o chefe sem levar dano";
             case CHEFE_RAPIDO: return "Vencer o chefe em ate " + alvo + " s";
             case CACADA: return "Cacar " + ALVO_NAVE[nave] + " e recuperar " + ARTIGO[nave] + " " + RELIQUIA_NAVE[nave];
+            case MINERACAO: return "Extrair " + alvo + " minerios raros dos campos de meteoros";
             case TROCA: return "Entregar " + ARTIGO[nave] + " " + RELIQUIA_NAVE[nave] + " e liberar a nave";
             default: return "Vaporizar " + alvo + " com o laser, levando no maximo " + GOLPES_MAX + " golpes";
         }
@@ -47,6 +48,7 @@ final class Contrato {
             case SEM_DANO_CHEFE: return titulo + ": CHEFE SEM DANO";
             case CHEFE_RAPIDO: return titulo + ": CHEFE EM " + alvo + "s";
             case CACADA: return "CACAR " + ALVO_NAVE[nave];
+            case MINERACAO: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " MINERIOS";
             case TROCA: return "";
             default: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " VAPORIZADOS  GOLPES " + golpes + "/" + GOLPES_MAX;
         }
@@ -59,6 +61,7 @@ final class Contrato {
     /** Piloto levou um golpe em qualquer momento do contrato. */
     void golpe() { if ((tipo == Tipo.ABATES || tipo == Tipo.VAPORIZAR) && !terminado() && ++golpes > GOLPES_MAX) falhar("LEVOU " + golpes + " GOLPES"); }
     /** Reliquia do alvo procurado foi recolhida. */
+    void minerio() { if (tipo == Tipo.MINERACAO && !terminado() && ++progresso >= alvo) cumprido = true; }
     void recuperou() { if (tipo == Tipo.CACADA && !terminado()) cumprido = true; }
     void danoNoChefe() { if (tipo == Tipo.SEM_DANO_CHEFE) falhar("LEVOU DANO NO CHEFE"); }
     /** Chefe caiu: resolve quem depende dele; quem nao chegou no alvo expira. */
@@ -66,7 +69,7 @@ final class Contrato {
         if (terminado()) return;
         if (tipo == Tipo.SEM_DANO_CHEFE) cumprido = true;
         else if (tipo == Tipo.CHEFE_RAPIDO) { if (segundos <= alvo) cumprido = true; else falhar("CHEFE CAIU EM " + (int) segundos + "s"); }
-        else falhar(tipo == Tipo.CACADA ? "O ALVO ESCAPOU" : "O CHEFE CAIU ANTES");
+        else falhar(tipo == Tipo.CACADA ? "O ALVO ESCAPOU" : tipo == Tipo.MINERACAO ? "FALTOU MINERIO" : "O CHEFE CAIU ANTES");
     }
 
     // ---- patente do piloto ----
@@ -92,13 +95,16 @@ final class Contrato {
     static Contrato troca(int modelo) { return new Contrato(Tipo.TROCA, 0, 0, 0, modelo, "ENTREGA: " + RELIQUIA_NAVE[modelo]); }
 
     /** Tres contratos comuns sorteados para o setor, mais o contrato de nave que estiver liberado. */
-    static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r) {
+    static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r) { return ofertas(setor, chefes, reator, r, false); }
+    /** campoAFrente: ainda ha planeta com anel (campo de meteoros) neste sistema. */
+    static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r, boolean campoAFrente) {
         List<Contrato> l = new ArrayList<>();
         int abates = 30 + chefes * 6 + r.nextInt(10);
         l.add(new Contrato(Tipo.ABATES, abates, 300 + abates * 15, 60 + abates * 3, -1, "LIMPEZA"));
         l.add(new Contrato(Tipo.SEM_DANO_CHEFE, 0, 900 + chefes * 150, 220 + chefes * 30, -1, "INTOCAVEL"));
         if (reator && r.nextBoolean()) { int v = 15 + chefes * 3; l.add(new Contrato(Tipo.VAPORIZAR, v, 700 + v * 30, 160 + v * 6, -1, "DESINTEGRADOR")); }
         else { int t = Math.max(35, 75 - chefes * 5); l.add(new Contrato(Tipo.CHEFE_RAPIDO, t, 700 + chefes * 120, 180 + chefes * 25, -1, "RELAMPAGO")); }
+        if (campoAFrente) { int q = 4 + chefes / 2; l.add(new Contrato(Tipo.MINERACAO, q, 600 + q * 140, 150 + q * 25, -1, "GARIMPO")); }
         for (int m = 1; m <= 4; m++) if (ProgressoJogo.podeTentarNave(m) && !ProgressoJogo.temReliquia(m)) { l.add(daNave(m)); break; }
         l.addAll(0, trocas());
         return l;

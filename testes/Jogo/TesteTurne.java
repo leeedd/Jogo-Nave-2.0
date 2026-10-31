@@ -19,4 +19,15 @@ public class TesteTurne{static void ok(boolean b,String m){if(!b)throw new Asser
    ok((int)TesteInvasao093.get(f,"planetaAtual")==p+1,"vencer "+Turne.integrante(4,p)+" leva ao planeta "+(p+2));}
   TesteInvasao093.set(f,"miniChefe",null);TesteInvasao093.set(f,"base",null);call(f,"verificarProgressao");
   ok(f.getEtapaTeste().equals("ALERTA_CHEFE"),"no ultimo planeta vem o chefe da banda");
+  // campo de meteoros: planeta com anel tem mais meteoros e minerio raro
+  Fase c=TesteInvasao093.fase(56);TesteInvasao093.set(c,"partidaTeste",true);TesteInvasao093.set(c,"setorAtual",4);TesteInvasao093.set(c,"planetaAtual",3);
+  ok(Turne.anel(4,3),"planeta do James tem anel");TesteInvasao093.set(c,"esperaProximoEsquadrao",999.0);c.getAliens().clear();
+  java.util.List<?> ast=(java.util.List<?>)TesteInvasao093.get(c,"asteroides");int maxAst=0,minerio=0;java.util.Set<Object> vistos=new java.util.HashSet<>();
+  for(int i=0;i<60*40;i++){c.getNave().tornarIntangivel(1);c.getNave().teleportar(20,90);c.atualizarSimulacao(1/60.0);maxAst=Math.max(maxAst,ast.size());for(Object o:ast)if(((Asteroide)o).temMinerio()&&vistos.add(o))minerio++;}
+  ok(maxAst>6,"campo de meteoros passa de 6 meteoros na tela ("+maxAst+")");ok(minerio>0,"aparece meteoro com minerio ("+minerio+")");
+  Asteroide m=new Asteroide(500,300,24,Asteroide.MINERIO);int tiros=0;while(!m.receberTiro())tiros++;ok(tiros>=2,"meteoro de minerio e mais duro");
+  Asteroide gig=new Asteroide(500,300,70,1);ok(gig.gigante()&&gig.danoColisao()==3,"meteoro gigante bate forte");int tg=0;while(!gig.receberTiro())tg++;ok(tg>=8,"gigante aguenta muito tiro ("+(tg+1)+")");
+  boolean viuGigante=false;for(int i=0;i<60*60&&!viuGigante;i++){c.getNave().tornarIntangivel(1);c.getNave().teleportar(20,90);c.atualizarSimulacao(1/60.0);for(Object o:ast)if(((Asteroide)o).gigante())viuGigante=true;}ok(viuGigante,"campo traz meteoro gigante");
+  Contrato g=new Contrato(Contrato.Tipo.MINERACAO,2,1,1,-1,"GARIMPO");g.minerio();ok(!g.cumprido,"falta minerio");g.minerio();ok(g.cumprido,"garimpo cumprido");
+  ok(Contrato.ofertas(4,4,false,new java.util.Random(1),true).stream().anyMatch(x->x.tipo==Contrato.Tipo.MINERACAO),"quadro oferece garimpo com campo a frente");
   System.out.println("OK turne");}}
