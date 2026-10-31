@@ -12,7 +12,9 @@ public final class TesteRevisao094 {
   tick(f,4.3);ok(f.getEtapaTeste().equals("INTERLUDIO"),"espera item "+id);tick(f,12);ok(f.getEtapaTeste().equals("INTERLUDIO"),"sem coleta automatica "+id);
   Rectangle r=f.getItens().get(0).getBounds();TesteInvasao093.set(f.getNave(),"x",(double)r.x);TesteInvasao093.set(f.getNave(),"y",(double)r.y);f.checarColisoes();ok(f.temTrofeuTeste(id),"coleta real "+id);tick(f,1);if(id!=1){ok(Boolean.TRUE.equals(TesteInvasao093.get(f,"escolhendoSetor")),"mapa para escolher setor "+id);key(f,KeyEvent.VK_ENTER,true);}if(id==1){ok(f.getEtapaTeste().equals("BATALHA_CHEFE")&&f.getChefeTeste()!=null&&f.getChefeTeste().getFase()==9,"hellraiser obrigatorio depois do oitavo");
    ok(TesteInvasao093.get(f,"cenaChefe")!=null,"cutscene da van");tick(f,.5);key(f,KeyEvent.VK_ENTER,true);key(f,KeyEvent.VK_ENTER,false);tick(f,.6);ok(TesteInvasao093.get(f,"cenaChefe")==null,"enter pula cutscene");
-   call(f,"derrotarChefao");for(int s=0;s<20&&!f.getEtapaTeste().equals("CREDITOS");s++)tick(f,1);}
+   call(f,"derrotarChefao");for(int s=0;s<8&&f.getMiniChefeTeste()==null;s++)tick(f,1);
+   // fortaleza: as 8 bandas reunidas antes do final
+   for(int b=0;b<8;b++){MiniChefe g=f.getMiniChefeTeste();ok(g!=null&&g.bandaReunida(),"fortaleza banda "+(b+1));while(!g.receberDano(50)){}call(f,"derrotarMiniChefe");TesteInvasao093.set(f,"base",null);for(int s=0;s<8&&f.getMiniChefeTeste()==null&&!f.getEtapaTeste().equals("CREDITOS");s++)tick(f,1);}}
   ok(f.getEtapaTeste().equals(id==1?"CREDITOS":"DOBRA"),"transicao "+id);
   if(id!=1){int hp=f.getNave().getVida();tick(f,4.3);ok(f.getEtapaTeste().equals("COMBATE"),"proximo setor "+id);ok(f.getNave().getVida()==hp,"sem reparo na dobra "+id);}
  }
