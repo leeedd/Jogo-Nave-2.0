@@ -40,6 +40,25 @@ final class Pecas {
         new Pecas(13, MODULO, 4, 1500, "CORACAO DE FORJA", "Furia dura 50% mais, +1 dano", "-2 casco", 1, -2, 0, 1, 1, 1, 1.5, 1, false, false),
     };
 
+    /** Icone da peca: pecas_icones.png (grade 7x2, na ordem do catalogo) ou peca_N.png avulso. */
+    private static final java.awt.image.BufferedImage[] ICONES = new java.awt.image.BufferedImage[14];
+    static {
+        java.awt.image.BufferedImage folha = ler("pecas_icones.png");
+        for (int i = 0; i < ICONES.length; i++) {
+            java.awt.image.BufferedImage avulso = ler("peca_" + i + ".png");
+            if (avulso != null) ICONES[i] = avulso;
+            else if (folha != null) { int cw = folha.getWidth() / 7, ch = folha.getHeight() / 2; ICONES[i] = folha.getSubimage(i % 7 * cw, i / 7 * ch, cw, ch); }
+        }
+    }
+    private static java.awt.image.BufferedImage ler(String n) { java.net.URL u = Pecas.class.getResource("/ImagemIcon/" + n); if (u == null) return null; try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; } }
+    static boolean temIcone(int id) { return id >= 0 && id < ICONES.length && ICONES[id] != null; }
+    static void icone(java.awt.Graphics2D g, int id, int x, int y, int lado) {
+        if (!temIcone(id)) return;
+        java.awt.Graphics2D a = (java.awt.Graphics2D) g.create();
+        a.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        a.drawImage(ICONES[id], x, y, lado, lado, null); a.dispose();
+    }
+
     static Pecas obter(int id) { return id >= 0 && id < TODAS.length ? TODAS[id] : null; }
     boolean serveEm(int modelo) { return nave < 0 || nave == modelo; }
 
