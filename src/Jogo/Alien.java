@@ -48,6 +48,34 @@ public class Alien {
         y = Math.max(80, Math.min(540, baseY + Math.sin(fase) * amp)); recarga = .5 + (x0 % 7) * .12;
     }
     boolean emPassagem() { return passagem; }
+    /**
+     * Rota de piloto das naves do setor (diferente do enxame): curva de Bezier cubica de p0 a p3,
+     * ou um looping no meio do caminho. Ao terminar, a nave saiu da tela.
+     */
+    static final int MERGULHO = 0, PINCA = 1, LACO = 2, POR_TRAS = 3, ESCADA = 4;
+    private int rota = -1;
+    private double tRota, durRota, atrasoRota, laco;
+    private final double[] pr = new double[8];
+    void iniciarRota(int tipo, double atraso, double duracao, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3) {
+        rota = tipo; atrasoRota = atraso; durRota = duracao; tRota = 0; emFormacao = false; passagem = false; posicionado = true;
+        pr[0] = x0; pr[1] = y0; pr[2] = x1; pr[3] = y1; pr[4] = x2; pr[5] = y2; pr[6] = x3; pr[7] = y3;
+        x = x0; y = y0; recarga = .7 + atraso * .3;
+    }
+    boolean emRota() { return rota >= 0; }
+    /** Ponto da rota em t (0..1); no LACO, entre 35% e 65% do caminho a nave da uma volta inteira. */
+    private void pontoRota(double t) {
+        if (rota == LACO && t > .35 && t < .65) {
+            double a = (t - .35) / .3 * Math.PI * 2; bez(.35);
+            x -= Math.sin(a) * 85; y += (1 - Math.cos(a)) * 85 * (pr[1] < 310 ? 1 : -1);
+            return;
+        }
+        bez(rota == LACO ? (t <= .35 ? t : t - .3) / .7 : t);
+    }
+    private void bez(double t) {
+        double q = 1 - t;
+        x = q * q * q * pr[0] + 3 * q * q * t * pr[2] + 3 * q * t * t * pr[4] + t * t * t * pr[6];
+        y = q * q * q * pr[1] + 3 * q * q * t * pr[3] + 3 * q * t * t * pr[5] + t * t * t * pr[7]; // pode nascer e sair fora da tela
+    }
     /** Saiu pela esquerda sem ser abatido (conta para o avanco do setor, sem pontos). */
     private boolean escapou;
     boolean escapou() { return escapou; }
@@ -239,6 +267,13 @@ public class Alien {
             if (this.congelado == 0) enrolado = false;
             return;
         }
+        if (rota >= 0) {
+            if (atrasoRota > 0) { atrasoRota -= d; return; }
+            tRota += d / durRota; recarga -= d;
+            if (tRota >= 1) { visivel = false; escapou = true; return; }
+            pontoRota(tRota);
+            return;
+        }
         if (passagem) {
             // atravessa reto para o outro lado, ondulando; quem sai pela esquerda vai embora
             x -= velPassagem * d; baseYPassagem += derivaPassagem * d;
@@ -260,7 +295,9 @@ public class Alien {
                 }
             } else {
                 // tempo de formacao acabou: levanta voo e passa por cima do piloto indo embora
-                if (permanencia > 0 && classe != Classe.KAMIKAZE) { permanencia -= d; if (permanencia <= 0) { iniciarPassagem(x, y, 230 + faseMovimento % 1 * 60, 22, 2.2, 0, 0); return; } }
+                if (permanencia > 0 && classe != Classe.KAMIKAZE) { permanencia -= d; if (permanencia <= 0) {
+                    // sai de mergulho: desce (ou sobe) em arco e corta a tela indo embora pela esquerda
+                    double lado = y < 310 ? 1 : -1; iniciarRota(MERGULHO, 0, 3.2, x, y, x - 120, y + lado * 170, 260, y + lado * 120, -110, y - lado * 40); return; } }
                 double d5 = this.tempoAnimacao + this.faseMovimento;
                 d3 = Math.sin(d5 * (1.25 + (double)this.padrao * 0.11)) * (double)(9 + this.padrao * 2);
                 d2 = this.tipo == Tipo.ALIENIGENA_ORIGINAL && this.variante == 3 ? -Math.max(0.0, Math.sin(d5 * 1.2)) * 165.0 : (this.padrao == 4 ? Math.max(0.0, Math.sin(d5 * 0.72)) * -100.0 : (this.padrao == 3 ? -Math.max(0.0, Math.sin(d5 * 0.64)) * 77.0 : (this.padrao == 6 ? -Math.max(0.0, Math.sin(d5 * 0.81)) * 95.0 : (this.padrao == 7 ? -Math.max(0.0, Math.sin(d5 * 0.95 + this.faseMovimento)) * 116.0 : 0.0))));

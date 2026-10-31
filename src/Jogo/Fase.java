@@ -157,7 +157,19 @@ implements ActionListener {
     private int abatesSeguidos; private boolean avisouSangrando;
     /** Emboscada do enxame: primeiro as ondas atravessam a tela, depois chega a rainha (ou a nave comandante). */
     private boolean rainhaChegou;
-    private int ultimaPassagemSetor = -1;
+    private int ultimaPassagemSetor = -1, ladoRota = 1;
+    /** Manobras das naves do setor (o enxame tem as dele): mergulho, pinca, laco, por tras e escada. */
+    private void configurarRota(Alien a, int tipo, int i, int q, double vel) {
+        double ny = Math.max(120, Math.min(500, nave.getY() + 18)), atraso = i * (tipo == Alien.ESCADA ? .32 : .26), dur = 1180 / vel * 1.6;
+        int l = ladoRota;
+        switch (tipo) {
+            case Alien.MERGULHO: { double y0 = l > 0 ? -40 : 640, alvo = ny + (i - q / 2.0) * 26; a.iniciarRota(tipo, atraso, dur, 1010, y0, 700, y0, 560, alvo, -110, alvo - l * 40); break; }
+            case Alien.PINCA: { boolean cima = i % 2 == 0; double xs = 860 - (i / 2) * 70; a.iniciarRota(tipo, (i / 2) * .3, dur * .9, xs, cima ? -40 : 640, xs - 160, cima ? 260 : 360, xs - 330, cima ? 420 : 200, -110, cima ? 560 : 60); break; }
+            case Alien.LACO: { double y = l > 0 ? 190 : 430; a.iniciarRota(tipo, atraso, dur * 1.5, 1010, y, 500, y, 300, y, -110, y + l * 60); break; }
+            case Alien.POR_TRAS: { double longe = ny < 310 ? 500 : 120; a.iniciarRota(tipo, atraso, dur * 1.35, -70, longe, 1100, longe, 1000, ny, -110, ny); break; }
+            default: { double y0 = l > 0 ? 600 : 0, fim = l > 0 ? -20 : 620; a.iniciarRota(tipo, atraso, dur, 1010, y0, 640, y0 + (fim - y0) * .33, 260, y0 + (fim - y0) * .66, -110, fim); break; } // diagonal reta, de um canto ao outro
+        }
+    }
     private static final String[] RADIO_SETOR = {
         "Intruso no Abismo. Acordem a coisa la embaixo... ou matem ele antes.",
         "Ele entrou na Fornalha. Esquentem os canhoes.",
@@ -557,6 +569,7 @@ implements ActionListener {
         // o setor nao para: parte dos esquadroes atravessa a tela; os outros estacionam por pouco tempo e depois vao embora
         boolean passa = numeroEsquadrao > 0 && aleatorio.nextDouble() < .55;
         int padraoPassagem; do { padraoPassagem = aleatorio.nextInt(5); } while (padraoPassagem == ultimaPassagemSetor); if (passa) ultimaPassagemSetor = padraoPassagem;
+        ladoRota = aleatorio.nextBoolean() ? 1 : -1;
         double velPassagem = 205 + chefesDerrotados * 12 + aleatorio.nextInt(40), permanencia = 6 + aleatorio.nextDouble() * 5;
         for (int i = 0; i < n2; ++i) {
             Alien.Classe[] classeArray;
@@ -606,7 +619,7 @@ implements ActionListener {
             Alien novo = new Alien(1045 + i * 54, n6, tipo, classe);
             novo.definirSetor(setorAtual,aleatorio);
             if(!partidaTeste)novo.adaptar(comando.adaptacoes(aleatorio));
-            if (passa) configurarPassagem(novo, padraoPassagem, i, n2, velPassagem);
+            if (passa) configurarRota(novo, padraoPassagem, i, n2, velPassagem);
             else { novo.entrarEmEsquadrao(d5, d6, i, n3, d4); novo.definirPermanencia(permanencia + i * .15); }
             this.alien.add(novo);
         }
