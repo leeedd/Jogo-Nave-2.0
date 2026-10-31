@@ -30,4 +30,14 @@ public class TesteContratos{static void ok(boolean b,String m){if(!b)throw new A
   TesteInvasao093.set(alvo,"x",500.0);Method el2=Fase.class.getDeclaredMethod("eliminarAlien",Alien.class,boolean.class);el2.setAccessible(true);el2.invoke(h,alvo,true);
   Item rel=null;for(Item it:h.getItens())if(it.getTipo()==Item.Tipo.RELIQUIA_NAVE)rel=it;ok(rel!=null&&rel.origem()==2,"procurado solta a reliquia da nave");
   java.awt.Rectangle rb=rel.getBounds();h.getNave().teleportar(rb.x,rb.y);h.checarColisoes();ok(TesteInvasao093.get(h,"contrato")==null,"pegar a reliquia cumpre a cacada");
+  // contrato que falha some, vai para o arquivo com o motivo, e a base sorteia outros
+  Fase q=TesteInvasao093.fase(14);TesteInvasao093.set(q,"partidaTeste",true);TesteInvasao093.set(q,"inventario",new ProgressaoNave((java.util.prefs.Preferences)null));
+  Contrato falho=new Contrato(Contrato.Tipo.ABATES,99,1,1,-1,"LIMPEZA");TesteInvasao093.set(q,"contrato",falho);
+  Method dano=Fase.class.getDeclaredMethod("processarDano",int.class,Alien.class);dano.setAccessible(true);
+  for(int i=0;i<3;i++){TesteInvasao093.set(q.getNave(),"invulneravel",0.0);dano.invoke(q,1,null);}
+  java.util.List<?> arq=(java.util.List<?>)TesteInvasao093.get(q,"arquivoContratos");
+  ok(TesteInvasao093.get(q,"contrato")==null&&arq.size()==1&&falho.falhou&&falho.motivo.contains("GOLPES"),"terceiro golpe expira o contrato e arquiva com o motivo ("+falho.motivo+")");
+  call(q,"atracar");java.util.List<?> novas=(java.util.List<?>)TesteInvasao093.get(q,"ofertasContrato");ok(!novas.contains(falho)&&novas.size()>=3,"base sorteia contratos novos, o falho nao volta");
+  Contrato vivo=new Contrato(Contrato.Tipo.SEM_DANO_CHEFE,0,1,1,-1,"INTOCAVEL");TesteInvasao093.set(q,"contrato",vivo);call(q,"reiniciar");
+  ok(vivo.falhou&&"NAVE DESTRUIDA".equals(vivo.motivo)&&arq.size()==2,"morrer expira o contrato e ele vai para o arquivo");
   System.out.println("OK contratos");}}

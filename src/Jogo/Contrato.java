@@ -22,6 +22,9 @@ final class Contrato {
     /** Golpes que o piloto pode levar antes de perder o contrato (abates e vaporizar). */
     static final int GOLPES_MAX = 2;
     boolean falhou, cumprido;
+    /** Por que o contrato acabou (vai para o arquivo da pausa). */
+    String motivo = "";
+    void falhar(String m) { if (!terminado()) { falhou = true; motivo = m; } }
 
     Contrato(Tipo tipo, int alvo, int cr, int xp, int nave, String titulo) {
         this.tipo = tipo; this.alvo = alvo; this.premioCR = cr; this.premioXP = xp; this.nave = nave; this.titulo = titulo;
@@ -54,16 +57,16 @@ final class Contrato {
     void abate() { if (tipo == Tipo.ABATES && !terminado() && ++progresso >= alvo) cumprido = true; }
     void vaporizou(int n) { if (tipo == Tipo.VAPORIZAR && !terminado() && (progresso += n) >= alvo) cumprido = true; }
     /** Piloto levou um golpe em qualquer momento do contrato. */
-    void golpe() { if ((tipo == Tipo.ABATES || tipo == Tipo.VAPORIZAR) && !terminado() && ++golpes > GOLPES_MAX) falhou = true; }
+    void golpe() { if ((tipo == Tipo.ABATES || tipo == Tipo.VAPORIZAR) && !terminado() && ++golpes > GOLPES_MAX) falhar("LEVOU " + golpes + " GOLPES"); }
     /** Reliquia do alvo procurado foi recolhida. */
     void recuperou() { if (tipo == Tipo.CACADA && !terminado()) cumprido = true; }
-    void danoNoChefe() { if (tipo == Tipo.SEM_DANO_CHEFE && !terminado()) falhou = true; }
+    void danoNoChefe() { if (tipo == Tipo.SEM_DANO_CHEFE) falhar("LEVOU DANO NO CHEFE"); }
     /** Chefe caiu: resolve quem depende dele; quem nao chegou no alvo expira. */
     void chefeDerrotado(double segundos) {
         if (terminado()) return;
         if (tipo == Tipo.SEM_DANO_CHEFE) cumprido = true;
-        else if (tipo == Tipo.CHEFE_RAPIDO) { if (segundos <= alvo) cumprido = true; else falhou = true; }
-        else falhou = true;
+        else if (tipo == Tipo.CHEFE_RAPIDO) { if (segundos <= alvo) cumprido = true; else falhar("CHEFE CAIU EM " + (int) segundos + "s"); }
+        else falhar(tipo == Tipo.CACADA ? "O ALVO ESCAPOU" : "O CHEFE CAIU ANTES");
     }
 
     // ---- patente do piloto ----

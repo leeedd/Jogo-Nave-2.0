@@ -5,7 +5,9 @@ final class Pausa099 {
  static final Color OURO=new Color(255,206,98),AZUL=new Color(65,219,238),CINZA=new Color(133,158,180);
  static final String[] NAVES={"RAPTOR MK-I","SHADOW","VALKYRIE","BERSERKER","METAL GOD"};
  static String nomeNave(int m){return NAVES[Math.max(0,Math.min(4,m))];}
- static final String[] ABAS={"ARSENAL","NAVE","RELIQUIAS","MAPA","MERCADO","SISTEMA"};
+ static final String[] ABAS={"ARSENAL","NAVE","RELIQUIAS","MAPA","MERCADO","SISTEMA","CONTRATOS"};
+ /** Contrato em andamento e arquivo dos encerrados (a Fase atualiza antes de desenhar). */
+ static Contrato contratoAtivo; static java.util.List<Contrato> arquivo=new java.util.ArrayList<>();
  static final String[][] PECAS={{"CHASSI RAPTOR","CANHAO DUPLO","TURBINA RAPTOR"},{"CHASSI SHADOW","AGULHAS GEMEAS","MOTOR FANTASMA"},{"CHASSI VALKYRIE","LEQUE VALKYRIE","REATOR VALKYRIE"},{"CHASSI BERSERKER","OBUS PESADO","TURBINA CERCO"},{"CHASSI METAL GOD","TRIDENTE REAL","REATOR LENDARIO"}};
  static void txt(Graphics2D g,String s,int x,int y,Color c){g.setColor(c);g.setFont(new Font(Font.MONOSPACED,Font.BOLD,9));g.drawString(s,x,y);}
  /** Texto que encolhe a fonte para caber na largura do cartao. */
@@ -25,7 +27,7 @@ final class Pausa099 {
  static void desenhar(Graphics2D tela,int aba,int cursor,ProgressaoNave inv,Nave nave,Energia098 energia,Poderes099 powers,boolean gelo,boolean fogo,double tempo,String aviso){
   BufferedImage b=new BufferedImage(480,300,1);Graphics2D g=b.createGraphics();g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_OFF);g.setColor(new Color(3,7,15));g.fillRect(0,0,480,300);
   for(int x=0;x<480;x+=16){g.setColor(new Color(26,42,59));g.fillRect(x,0,14,5);g.fillRect(x,295,14,5);g.setColor((x+(int)(tempo*8))%48<24?Color.RED:new Color(70,18,27));g.fillRect(x+3,1,6,2);}
-  txt(g,"METAL SPACE / SISTEMAS DE BORDO",12,20,OURO);txtDir(g,"CR "+inv.saldo(),466,20,AZUL);for(int i=0;i<6;i++){box(g,12+i*76,29,74,21,i==aba);txt(g,(i+1)+" "+ABAS[i],17+i*76,43,i==aba?OURO:CINZA);}
+  txt(g,"METAL SPACE / SISTEMAS DE BORDO",12,20,OURO);txtDir(g,"CR "+inv.saldo(),466,20,AZUL);for(int i=0;i<7;i++){box(g,12+i*65,29,63,21,i==aba);txtCabe(g,(i+1)+" "+ABAS[i],16+i*65,43,57,i==aba?OURO:CINZA);}
   int m=nave.getModeloVisual();
   if(aba==0){for(int i=0;i<8;i++){int x=12+i%2*145,y=56+i/2*47;boolean tem=inv.temChaveIndice(i);box(g,x,y,137,42,cursor==i);if(tem)Poderes099.icone(g,i,x+3,y+4,34,tempo);else txt(g,"?",x+16,y+25,CINZA);g.setColor(new Color(10,20,34));g.fillRect(x+2,y+30,9,11);txt(g,""+(i+1),x+4,y+39,tem?Color.WHITE:CINZA);txtCabe(g,tem?Poderes099.NOMES[i]:"DESCONHECIDO",x+41,y+13,92,tem?Color.WHITE:CINZA);HudEnergia.miniBarra(g,x+41,y+20,90,powers.energia[i],CUSTO_I(i),Poderes099.CORES_SIMBOLO[i],tem);txt(g,!tem?"CHEFE NAO VENCIDO":powers.cooldown[i]>0?"RECARGA "+(int)Math.ceil(powers.cooldown[i])+"s":powers.selecionado==i?"EQUIPADO / C":"ESPACO: EQUIPAR",x+41,y+36,tem?OURO:CINZA);}
    box(g,302,56,164,183,false);Poderes099.icone(g,cursor,341,64,86,tempo);txt(g,Poderes099.NOMES[cursor],312,166,OURO);String s=Poderes099.DICAS[cursor];int at=s.lastIndexOf(' ',Math.min(s.length()-1,22));if(s.length()>23){txt(g,s.substring(0,at),312,182,CINZA);txt(g,s.substring(at+1),312,195,CINZA);}else txt(g,s,312,182,CINZA);txt(g,"ENERGIA "+powers.energia[cursor]+"  CUSTO "+Poderes099.CUSTO[cursor],312,218,AZUL);txt(g,"USOS RESTANTES: "+(powers.energia[cursor]/Poderes099.CUSTO[cursor]),312,228,OURO);if(inv.reator())txtCabe(g,"FUSAO V: "+LaserConvergencia.NOMES[cursor],312,206,150,new Color(200,130,255));
@@ -69,6 +71,17 @@ final class Pausa099 {
     boolean tem=inv.temPeca(q.id),eq=inv.equipada(m,e)==q.id;txt(g,eq?"ESPACO: DESEQUIPAR":tem?"ESPACO: EQUIPAR":"ESPACO: COMPRAR",310,190,AZUL);}
    txt(g,"NAVE ATUAL",310,204,CINZA);txt(g,"DANO "+nave.danoBalistico()+"  CASCO "+nave.getVidaMaxima(),310,217,Color.WHITE);txt(g,"COMPRAS SAO PERMANENTES",310,232,AZUL);
    }
+  }else if(aba==6){
+   // contrato atual e arquivo: o que falhou ou expirou nao volta, pegue outro na base
+   Contrato c=contratoAtivo;int xp=ProgressoJogo.xp(),p=Contrato.patente(xp);
+   box(g,12,56,454,86,false);txt(g,"CONTRATO ATUAL",22,70,OURO);txtDir(g,"PATENTE "+Contrato.PATENTES[p]+"  XP "+xp,456,70,AZUL);
+   if(c==null){txt(g,"NENHUM CONTRATO ATIVO",22,92,Color.WHITE);txt(g,"PEGUE UM NO QUADRO DE MISSOES DA BASE ALIADA",22,108,CINZA);}
+   else{txtCabe(g,c.titulo,22,90,430,Color.WHITE);txtCabe(g,c.descricao(),22,104,430,CINZA);txtCabe(g,c.hud(),22,118,430,new Color(110,230,130));txt(g,"PREMIO CR "+c.premioCR+"  XP "+c.premioXP+(c.tipo==Contrato.Tipo.CACADA?" + RELIQUIA":""),22,134,OURO);}
+   box(g,12,148,454,94,false);txt(g,"ARQUIVO",22,162,OURO);
+   if(arquivo.isEmpty())txt(g,"VAZIO",22,180,CINZA);
+   for(int i=0;i<Math.min(5,arquivo.size());i++){Contrato a=arquivo.get(i);int y=178+i*13;txtCabe(g,a.titulo,22,y,150,Color.WHITE);
+    txt(g,a.cumprido?"CUMPRIDO":"EXPIRADO",180,y,a.cumprido?new Color(110,230,130):new Color(240,100,100));txtCabe(g,a.cumprido?"+"+a.premioCR+" CR":a.motivo,262,y,196,CINZA);}
+   txt(g,"CONTRATO FALHO NAO VOLTA: A BASE SORTEIA OUTROS",12,256,AZUL);
   }else if(aba==5){String[] linhas={"ENTER / ESC: RETOMAR VOO","M: VOLTAR AO MENU INICIAL","F8: LABORATORIO DE TESTES","F9: OPCOES (AUDIO, JOGO, CONTROLES)","COMPRAS SALVAS AUTOMATICAMENTE","ROTA LIVRE: ESCOLHA O SETOR NO MAPA"};box(g,12,56,454,183,false);for(int i=0;i<linhas.length;i++)txt(g,linhas[i],30,82+i*28,i%2==0?Color.WHITE:OURO);}
   if(aviso!=null&&!aviso.isEmpty())txt(g,aviso.substring(0,Math.min(69,aviso.length())),12,267,OURO);txt(g,aba==4?"< >: ENCAIXE  CIMA/BAIXO: ITEM  ESPACO: COMPRAR / EQUIPAR  TAB: ABA  ENTER: VOLTAR":aba==0?"C: USAR  X: TROCAR  1-8: ESCOLHER  ESPACO: EQUIPAR  TAB: ABA  ENTER: VOLTAR":"TAB: ABA  SETAS: SELECAO  ESPACO: CONFIRMAR  ENTER: VOLTAR",12,285,CINZA);g.dispose();tela.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);tela.drawImage(b,0,0,960,600,null);
  }

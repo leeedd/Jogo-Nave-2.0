@@ -161,6 +161,9 @@ implements ActionListener {
     private Contrato contrato;
     private java.util.List<Contrato> ofertasContrato = new java.util.ArrayList<>();
     private boolean quadroBase; private int cursorQuadro; private double tempoBatalhaChefe;
+    /** Arquivo dos contratos encerrados (cumpridos, falhos e expirados), o mais novo primeiro. */
+    private final java.util.LinkedList<Contrato> arquivoContratos = new java.util.LinkedList<>();
+    private void arquivar(Contrato c) { arquivoContratos.addFirst(c); while (arquivoContratos.size() > 6) arquivoContratos.removeLast(); }
     private int ultimaPassagemSetor = -1, ladoRota = 1;
     /** Manobras das naves do setor (o enxame tem as dele): mergulho, pinca, laco, por tras e escada. */
     private void configurarRota(Alien a, int tipo, int i, int q, double vel) {
@@ -391,8 +394,8 @@ implements ActionListener {
     /** Paga ou encerra o contrato quando ele termina. */
     private void resolverContrato() {
         if (contrato == null || !contrato.terminado()) return;
-        Contrato c = contrato; contrato = null;
-        if (c.falhou) { SomJogo.tocar(SomJogo.Efeito.ERRO); mostrarAviso("CONTRATO " + c.titulo + " FALHOU"); return; }
+        Contrato c = contrato; contrato = null; arquivar(c);
+        if (c.falhou) { SomJogo.tocar(SomJogo.Efeito.ERRO); mostrarAviso("CONTRATO " + c.titulo + " EXPIROU: " + c.motivo + ". PEGUE OUTRO NA BASE"); return; }
         inventario.creditar(c.premioCR); SomJogo.tocar(SomJogo.Efeito.VITORIA);
         boolean subiu = !partidaTeste && ProgressoJogo.ganharXP(c.premioXP);
         if (c.tipo == Contrato.Tipo.CACADA) mostrarAviso(Contrato.RELIQUIA_NAVE[c.nave] + " RECUPERADO! ENTREGUE NA BASE PARA LIBERAR A " + Pausa099.nomeNave(c.nave));
@@ -1018,6 +1021,7 @@ implements ActionListener {
             mapaEstelar.estado(setor,etapa==Etapa.DOBRA&&!escolhendoSetor,intercepcao||etapa==Etapa.INTERDICAO,cenaNave==null?0:cenaNave.getTempo()/4.2);
             mapaEstelar.desenhar(graphics2D);return;
         }
+        Pausa099.contratoAtivo=contrato;Pausa099.arquivo=arquivoContratos;
         Pausa099.desenhar(graphics2D,abaPausa,cursorPausa,inventario,nave,energia,poderes,geloColetado,fogoColetado,tempoTotal,tempoAviso>0?aviso:"");
     }
 
@@ -2103,7 +2107,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
@@ -2573,8 +2577,8 @@ implements ActionListener {
             if (Fase.this.pausado) {
                 if(mapaAberto() && mapaEstelar.tecla(codigo)){repaint();return;}
                 if(codigo==KeyEvent.VK_M){voltarAoMenuInicial();return;}
-                if(codigo==KeyEvent.VK_TAB){if(teclasTeste.add(codigo)){abaPausa=(abaPausa+1)%6;cursorPausa=0;}repaint();return;}
-                if(codigo>=KeyEvent.VK_1&&codigo<=KeyEvent.VK_6){abaPausa=codigo-KeyEvent.VK_1;cursorPausa=0;repaint();return;}
+                if(codigo==KeyEvent.VK_TAB){if(teclasTeste.add(codigo)){abaPausa=(abaPausa+1)%7;cursorPausa=0;}repaint();return;}
+                if(codigo>=KeyEvent.VK_1&&codigo<=KeyEvent.VK_7){abaPausa=codigo-KeyEvent.VK_1;cursorPausa=0;repaint();return;}
                 if(abaPausa==4&&(codigo==KeyEvent.VK_LEFT||codigo==KeyEvent.VK_RIGHT)){if(teclasTeste.add(codigo)){Pausa099.encaixeMercado=Math.floorMod(Pausa099.encaixeMercado+(codigo==KeyEvent.VK_LEFT?-1:1),6);cursorPausa=0;SomJogo.tocar(SomJogo.Efeito.MENU);}repaint();return;}
                 int total=abaPausa==4?(Pausa099.encaixeMercado==5?1:Pausa099.encaixeMercado==4?5:Math.max(1,Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual()).size())):abaPausa==0||abaPausa==2?8:4;
                 if(codigo==KeyEvent.VK_UP||codigo==KeyEvent.VK_LEFT)cursorPausa=(cursorPausa+total-1)%total;
