@@ -54,8 +54,10 @@ final class ProgressaoNave {
  void selecionarFusao(int n){if(fusaoLiberada(n)){fusao=n;salvar();}}
  void coletarReator(){reator=true;salvar();}
  void registrarElemental(boolean geloColetado,boolean fogoColetado){if(!retencao)return;gelo=Math.max(gelo,geloColetado?1:0);fogo=Math.max(fogo,fogoColetado?1:0);salvar();}
- int preco(int produto){switch(produto){case 0:return retencao?0:3000;case 1:return gelo>=3?0:new int[]{400,800,1400}[gelo];case 2:return fogo>=3?0:new int[]{400,800,1400}[fogo];case 3:return blindagem>=3?0:new int[]{450,900,1600}[blindagem];case 4:return reator?0:15000;default:return 0;}}
- boolean comprar(int produto){int custo=preco(produto);if(custo<=0||saldo<custo)return false;saldo-=custo;switch(produto){case 0:retencao=true;break;case 1:gelo++;break;case 2:fogo++;break;case 4:reator=true;break;case 3:blindagem++;break;default:return false;}salvar();return true;}
+ int preco(int produto){switch(produto){case 0:return retencao?0:3000;case 1:return gelo>=3?0:new int[]{400,800,1400}[gelo];case 2:return fogo>=3?0:new int[]{400,800,1400}[fogo];case 3:return blindagem>=3?0:new int[]{450,900,1600}[blindagem];case 4:return reator?0:15000;case 5:return quantidadeTanques()>=4?0:PRECO_TANQUE[quantidadeTanques()];default:return 0;}}
+ /** Subtanques vendidos no mercado (ate 4): chegam cheios. */
+ static final int[] PRECO_TANQUE={1500,2500,4000,6000};
+ boolean comprar(int produto){int custo=preco(produto);if(custo<=0||saldo<custo)return false;saldo-=custo;switch(produto){case 0:retencao=true;break;case 1:gelo++;break;case 2:fogo++;break;case 4:reator=true;break;case 3:blindagem++;break;case 5:{int t=0;while(temTanque(t))t++;tanques|=1<<t;carga[t]=100;break;}default:return false;}salvar();return true;}
  int peca(int m,int t){return pecas[lim(m,0,4)][lim(t,0,2)];}
  int precoMercado(int m,int t){if(t<0||t>5)return 0;if(t>=3)return preco(t==3?1:t==4?2:3);int n=peca(m,t);return n>=(t==0?8:3)?0:t==0?PRECO_EVOLUCAO[n]:450+350*n;}
  /** Evolucao da nave no mercado: os niveis 3 e 6 trocam o estagio da nave e custam mais. */

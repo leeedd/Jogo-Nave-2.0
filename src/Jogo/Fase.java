@@ -397,8 +397,8 @@ implements ActionListener {
         atualizarBase(dt);
         if(etapa!=Etapa.COMBATE||intercepcao)return;
         if(!segredoGerado&&tempoSetor>=18){segredoGerado=true;int setor=setorAtual;
-            if(setor<8&&setor%2==0&&!inventario.temTanque(setor/2))segredo=new Segredo098(setor,false);
-            else if(setor==3&&!inventario.reator())segredo=new Segredo098(setor,true);
+            // subtanques sao vendidos no mercado; nao ficam mais escondidos nos setores
+            if(setor==3&&!inventario.reator())segredo=new Segredo098(setor,true);
         }
         // Nucleo de Casco: aparece mais tarde no setor, so se ainda nao foi achado aqui.
         if(segredoCasco==null&&tempoSetor>=34&&!inventario.temNucleo(setorAtual))segredoCasco=Segredo098.nucleo(setorAtual);
@@ -2426,7 +2426,7 @@ implements ActionListener {
                 if(codigo==KeyEvent.VK_TAB){if(teclasTeste.add(codigo)){abaPausa=(abaPausa+1)%6;cursorPausa=0;}repaint();return;}
                 if(codigo>=KeyEvent.VK_1&&codigo<=KeyEvent.VK_6){abaPausa=codigo-KeyEvent.VK_1;cursorPausa=0;repaint();return;}
                 if(abaPausa==4&&(codigo==KeyEvent.VK_LEFT||codigo==KeyEvent.VK_RIGHT)){if(teclasTeste.add(codigo)){Pausa099.encaixeMercado=Math.floorMod(Pausa099.encaixeMercado+(codigo==KeyEvent.VK_LEFT?-1:1),6);cursorPausa=0;SomJogo.tocar(SomJogo.Efeito.MENU);}repaint();return;}
-                int total=abaPausa==4?(Pausa099.encaixeMercado==5?1:Pausa099.encaixeMercado==4?4:Math.max(1,Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual()).size())):abaPausa==0||abaPausa==2?8:4;
+                int total=abaPausa==4?(Pausa099.encaixeMercado==5?1:Pausa099.encaixeMercado==4?5:Math.max(1,Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual()).size())):abaPausa==0||abaPausa==2?8:4;
                 if(codigo==KeyEvent.VK_UP||codigo==KeyEvent.VK_LEFT)cursorPausa=(cursorPausa+total-1)%total;
                 if(codigo==KeyEvent.VK_DOWN||codigo==KeyEvent.VK_RIGHT)cursorPausa=(cursorPausa+1)%total;
                 if(codigo==KeyEvent.VK_O){abaPausa=4;cursorPausa=0;}
@@ -2438,8 +2438,8 @@ implements ActionListener {
                             if(inventario.comprarMercado(mv,0)){SomJogo.tocar(SomJogo.Efeito.EVOLUCAO);aplicarInventario();int nv=inventario.peca(mv,0);mostrarAviso(ArteNaves.estagio(nv)>antes?"NOVO ESTAGIO! NAVE NIVEL "+nv:"NAVE EVOLUIU: NIVEL "+nv);}
                             else{SomJogo.tocar(SomJogo.Efeito.ERRO);mostrarAviso(inventario.precoMercado(mv,0)==0?"EVOLUCAO MAXIMA":"CREDITOS INSUFICIENTES");}
                             repaint();return;}
-                        if(Pausa099.encaixeMercado==4){int prod=new int[]{1,2,0,4}[Math.min(3,cursorPausa)];
-                            if(inventario.comprar(prod)){SomJogo.tocar(SomJogo.Efeito.COMPRA);aplicarInventario();mostrarAviso("COMPRADO: "+new String[]{"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"}[Math.min(3,cursorPausa)]);}
+                        if(Pausa099.encaixeMercado==4){int prod=new int[]{1,2,0,4,5}[Math.min(4,cursorPausa)];
+                            if(inventario.comprar(prod)){SomJogo.tocar(SomJogo.Efeito.COMPRA);aplicarInventario();mostrarAviso(prod==5?"SUBTANQUE INSTALADO: "+inventario.quantidadeTanques()+"/4":"COMPRADO: "+new String[]{"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"}[Math.min(3,cursorPausa)]);}
                             else{SomJogo.tocar(SomJogo.Efeito.ERRO);mostrarAviso(inventario.preco(prod)==0?"JA ADQUIRIDO":"CREDITOS INSUFICIENTES");}
                             repaint();return;}
                         java.util.List<Pecas> lista=Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual());

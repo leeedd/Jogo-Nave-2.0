@@ -49,14 +49,14 @@ final class Pausa099 {
      txt(g,(nv+1)%2==0?"+1 CASCO":nv+1==6?"+1 DANO":"+ VELOCIDADE",310,151,new Color(110,230,130));txt(g,"CR "+preco,310,174,preco>inv.saldo()?new Color(240,100,100):OURO);txt(g,"ESPACO: COMPRAR",310,190,AZUL);}
     txt(g,"ITEM DO SETOR: ATE O NV "+(nv<=2?2:nv<=5?5:8),310,204,CINZA);txt(g,"CADA NAVE EVOLUI SEPARADA",310,217,CINZA);txt(g,"COMPRA NAO SE PERDE",310,232,AZUL);
    }else if(e==4){
-    String[] nomes={"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"};int[] prod={1,2,0,4},ic={6,7,5,8};
-    String[] bom={"Arma de gelo (Q): congela","Arma de fogo (E): queima","Protege gelo e fogo","Gelo + fogo = LASER (V)"};
-    String[] info={"Nivel "+inv.gelo()+"/3: superaquece","Nivel "+inv.fogo()+"/3: superaquece",inv.retencao()?"Cargas: "+inv.cargasAmuleto()+"/3":"Segura 3 golpes e quebra","Com poder equipado: FUSAO"};
-    for(int i=0;i<4;i++){int y=102+i*28,preco=inv.preco(prod[i]);box(g,12,y,282,25,cursor==i);if(!especial(g,i,15,y+1,23))Arte098.item(g,ic[i],15,y+1,23);
-     txtCabe(g,nomes[i]+(prod[i]<3&&prod[i]>0?" NV "+(prod[i]==1?inv.gelo():inv.fogo()):""),42,y+11,240,Color.WHITE);txt(g,preco==0?(i==2?"ATIVO: "+inv.cargasAmuleto()+"/3 CARGAS":"ADQUIRIDO / MAXIMO"):"CR "+preco,42,y+21,preco==0?VERDE:preco>inv.saldo()?VERM:OURO);}
-    box(g,302,102,164,137,false);int c=Math.min(3,cursor);if(!especial(g,c,310,108,40))Arte098.item(g,ic[c],310,108,40);txtCabe(g,nomes[c],356,118,104,OURO);txt(g,"SERVE EM TODAS",356,131,CINZA);
+    String[] nomes={"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA","SUBTANQUE"};int[] prod={1,2,0,4,5},ic={6,7,5,8,0};
+    String[] bom={"Arma de gelo (Q): congela","Arma de fogo (E): queima","Protege gelo e fogo","Gelo + fogo = LASER (V)","Reserva de casco (R)"};
+    String[] info={"Nivel "+inv.gelo()+"/3: superaquece","Nivel "+inv.fogo()+"/3: superaquece",inv.retencao()?"Cargas: "+inv.cargasAmuleto()+"/3":"Segura 3 golpes e quebra","Com poder equipado: FUSAO","Tanques: "+inv.quantidadeTanques()+"/4, chega cheio"};
+    for(int i=0;i<5;i++){int y=102+i*27,preco=inv.preco(prod[i]);box(g,12,y,282,25,cursor==i);if(i>3||!especial(g,i,15,y+1,23))Arte098.item(g,ic[i],15,y+1,23);
+     txtCabe(g,nomes[i]+(prod[i]<3&&prod[i]>0?" NV "+(prod[i]==1?inv.gelo():inv.fogo()):prod[i]==5?" "+inv.quantidadeTanques()+"/4":""),42,y+11,240,Color.WHITE);txt(g,preco==0?(i==2?"ATIVO: "+inv.cargasAmuleto()+"/3 CARGAS":"ADQUIRIDO / MAXIMO"):"CR "+preco,42,y+21,preco==0?VERDE:preco>inv.saldo()?VERM:OURO);}
+    box(g,302,102,164,137,false);int c=Math.min(4,cursor);if(c>3||!especial(g,c,310,108,40))Arte098.item(g,ic[c],310,108,40);txtCabe(g,nomes[c],356,118,104,OURO);txt(g,"SERVE EM TODAS",356,131,CINZA);
     txt(g,"+ "+bom[c],310,161,VERDE);txt(g,info[c],310,174,CINZA);txt(g,inv.preco(prod[c])==0?"JA ADQUIRIDO":"ESPACO: COMPRAR",310,190,AZUL);
-    txt(g,c==3?"CADA CHEFE MUDA O DISPARO":c==2?"QUEBRA: COMPRE DE NOVO":"ATIRE EM RAJADAS CURTAS",310,217,c==2?VERM:CINZA);txt(g,"COMPRAS SAO PERMANENTES",310,232,AZUL);
+    txt(g,c==4?"REPARO ENCHE OS TANQUES":c==3?"CADA CHEFE MUDA O DISPARO":c==2?"QUEBRA: COMPRE DE NOVO":"ATIRE EM RAJADAS CURTAS",310,217,c==2?VERM:CINZA);txt(g,"COMPRAS SAO PERMANENTES",310,232,AZUL);
    }else{
    java.util.List<Pecas> lista=Pecas.doEncaixe(e,m);   for(int i=0;i<lista.size();i++){Pecas q=lista.get(i);int y=102+i*28;box(g,12,y,282,25,cursor==i);boolean tem=inv.temPeca(q.id),eq=inv.equipada(m,e)==q.id;
     int ix=Pecas.temIcone(q.id)?42:20;Pecas.icone(g,q.id,16,y+1,23);

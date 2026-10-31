@@ -16,4 +16,8 @@ public class TesteEvolucaoMercado{static void ok(boolean b,String m){if(!b)throw
   for(int i=0;i<4;i++){TesteInvasao093.set(n,"invulneravel",0.0);dano.invoke(f,1,null);}
   ok(n.getNivel()==3,"dano tira o extra do setor mas nunca o nivel comprado");
   for(int i=0;i<5;i++)p.comprarMercado(m,0);ok(p.peca(m,0)==8&&p.precoMercado(m,0)==0&&!p.comprarMercado(m,0),"para no nivel 8");
+  ProgressaoNave q=new ProgressaoNave((java.util.prefs.Preferences)null);TesteInvasao093.set(q,"saldo",20000);
+  ok(q.quantidadeTanques()==0&&q.preco(5)==1500,"primeiro subtanque custa 1500");
+  for(int i=0;i<4;i++)ok(q.comprar(5)&&q.temTanque(i)&&q.carga(i)==100,"subtanque "+(i+1)+" chega cheio");
+  ok(q.quantidadeTanques()==4&&q.preco(5)==0&&!q.comprar(5)&&q.saldo()==20000-1500-2500-4000-6000,"para em 4 subtanques");
   System.out.println("OK evolucao no mercado");}}
