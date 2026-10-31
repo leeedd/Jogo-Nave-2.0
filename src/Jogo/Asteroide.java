@@ -13,6 +13,9 @@ public final class Asteroide {
         Assets.imagem("meteoro_16bits_2.png"),
         Assets.imagem("meteoro_16bits_3.png")
     };
+    private static final Image[] MINERIO_ART = {Assets.imagem("meteoro_minerio_0.png"), Assets.imagem("meteoro_minerio_1.png")};
+    private static final Image GIGANTE_ART = Assets.imagem("meteoro_gigante.png");
+    private static final Image[] ESTILHACO_ART = {Assets.imagem("estilhaco_0.png"), Assets.imagem("estilhaco_1.png"), Assets.imagem("estilhaco_2.png")};
     private double x, y, tempo;
     private final int raio, variante;
     private int vida;
@@ -50,9 +53,13 @@ public final class Asteroide {
         a.translate(Math.round(x), Math.round(y));
         a.rotate(tempo * (variante % 2 == 0 ? .23 : -.20));
         int tamanho = raio * 2;
-        if(temSuprimento())Arte095.desenhar(a,11,-raio,-raio,tamanho,tamanho);else a.drawImage(SPRITES[Math.floorMod(variante, SPRITES.length)],
+        Image arte = estilhaco && ESTILHACO_ART[raio % 3] != null ? ESTILHACO_ART[raio % 3]
+                : gigante() && GIGANTE_ART != null ? GIGANTE_ART
+                : temMinerio() && MINERIO_ART[raio % 2] != null ? MINERIO_ART[raio % 2] : null;
+        if (arte != null) a.drawImage(arte, -raio, -raio, tamanho, tamanho, null);
+        else if(temSuprimento())Arte095.desenhar(a,11,-raio,-raio,tamanho,tamanho);else a.drawImage(SPRITES[Math.floorMod(variante, SPRITES.length)],
                 -raio, -raio, tamanho, tamanho, null);
-        if (temMinerio()) {
+        if (temMinerio() && MINERIO_ART[raio % 2] == null) {
             // veios de cristal brilhando na rocha
             java.util.Random r = new java.util.Random(variante * 31 + raio);
             for (int k = 0; k < 6; k++) {

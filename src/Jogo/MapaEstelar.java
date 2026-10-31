@@ -17,6 +17,16 @@ final class MapaEstelar {
  private static final BufferedImage[][] PLANETAS=criarPlanetas();
  /** Estrela de cada sistema em pixel art (mapa_estrela_0..7.png); sem a arte, fica a bolinha antiga. */
  private static final BufferedImage[] ESTRELAS=new BufferedImage[8];
+ /** 12 planetas em pixel art (0..9 comuns, 10 e 11 com anel) e o marcador da nave (4 quadros). */
+ private static final BufferedImage[] ARTE_PLANETA=new BufferedImage[12];private static BufferedImage NAVE_MAPA;
+ static{for(int i=0;i<12;i++)ARTE_PLANETA[i]=ler("mapa_planeta_"+i+".png");NAVE_MAPA=ler("mapa_nave.png");}
+ private static BufferedImage ler(String n){java.net.URL u=MapaEstelar.class.getResource("/ImagemIcon/"+n);if(u==null)return null;try{return javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){return null;}}
+ /** Tema de cada sistema: o primeiro planeta usa a cara do setor; os outros variam. */
+ private static final int[] TEMA={3,1,5,8,2,6,9,0};
+ private static BufferedImage arteDoPlaneta(int i,int j){
+  if(Turne.anel(i,j))return ARTE_PLANETA[i%2==0?11:10];
+  int k=j==0?TEMA[i]:(TEMA[i]+j*3+i)%10;return ARTE_PLANETA[k]!=null?ARTE_PLANETA[k]:PLANETAS[i][j];
+ }
  static{for(int i=0;i<8;i++){java.net.URL u=MapaEstelar.class.getResource("/ImagemIcon/mapa_estrela_"+i+".png");if(u!=null)try{ESTRELAS[i]=javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){}}}
  private double cameraX,cameraY,zoom=.19,alvoX,alvoY,alvoZoom=.19;
  private double tempo,viagem;
@@ -141,7 +151,8 @@ final class MapaEstelar {
   }
   for(int i=0;i<8;i++)desenharSistema(v,i);
   double[] pos=posicaoJogador();int px=telaX(pos[0]),py=telaY(pos[1]);
-  v.setColor(foraRota?Color.ORANGE:Color.CYAN);v.fillPolygon(new int[]{px-7,px+7,px},new int[]{py-28,py-28,py-17},3);
+  if(NAVE_MAPA!=null&&!foraRota){int q=(int)(tempo*6)%4,fw=NAVE_MAPA.getWidth()/4;v.drawImage(NAVE_MAPA,px-17,py-50,px+17,py-16,q*fw,0,q*fw+fw,NAVE_MAPA.getHeight(),null);}
+  else{v.setColor(foraRota?Color.ORANGE:Color.CYAN);v.fillPolygon(new int[]{px-7,px+7,px},new int[]{py-28,py-28,py-17},3);}
   texto(v,foraRota?"SINAL INTERROMPIDO":dobra?"EM DOBRA":"VOCE",px+12,py-20,11,foraRota?Color.ORANGE:Color.CYAN);
   v.dispose();g.setColor(new Color(55,92,120));g.draw(VISTA);
   desenharPainel(g);
@@ -196,9 +207,12 @@ final class MapaEstelar {
     // cor do risco: halo em volta; risco alto ganha anel, como Saturno
     int risco=Turne.risco(i,j);Color cr=Turne.CORES_RISCO[risco];boolean anel=Turne.anel(i,j);
     for(int k=3;k>0;k--){g.setColor(new Color(cr.getRed(),cr.getGreen(),cr.getBlue(),26));int hr=tamanho/2+k*Math.max(2,tamanho/10);g.fillOval(qx-hr,qy-hr,hr*2,hr*2);}
-    if(anel){Graphics2D a=(Graphics2D)g.create();a.setColor(cr.darker());a.setStroke(new BasicStroke(Math.max(1,tamanho/10f)));a.drawArc(qx-tamanho,qy-tamanho/4,tamanho*2,tamanho/2,0,180);a.dispose();}
-    g.drawImage(PLANETAS[i][j],qx-tamanho/2,qy-tamanho/2,tamanho,tamanho,null);
-    if(anel){Graphics2D a=(Graphics2D)g.create();a.setColor(cr);a.setStroke(new BasicStroke(Math.max(1,tamanho/10f)));a.drawArc(qx-tamanho,qy-tamanho/4,tamanho*2,tamanho/2,180,180);a.dispose();}
+    BufferedImage arte=arteDoPlaneta(i,j);boolean arteNova=arte!=PLANETAS[i][j];
+    if(anel&&!arteNova){Graphics2D a=(Graphics2D)g.create();a.setColor(cr.darker());a.setStroke(new BasicStroke(Math.max(1,tamanho/10f)));a.drawArc(qx-tamanho,qy-tamanho/4,tamanho*2,tamanho/2,0,180);a.dispose();}
+    // a arte nova ja traz o anel desenhado; os sprites tem margem, por isso saem um pouco maiores
+    int t2=arteNova?(int)(tamanho*(anel?1.9:1.35)):tamanho;
+    g.drawImage(arte,qx-t2/2,qy-t2/2,t2,t2,null);
+    if(anel&&!arteNova){Graphics2D a=(Graphics2D)g.create();a.setColor(cr);a.setStroke(new BasicStroke(Math.max(1,tamanho/10f)));a.drawArc(qx-tamanho,qy-tamanho/4,tamanho*2,tamanho/2,180,180);a.dispose();}
     if(i==selecionado&&j==planeta){g.setColor(Color.WHITE);g.drawOval(qx-tamanho/2-4,qy-tamanho/2-4,tamanho+8,tamanho+8);}
     boolean chefe=j==Turne.planetas(i)-1;String quem=chefe?CHEFES[i]:Turne.integrante(i,j);
     if(zoom>4){texto(g,(j+1)+". "+quem,qx+tamanho/2+5,qy+3,10,chefe?new Color(255,199,111):new Color(170,199,219));
@@ -235,7 +249,7 @@ final class MapaEstelar {
   }else
   texto(g,selecionado<atual?"PERCORRIDO":selecionado==atual?"POSICAO DA CAMPANHA":"AINDA NAO ALCANCADO",748,181,11,new Color(165,190,214));
   if(planeta>=0){
-   g.drawImage(PLANETAS[selecionado][planeta],800,207,80,80,null);
+   g.drawImage(arteDoPlaneta(selecionado,planeta),796,203,88,88,null);
    boolean chefe=planeta==Turne.planetas(selecionado)-1;int risco=Turne.risco(selecionado,planeta);
    texto(g,"PLANETA "+(planeta+1)+" / "+Turne.planetas(selecionado),748,302,13,Color.WHITE);
    texto(g,chefe?"CHEFE: "+CHEFES[selecionado]:Turne.integrante(selecionado,planeta),748,318,11,chefe?new Color(255,199,111):Color.WHITE);
