@@ -32,7 +32,7 @@ Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de he
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: um símbolo da banda, sem nenhuma letra escrita, estilo logotipo de metal dos anos 80, cores vermelho e preto, com o ás de espadas, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
 
-### Emblema 5: METALLICA (emblema_banda_4.png)
+### [FEITO] Emblema 5: METALLICA (emblema_banda_4.png)
 ```
 Pixel art 16-bit estilo arcade, fundo PRETO liso, emblema gigante de banda de heavy metal: a letra M angulosa com pontas afiadas como raios nas pernas, estilo logotipo de metal dos anos 80, cores prateado cromado com azul-elétrico, aura de energia brilhando em volta, faíscas pequenas. Centralizado, imponente, sem texto. Contorno escuro marcado.
 ```
