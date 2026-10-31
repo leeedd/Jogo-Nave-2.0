@@ -74,11 +74,17 @@ Pixel art 16-bit estilo arcade, fundo branco liso, 4 naves inimigas de elite lad
 
 Modelo unico para TODOS os integrantes. Troque so o trecho entre colchetes pela
 descricao da lista abaixo. Uma prancha por integrante.
+Todo integrante aparece TOCANDO o tempo todo, nos 4 quadros: o ataque sai da musica.
+
+Guitarristas e baixistas:
 ```
-Pixel art 16-bit estilo arcade Metal Slug, fundo branco liso, tira horizontal com 4 quadros do mesmo tamanho, corpo inteiro virado para a ESQUERDA, flutuando no espaço. [DESCRIÇÃO]. Quadro 1: repouso, tocando. Quadro 2: preparando o golpe, instrumento erguido e brilhando. Quadro 3: golpe, o ataque saindo do instrumento para a esquerda. Quadro 4: bate-cabeça. Mesma escala e mesma posição nos 4 quadros, contorno escuro marcado.
+Pixel art 16-bit estilo arcade Metal Slug, fundo branco liso, tira horizontal com 4 quadros do mesmo tamanho, corpo inteiro virado para a ESQUERDA, flutuando no espaço e TOCANDO o instrumento em todos os quadros. [DESCRIÇÃO]. Quadro 1: tocando, dedos no braço do instrumento. Quadro 2: tocando mais forte, instrumento começando a brilhar. Quadro 3: solo no auge, o ataque saindo do instrumento para a esquerda. Quadro 4: bate-cabeça sem parar de tocar. Mesma escala e mesma posição nos 4 quadros, contorno escuro marcado.
 ```
-Ataque por instrumento (ja descrito no texto de cada um):
-guitarra = rajada de energia; baixo = onda grave; bateria = pratos voando como serra.
+
+Bateristas (a bateria e o veiculo: ele vem sentado nela, voando):
+```
+Pixel art 16-bit estilo arcade Metal Slug, fundo branco liso, tira horizontal com 4 quadros do mesmo tamanho, vista lateral virada para a ESQUERDA. [DESCRIÇÃO], SENTADO TOCANDO a bateria completa, e a bateria flutua no espaço como uma nave, com pequenos propulsores embaixo do bumbo. Quadro 1: tocando, baquetas no ar. Quadro 2: virada nos tambores, baquetas borradas de velocidade. Quadro 3: batendo nos pratos, os pratos se soltam e voam girando como serras para a esquerda. Quadro 4: bumbo duplo, ondas de impacto saindo do bumbo. Mesma escala e mesma posição nos 4 quadros, contorno escuro marcado.
+```
 
 ### Metallica (fazer primeiro)
 - [ ] KIRK HAMMETT: guitarrista, cabelo preto cacheado comprido, jaqueta de couro preta, guitarra preta com gráficos de filme de terror, rajada de energia roxa saindo da guitarra
