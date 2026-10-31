@@ -15,7 +15,9 @@ import java.util.Random;
  * para nao virar falacao. Retrato: radio_capitao.png (4 quadros: boca fechada, aberta, meio, estatica).
  */
 final class RadioPirata {
-    private static final BufferedImage RETRATO = ler("radio_capitao.png");
+    private static final BufferedImage RETRATO = ler("radio_capitao.png"), MOLDURA = ler("radio_moldura.png");
+    /** Areas dentro da moldura original (1632x303): tela do retrato, area de texto e luz de transmissao. */
+    private static final int MW = 1632, MH = 303, TELA_X = 103, TELA_Y = 45, TELA_L = 213, TXT_X = 375, TXT_Y = 40, TXT_W = 980, LUZ_X = 1526, LUZ_Y = 40;
     private static final double ABRIR = .35, LETRAS_POR_S = 38, LEITURA = 2.6, FECHAR = .3, INTERVALO = 7;
     private static final int X = 12, Y = 448, W = 372, H = 74;
 
@@ -47,6 +49,7 @@ final class RadioPirata {
 
     void desenhar(Graphics2D tela) {
         if (atual == null) return;
+        if (MOLDURA != null) { desenharMoldura(tela); return; }
         Graphics2D g = (Graphics2D) tela.create();
         double fim = duracao(), abre = Math.min(1, tempo / ABRIR), fecha = Math.min(1, (fim - tempo) / FECHAR), a = Math.min(abre, fecha);
         int h = (int) (H * Math.max(.08, a)), y = Y + (H - h) / 2;
@@ -76,11 +79,39 @@ final class RadioPirata {
         g.dispose();
     }
 
+    /** Versao com a arte: a moldura abre de cima para baixo, o retrato fala na tela da esquerda. */
+    private void desenharMoldura(Graphics2D tela) {
+        Graphics2D g = (Graphics2D) tela.create();
+        int w = 440, h = w * MH / MW, x0 = 10, y0 = 600 - h - 66;
+        double e = w / (double) MW, fim = duracao(), a = Math.min(Math.min(1, tempo / ABRIR), Math.min(1, (fim - tempo) / FECHAR));
+        int hv = (int) (h * Math.max(.06, a)), yv = y0 + (h - hv) / 2;
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(MOLDURA, x0, yv, w, hv, null);
+        int tx = x0 + (int) (TELA_X * e), ty = y0 + (int) (TELA_Y * e), tl = (int) (TELA_L * e);
+        if (a < 1) { estatica(g, tx, Math.max(yv, ty), tl, Math.min(tl, hv), 1); g.dispose(); return; }
+        int letras = (int) Math.min(atual.length(), Math.max(0, tempo - ABRIR) * LETRAS_POR_S);
+        boolean fala = letras < atual.length() && atual.charAt(Math.max(0, letras - 1)) != ' ';
+        if (RETRATO != null) {
+            // quadro 4 (estatica) aparece ao abrir e de vez em quando, como sinal fraco
+            boolean chiado = tempo - ABRIR < .12 || (int) (tempo * 7) % 23 == 0;
+            int fw = RETRATO.getWidth() / 4, q = chiado ? 3 : fala ? 1 + (int) (tempo * 12) % 2 : 0;
+            g.drawImage(RETRATO, tx, ty, tx + tl, ty + tl, q * fw, 0, q * fw + fw, RETRATO.getHeight(), null);
+        } else capitao(g, tx, ty, tl, fala && (int) (tempo * 12) % 2 == 0);
+        g.setColor(new Color(0, 0, 0, 60)); for (int k = ty; k < ty + tl; k += 2) g.drawLine(tx, k, tx + tl, k);
+        // luz de transmissao: apaga e acende enquanto o capitao fala
+        if ((int) (tempo * 4) % 2 == 1) { int lx = x0 + (int) (LUZ_X * e), ly = y0 + (int) (LUZ_Y * e); g.setColor(new Color(40, 0, 0, 220)); g.fillOval(lx - 5, ly - 5, 10, 10); }
+        int xt = x0 + (int) (TXT_X * e), yt = y0 + (int) (TXT_Y * e);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 10)); g.setColor(new Color(255, 90, 80)); g.drawString("RADIO PIRATA", xt, yt + 9);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); g.setColor(new Color(240, 225, 200));
+        quebrar(g, atual.substring(0, letras), xt, yt + 24, (int) (TXT_W * e));
+        g.dispose();
+    }
+
     private void quebrar(Graphics2D g, String s, int x, int y, int largura) {
         String[] palavras = s.split(" "); StringBuilder linha = new StringBuilder(); int ly = y;
         for (String p : palavras) {
             String teste = linha.length() == 0 ? p : linha + " " + p;
-            if (g.getFontMetrics().stringWidth(teste) > largura && linha.length() > 0) { g.drawString(linha.toString(), x, ly); ly += 15; linha = new StringBuilder(p); }
+            if (g.getFontMetrics().stringWidth(teste) > largura && linha.length() > 0) { g.drawString(linha.toString(), x, ly); ly += g.getFont().getSize() + 2; linha = new StringBuilder(p); }
             else linha = new StringBuilder(teste);
         }
         if (linha.length() > 0) g.drawString(linha.toString(), x, ly);
