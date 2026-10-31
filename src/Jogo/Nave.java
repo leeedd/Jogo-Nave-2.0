@@ -242,6 +242,14 @@ public class Nave {
         if (this.vida > 0) this.vida += this.getVidaMaxima() - vidaMaximaAnterior;
     }
 
+    /** Topo do estagio comprado: 2 no estagio I, 5 no II, 8 no III. O item do setor enche ate aqui e nunca troca o estagio. */
+    int topoDoEstagio() { return pisoPermanente <= 2 ? 2 : pisoPermanente <= 5 ? 5 : MAX_EVOLUCAO; }
+    /** Item de evolucao do setor: +1 nivel dentro do estagio; devolve false se ja esta no topo. */
+    boolean coletarMelhoria() {
+        if (nivel >= topoDoEstagio()) return false;
+        int antes = getVidaMaxima(); nivel++; if (vida > 0) vida += getVidaMaxima() - antes; return true;
+    }
+
     public void curar(int n) {
         this.vida = Math.min(this.getVidaMaxima(), this.vida + n);
     }

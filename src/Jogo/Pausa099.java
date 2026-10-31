@@ -47,7 +47,7 @@ final class Pausa099 {
     box(g,302,102,164,137,false);txt(g,nv>=8?"EVOLUCAO MAXIMA":"NIVEL "+(nv+1),310,118,OURO);
     if(nv<8){boolean troca=ArteNaves.estagio(nv+1)>ArteNaves.estagio(nv);txt(g,troca?"+ NOVO ESTAGIO DA NAVE":"+ MOTOR E TIRO MAIS FORTES",310,138,new Color(110,230,130));
      txt(g,(nv+1)%2==0?"+1 CASCO":nv+1==6?"+1 DANO":"+ VELOCIDADE",310,151,new Color(110,230,130));txt(g,"CR "+preco,310,174,preco>inv.saldo()?new Color(240,100,100):OURO);txt(g,"ESPACO: COMPRAR",310,190,AZUL);}
-    txt(g,"CADA NAVE EVOLUI SEPARADA",310,217,CINZA);txt(g,"NAO SE PERDE COM DANO",310,232,AZUL);
+    txt(g,"ITEM DO SETOR: ATE O NV "+(nv<=2?2:nv<=5?5:8),310,204,CINZA);txt(g,"CADA NAVE EVOLUI SEPARADA",310,217,CINZA);txt(g,"COMPRA NAO SE PERDE",310,232,AZUL);
    }else if(e==4){
     String[] nomes={"CANHAO CRIOGENICO","LANCA-CHAMAS","AMULETO DO METAL GOD","REATOR DE CONVERGENCIA"};int[] prod={1,2,0,4},ic={6,7,5,8};
     String[] bom={"Arma de gelo (Q): congela","Arma de fogo (E): queima","Protege gelo e fogo","Gelo + fogo = LASER (V)"};

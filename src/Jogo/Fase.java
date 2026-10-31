@@ -1401,8 +1401,9 @@ implements ActionListener {
             if(item.getTipo()==Item.Tipo.ENERGIA){if(energia.recarregar(geloColetado,fogoColetado)==0)item.setVisible(true);else SomJogo.tocar(SomJogo.Efeito.ENERGIA);continue;}
             this.coleta.put(item.getTipo(),this.coleta.containsKey(item.getTipo())?this.coleta.get(item.getTipo())+1:1);
             if (item.getTipo() == Item.Tipo.MELHORIA) {
-                SomJogo.tocar(SomJogo.Efeito.EVOLUCAO);this.nave.melhorar();
-                this.mostrarAviso("EVOLUCAO " + nave.getNivel() + "/8 - MODULO INTEGRADO");
+                // so fortalece dentro do estagio comprado; no topo vira credito
+                if(nave.coletarMelhoria()){SomJogo.tocar(SomJogo.Efeito.EVOLUCAO);mostrarAviso("POTENCIA "+nave.getNivel()+"/"+nave.topoDoEstagio()+" - TIRO E MOTOR MAIS FORTES");}
+                else{SomJogo.tocar(SomJogo.Efeito.COMPRA);premiar(250);mostrarAviso("POTENCIA MAXIMA DO ESTAGIO: +250 PONTOS");}
                 continue;
             }
             if (Recompensas.identificador(item.getTipo()) != 0) {
@@ -1823,7 +1824,7 @@ implements ActionListener {
             } else {
                 int n3 = this.aleatorio.nextInt(bl ? 200 : 120);
                 if (this.eliminados == 24 || this.eliminados == 100 || n3 == 0 && this.eliminados > 45) {
-                    // a evolucao da nave agora e comprada no mercado: inimigo nao solta mais o item de melhoria
+                    this.itens.add(new Item(Item.Tipo.MELHORIA, n, n2, false));
                 } else if (n3 == 1) {
                     this.itens.add(new Item(Item.Tipo.REPARO, n, n2, false));
                 } else if (n3 < 5) {

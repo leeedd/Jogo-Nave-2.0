@@ -1,6 +1,6 @@
 package Jogo;
 import java.lang.reflect.Method;
-/** Evolucao comprada no mercado: sobe o nivel e o estagio da nave e nao se perde com dano. */
+/** Evolucao comprada no mercado define o estagio; o item do setor so enche ate o topo dele e se perde com dano. */
 public class TesteEvolucaoMercado{static void ok(boolean b,String m){if(!b)throw new AssertionError(m);System.out.println("ok "+m);}
  public static void main(String[] a)throws Exception{
   Fase f=TesteInvasao093.fase(7);ProgressaoNave p=new ProgressaoNave((java.util.prefs.Preferences)null);p.equiparTeste();TesteInvasao093.set(p,"saldo",50000);TesteInvasao093.set(f,"inventario",p);
@@ -11,6 +11,9 @@ public class TesteEvolucaoMercado{static void ok(boolean b,String m){if(!b)throw
   ok(f.getNave().getNivel()==3&&ArteNaves.estagio(f.getNave().getNivel())==1,"nivel 3 vira estagio II");
   Method dano=Fase.class.getDeclaredMethod("processarDano",int.class,Alien.class);dano.setAccessible(true);
   TesteInvasao093.set(f,"fogoColetado",false);TesteInvasao093.set(f,"geloColetado",false);
-  dano.invoke(f,1,null);ok(f.getNave().getNivel()==3,"levar dano nao tira o nivel comprado");
+  Nave n=f.getNave();ok(n.coletarMelhoria()&&n.coletarMelhoria()&&n.getNivel()==5,"item do setor enche ate o topo do estagio II");
+  ok(!n.coletarMelhoria()&&n.getNivel()==5&&ArteNaves.estagio(n.getNivel())==1,"item nao passa para o estagio III");
+  for(int i=0;i<4;i++){TesteInvasao093.set(n,"invulneravel",0.0);dano.invoke(f,1,null);}
+  ok(n.getNivel()==3,"dano tira o extra do setor mas nunca o nivel comprado");
   for(int i=0;i<5;i++)p.comprarMercado(m,0);ok(p.peca(m,0)==8&&p.precoMercado(m,0)==0&&!p.comprarMercado(m,0),"para no nivel 8");
   System.out.println("OK evolucao no mercado");}}
