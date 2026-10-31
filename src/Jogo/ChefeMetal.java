@@ -407,13 +407,7 @@ public final class ChefeMetal {
         void desenhar(Graphics2D tela, double flashDano) {
             Graphics2D g = (Graphics2D) tela.create();
             int x = (int) tx, y = (int) ty + ((int) (tempo * 14) % 2);
-            if (aviso > 0) {
-                // faixa da investida: a nave tem menos de um segundo para sair dos trilhos
-                boolean pisca = (int) (aviso * 10) % 2 == 0;
-                g.setColor(new Color(200, 60, 255, pisca ? 70 : 35)); g.fillRect(0, (int) (ty + h * .3), Config.LARGURA, (int) (h * .66));
-                g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22)); g.setColor(new Color(235, 170, 255, pisca ? 255 : 140));
-                g.drawString("ALL ABOARD!", 40, (int) (ty + h * .62));
-            }
+            // sem faixa na tela: o aviso e o olho da caveira acendendo (abaixo)
             int q = sopro > 0 ? 1 : vida < vidaPorForma * .4 ? 2 : 0;
             if (arte != null) {
                 int fw = arte.getWidth() / 3;

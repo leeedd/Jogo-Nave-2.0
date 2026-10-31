@@ -138,7 +138,7 @@ final class ChefeHellraiser {
     private void iniciarManobra(int m, int naveY) {
         manobra = m; aviso = m == POR_TRAS ? 1.0 : .85;
         faixaTravada = faixaVan(naveY); vy = vAlvoY = faixaTravada;
-        if (m == POR_TRAS) { sentido = 1; vx = -vanW - 30; }
+        if (m == POR_TRAS) { sentido = 1; vx = -vanW - 30; SomJogo.tocar(SomJogo.Efeito.ALERTA); } // buzina antes de vir por tras
         else sentido = -1;
     }
     /** Barril estoura no ar ou ao cair: oito labaredas para todos os lados. */
@@ -315,24 +315,7 @@ final class ChefeHellraiser {
     }
     private void desenharVan(Graphics2D g) {
         int x = (int) vx, y = (int) vy + ((int) (tempo * 16) % 2);
-        if (aviso > 0) {
-            boolean pisca = (int) (aviso * 10) % 2 == 0;
-            int fy = (int) faixaTravada;
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22)); 
-            if (manobra == ZIGUE) {
-                // mostra a trilha que a van vai fazer
-                g.setColor(new Color(255, 150, 50, pisca ? 200 : 90));
-                for (int k = 0; k < 60; k++) { double p = k / 60.0; int cx = (int) (W - p * (W + vanW)), cy = fy + vanH / 2 + (int) (Math.sin(p * Math.PI * 3) * 150); g.fillRect(cx, cy - 3, 8, 6); }
-                g.setColor(new Color(255, 200, 120, pisca ? 255 : 130)); g.drawString("ACE OF SPADES!", 30, TOPO + 90);
-            } else {
-                g.setColor(new Color(255, 120, 30, pisca ? 70 : 30)); g.fillRect(0, fy + vanH / 4, W, vanH * 3 / 5);
-                g.setColor(new Color(255, 200, 120, pisca ? 255 : 130));
-                if (manobra == POR_TRAS) {
-                    g.drawString(">> OLHA ATRAS! >>", 30, fy + vanH / 2 + 8);
-                    for (int k = 0; k < 3; k++) g.fillPolygon(new int[]{6 + k * 22, 22 + k * 22, 6 + k * 22}, new int[]{fy + vanH / 2 - 30, fy + vanH / 2 - 18, fy + vanH / 2 - 6}, 3);
-                } else g.drawString("BORN TO RAISE HELL!", 30, fy + vanH / 2 + 8);
-            }
-        }
+        // sem faixa na tela: o aviso e a propria van tremendo no turbo (quadro 1)
         int q = investindo ? 2 : aviso > 0 ? 1 : vida < vidaVan * .4 ? 3 : (int) (tempo * 6) % 4 == 0 ? 1 : 0;
         boolean virada = sentido > 0;
         if (ARTE_VAN != null) {
@@ -379,9 +362,7 @@ final class ChefeHellraiser {
         } else { g.setColor(new Color(60, 20, 80)); g.fillOval(x + 40, y + 40, dragW - 80, dragH - 80); }
         if (sopro > 0) desenharSopro(g);
         if (carga > 0) {
-            // aviso do sopro: a boca brilha e uma linha fina marca a mira travando na nave
-            g.setColor(new Color(230, 140, 255, (int) (40 + (.9 - carga) * 180)));
-            g.drawLine((int) bocaX(), (int) bocaY(), (int) (bocaX() + Math.cos(direcaoSopro) * ALCANCE_SOPRO), (int) (bocaY() + Math.sin(direcaoSopro) * ALCANCE_SOPRO));
+            // aviso do sopro: so a boca brilhando e crescendo
             int r = (int) (10 + (.9 - carga) * 30 + Math.sin(tempo * 40) * 3);
             g.setColor(new Color(220, 120, 255, 150)); g.fillOval((int) bocaX() - r, (int) bocaY() - r, r * 2, r * 2);
         }
