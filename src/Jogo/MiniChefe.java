@@ -86,12 +86,33 @@ public final class MiniChefe {
         if (!this.disparando || this.atingiu) {
             return false;
         }
-        Rectangle rectangle2 = new Rectangle(0, this.raioAlvo - 12, Math.max(0, (int)this.x - 65), 24);
+        Rectangle rectangle2 = new Rectangle(0, this.raioAlvo - 12, Math.max(0, fimRaio()), 24);
         if (!rectangle2.intersects(rectangle)) {
             return false;
         }
         this.atingiu = true;
         return true;
+    }
+
+    /** Onde o raio do codigo termina: na boca do raio da arte (olho da sentinela ou caveira do integrante). */
+    private int fimRaio() {
+        if (AtlasInimigos.integrante(integrante) != null) return (int) this.x - 131;
+        if (AtlasInimigos.temSentinelaOlho()) return (int) this.x - 81;
+        return (int) this.x - 65;
+    }
+    /** Raio em pixel art: blocos de 4 px, borda serrilhada que treme, nucleo claro; roxo no integrante. */
+    private void desenharRaio(Graphics2D g) {
+        boolean roxo = AtlasInimigos.integrante(integrante) != null;
+        Color borda = roxo ? new Color(110, 30, 190) : new Color(150, 20, 30), meio = roxo ? new Color(190, 90, 255) : new Color(240, 60, 50),
+              claro = roxo ? new Color(235, 200, 255) : new Color(255, 200, 120);
+        int fim = fimRaio(), y = this.raioAlvo; java.util.Random r = new java.util.Random((long) (this.tempo * 30));
+        for (int px = 0; px < fim; px += 4) {
+            int h = 9 + r.nextInt(3) * 2;
+            g.setColor(borda); g.fillRect(px, y - h, 4, h * 2);
+            g.setColor(meio); g.fillRect(px, y - h + 4, 4, h * 2 - 8);
+            g.setColor(claro); g.fillRect(px, y - 2, 4, 4);
+            if (r.nextInt(7) == 0) { g.setColor(claro); g.fillRect(px, y + (r.nextBoolean() ? -h - 4 : h), 4, 4); } // faisca solta
+        }
     }
 
     public boolean receberDano(int n) {
@@ -135,13 +156,7 @@ public final class MiniChefe {
         if(comandante!=null){comandante.desenhar(graphics2D);return;}
         Graphics2D graphics2D2 = (Graphics2D)graphics2D.create();
         // sem linha de aviso: enquanto carrega, o aviso e o proprio olho arregalado; o raio so aparece no disparo
-        if (this.disparando) {
-            boolean roxo = AtlasInimigos.integrante(integrante) != null; // o golpe do Kirk e roxo, como na arte
-            graphics2D2.setColor(roxo ? new Color(170, 60, 255, 190) : new Color(250, 70, 72, this.disparando ? 190 : 75));
-            graphics2D2.fillRect(0, this.raioAlvo - (this.disparando ? 10 : 2), (int)this.x - 65, this.disparando ? 20 : 4);
-            graphics2D2.setColor(roxo ? new Color(235, 200, 255, 220) : new Color(255, 216, 149, this.disparando ? 220 : 120));
-            graphics2D2.fillRect(0, this.raioAlvo - (this.disparando ? 3 : 1), (int)this.x - 65, this.disparando ? 6 : 2);
-        }
+        if (this.disparando) desenharRaio(graphics2D2);
         int n = (int)this.x;
         int n2 = (int)this.y;
         int n3 = this.disparando ? 2 : (this.carregando ? 1 : ((int)(this.tempo * 4.0)%2==0?0:3));
@@ -152,9 +167,9 @@ public final class MiniChefe {
         } else if (AtlasInimigos.integrante(integrante) != null) {
             // o integrante toca o tempo todo: alterna tocar e bate-cabeca; arregala no preparo e solta o golpe
             int q = this.disparando ? 2 : this.carregando ? 1 : (int) (this.tempo * 2.2) % 2 == 0 ? 0 : 3;
-            AtlasInimigos.integrante(graphics2D2, AtlasInimigos.integrante(integrante), n, n2, q);
+            AtlasInimigos.integrante(graphics2D2, AtlasInimigos.integrante(integrante), n, n2 + 5, q);
         } else if (AtlasInimigos.temSentinelaOlho()) {
-            AtlasInimigos.sentinelaOlho(graphics2D2, n, n2, this.disparando ? 2 : this.carregando ? 1 : vida < vidaMaxima * .35 ? 3 : 0);
+            AtlasInimigos.sentinelaOlho(graphics2D2, n, n2 - 11, this.disparando ? 2 : this.carregando ? 1 : vida < vidaMaxima * .35 ? 3 : 0);
         } else AtlasInimigos.sentinela(graphics2D2, n, n2, n3);
         graphics2D2.setColor(new Color(255, 205, 115));
         graphics2D2.setFont(new Font("Monospaced", 1, 12));
