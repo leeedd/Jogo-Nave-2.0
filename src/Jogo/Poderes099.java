@@ -72,7 +72,8 @@ final class Poderes099 {
    java.util.List<double[]> pts=new java.util.ArrayList<>();double ax=rx,ay=ry,acum=0;pts.add(new double[]{rx,ry});
    for(int k=1;k<=80;k++){double p=k/80.0,q=1-p;double sx=q*q*q*rx+3*q*q*p*c1x+3*q*p*p*c2x+p*p*p*tx,sy=q*q*q*ry+3*q*q*p*c1y+3*q*p*p*c2y+p*p*p*ty;acum+=Math.hypot(sx-ax,sy-ay);ax=sx;ay=sy;if(acum>=9){pts.add(new double[]{sx,sy});acum=0;}}
    pts.add(new double[]{tx,ty});
-   for(int k=0;k<pts.size();k++){double[] p=pts.get(k),ant=pts.get(Math.max(0,k-1));double w=6+20*Math.sqrt(1-k/(double)Math.max(1,pts.size()-1));LulaVisual.elo(g,p[0],p[1],Math.atan2(p[1]-ant[1],p[0]-ant[0]),w);}
+   for(int k=0;k<pts.size();k++){double[] p=pts.get(k),ant=pts.get(Math.max(0,k-1));double w=6+20*Math.sqrt(1-k/(double)Math.max(1,pts.size()-1));elo(g,p[0],p[1],Math.atan2(p[1]-ant[1],p[0]-ant[0]),w);}
+   if(!(e>.9&&preso[i])&&pts.size()>1){double[] f1=pts.get(pts.size()-1),f0=pts.get(pts.size()-2);ponta(g,f1[0],f1[1],Math.atan2(f1[1]-f0[1],f1[0]-f0[0]),9);}
    if(e>.9&&preso[i]){
     // Enrolado no alvo: aneis apertando e gotas de energia sendo drenadas de volta para a nave.
     espiral(g,tx,ty,true);
@@ -80,13 +81,27 @@ final class Poderes099 {
    }
   }
  }
+ /** Tentaculo roxo do poder (tentaculo_roxo_elo/ponta.png); sem a arte, usa o elo vermelho da Lula chefe. */
+ private static final java.awt.image.BufferedImage ELO_ROXO=lerArte("tentaculo_roxo_elo.png"),PONTA_ROXA=lerArte("tentaculo_roxo_ponta.png");
+ private static java.awt.image.BufferedImage lerArte(String n){java.net.URL u=Poderes099.class.getResource("/ImagemIcon/"+n);if(u==null)return null;try{return javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){return null;}}
+ private static void elo(Graphics2D g,double x,double y,double angulo,double largura){
+  if(ELO_ROXO==null){LulaVisual.elo(g,x,y,angulo,largura);return;}
+  Graphics2D a=(Graphics2D)g.create();a.translate(x,y);a.rotate(angulo);
+  a.drawImage(ELO_ROXO,-(int)(largura*.6),-(int)(largura*.55),(int)(largura*1.2),(int)(largura*1.1),null);a.dispose();
+ }
+ /** Ponta curva no fim do tentaculo, apontando para onde ele avanca. */
+ private static void ponta(Graphics2D g,double x,double y,double angulo,double largura){
+  if(PONTA_ROXA==null)return;
+  Graphics2D a=(Graphics2D)g.create();a.translate(x,y);a.rotate(angulo);int h=(int)(largura*2.2),w=PONTA_ROXA.getWidth()*h/PONTA_ROXA.getHeight();
+  a.drawImage(PONTA_ROXA,-2,-(int)(h*.62),w,h,null);a.dispose();
+ }
  /** Espiral de 3 voltas em volta do alvo: a metade de tras (frente=false) fica atras do inimigo, a da frente por cima. */
  private void espiral(Graphics2D g,double tx,double ty,boolean frente){
   // elipse mais alta que antes: a volta de tras aparece por cima e por baixo do corpo, entao le como enrolado
   double aperto=1-.1*Math.abs(Math.sin(tempo*5)),rx2=34*aperto,ry2=21*aperto;int passos=90;
   for(int k=0;k<=passos;k++){double a2=-Math.PI/2+k*(3*2*Math.PI)/passos;boolean naFrente=Math.sin(a2)>0;if(naFrente!=frente)continue;
    double ex=tx+Math.cos(a2)*rx2,ey=ty-22+k*44.0/passos+Math.sin(a2)*ry2;double w=(frente?15:12)-k*4.0/passos;
-   LulaVisual.elo(g,ex,ey,a2+Math.PI/2,w);
+   elo(g,ex,ey,a2+Math.PI/2,w);
    if(!frente){g.setColor(new Color(10,0,20,150));g.fillOval((int)(ex-w/2),(int)(ey-w/2),(int)w,(int)w);}}
  }
  /** Desenhado antes dos inimigos: as voltas que passam por tras do corpo agarrado. */
