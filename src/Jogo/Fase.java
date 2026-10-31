@@ -181,6 +181,7 @@ implements ActionListener {
     private void aplicarInventario(){
         nave.aplicarBlindagem(inventario.blindagem());
         nave.aplicarNucleos(inventario.quantidadeNucleos());
+        nave.aplicarEquipamento(inventario.equipamento(nave.getModeloVisual()));
         int m=nave.getModeloVisual();
         nave.aplicarPecas(inventario.peca(m,0),inventario.peca(m,1),inventario.peca(m,2));
         if(inventario.retencao()){geloColetado=inventario.gelo()>0;fogoColetado=inventario.fogo()>0;}
@@ -204,8 +205,9 @@ implements ActionListener {
         Rectangle pega = nave.getBounds(); pega.grow(10, 10);
         for (double[] c : capsulas) {
             c[0] -= 45 * d; c[3] += d;
+            if (nave.temIma()) { double dx = pega.getCenterX() - c[0], dy = pega.getCenterY() - c[1], dd = Math.hypot(dx, dy); if (dd < 280 && dd > 1) { c[0] += dx / dd * 320 * d; c[1] += dy / dd * 320 * d; } }
             if (pega.contains(c[0], c[1])) {
-                poderes.recarregar(inventario, (int) c[2]); SomJogo.tocar(SomJogo.Efeito.ENERGIA);
+                poderes.recarregar(inventario, (int) Math.round(c[2] * nave.bonusCapsulas())); SomJogo.tocar(SomJogo.Efeito.ENERGIA);
                 gerarParticulas((int) c[0], (int) c[1], 8); c[3] = 99;
             }
         }
@@ -231,7 +233,10 @@ implements ActionListener {
     private void atualizarInvestida() {
         if (!nave.investindo()) { investidaAcertouChefe = false; return; }
         Rectangle r = nave.getBounds(); r.grow(14, 10);
-        for (Alien a : alien) if (a.isVisible() && r.intersects(a.getBounds()) && a.receberImpacto(0, 6)) eliminarAlien(a, true);
+        // atropela tudo pelo caminho: qualquer inimigo comum morre, e os tiros na frente sao esmagados
+        for (Alien a : alien) if (a.isVisible() && r.intersects(a.getBounds())) eliminarAlien(a, true);
+        for (ProjetilInimigo t : tirosInimigos) if (t.isVisible() && r.intersects(t.getBounds())) t.setVisible(false);
+        for (TiroChefe t : tirosChefes) if (t.isVisible() && r.intersects(t.getBounds())) t.setVisible(false);
         if (miniChefe != null && r.intersects(miniChefe.getBounds()) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (miniChefe.receberDano(6)) derrotarMiniChefe(); }
         if (chefe != null && r.intersects(chefe.getBounds()) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (chefe.receberDano(8)) derrotarChefao(); }
     }
@@ -689,8 +694,8 @@ implements ActionListener {
         }
         if(PainelSom.tremorTela()&&intercepcao&&miniChefe!=null&&miniChefe.morrendo())graphics2D2.translate((int)(Math.sin(miniChefe.comandanteTeste().relogio()*70)*4),(int)(Math.cos(miniChefe.comandanteTeste().relogio()*70)*3));
         this.fundoEspacial.desenhar(graphics2D2);
-        if(segredo!=null)segredo.desenhar(graphics2D2,tempoTotal);
-        if(segredoCasco!=null)segredoCasco.desenhar(graphics2D2,tempoTotal);
+        if(segredo!=null)segredo.desenhar(graphics2D2,tempoTotal,nave.temScanner());
+        if(segredoCasco!=null)segredoCasco.desenhar(graphics2D2,tempoTotal,nave.temScanner());
         if(base!=null)base.desenhar(graphics2D2);
         if (this.emJogo) {
             for (Asteroide object : this.asteroides) {
@@ -2338,7 +2343,8 @@ implements ActionListener {
                 if(codigo==KeyEvent.VK_M){voltarAoMenuInicial();return;}
                 if(codigo==KeyEvent.VK_TAB){if(teclasTeste.add(codigo)){abaPausa=(abaPausa+1)%6;cursorPausa=0;}repaint();return;}
                 if(codigo>=KeyEvent.VK_1&&codigo<=KeyEvent.VK_6){abaPausa=codigo-KeyEvent.VK_1;cursorPausa=0;repaint();return;}
-                int total=abaPausa==4?6:abaPausa==0||abaPausa==2?8:4;
+                if(abaPausa==4&&(codigo==KeyEvent.VK_LEFT||codigo==KeyEvent.VK_RIGHT)){if(teclasTeste.add(codigo)){Pausa099.encaixeMercado=Math.floorMod(Pausa099.encaixeMercado+(codigo==KeyEvent.VK_LEFT?-1:1),4);cursorPausa=0;SomJogo.tocar(SomJogo.Efeito.MENU);}repaint();return;}
+                int total=abaPausa==4?Math.max(1,Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual()).size()):abaPausa==0||abaPausa==2?8:4;
                 if(codigo==KeyEvent.VK_UP||codigo==KeyEvent.VK_LEFT)cursorPausa=(cursorPausa+total-1)%total;
                 if(codigo==KeyEvent.VK_DOWN||codigo==KeyEvent.VK_RIGHT)cursorPausa=(cursorPausa+1)%total;
                 if(codigo==KeyEvent.VK_O){abaPausa=4;cursorPausa=0;}
@@ -2346,10 +2352,9 @@ implements ActionListener {
                 if(codigo==KeyEvent.VK_SPACE && teclasTeste.add(codigo)){
                     if(abaPausa==0){poderes.selecionar(cursorPausa,inventario);mostrarAviso("PODER EQUIPADO: "+Poderes099.NOMES[poderes.selecionado]);}
                     if(abaPausa==4){
-                        if(inventario.comprarMercado(nave.getModeloVisual(),cursorPausa)){
-                            SomJogo.tocar(SomJogo.Efeito.COMPRA);aplicarInventario();
-                            mostrarAviso("PECA INSTALADA PERMANENTEMENTE / SALVA");
-                        }else mostrarAviso("CREDITOS INSUFICIENTES OU NIVEL MAXIMO");
+                        java.util.List<Pecas> lista=Pecas.doEncaixe(Pausa099.encaixeMercado,nave.getModeloVisual());
+                        if(cursorPausa<lista.size()){String r=inventario.usarPeca(nave.getModeloVisual(),lista.get(cursorPausa).id);
+                            boolean ok=!r.startsWith("CREDITOS")&&!r.startsWith("PECA INC");SomJogo.tocar(ok?SomJogo.Efeito.COMPRA:SomJogo.Efeito.ERRO);if(ok)aplicarInventario();mostrarAviso(r);}
                     }
                 }
                 repaint();return;

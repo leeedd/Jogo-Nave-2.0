@@ -25,6 +25,17 @@ public class Nave {
     public static final int MAX_EVOLUCAO = 8;
     private int nivel = 0;
     private int blindagemComprada, nucleosCasco;
+    /** Efeito somado das pecas equipadas no mercado. */
+    private int danoPeca, cascoPeca, defesaPeca; private double recargaPeca = 1, velocidadePeca = 1, truqueRecPeca = 1, truqueDurPeca = 1, capsulasPeca = 1; private boolean ima, scanner;
+    void aplicarEquipamento(int[] ids) {
+        int antes = getVidaMaxima();
+        danoPeca = cascoPeca = defesaPeca = 0; recargaPeca = velocidadePeca = truqueRecPeca = truqueDurPeca = capsulasPeca = 1; ima = scanner = false;
+        for (int id : ids) { Pecas p = Pecas.obter(id); if (p == null || !p.serveEm(modeloVisual)) continue;
+            danoPeca += p.dano; cascoPeca += p.casco; defesaPeca += p.defesa; recargaPeca *= p.recarga; velocidadePeca *= p.velocidade;
+            truqueRecPeca *= p.truqueRecarga; truqueDurPeca *= p.truqueDuracao; capsulasPeca *= p.capsulas; ima |= p.ima; scanner |= p.scanner; }
+        vida = Math.max(1, Math.min(getVidaMaxima(), vida + getVidaMaxima() - antes));
+    }
+    boolean temIma() { return ima; } boolean temScanner() { return scanner; } double bonusCapsulas() { return capsulasPeca; }
     /** Cada Nucleo de Casco encontrado aumenta o casco maximo em 2; o novo casco entra cheio. */
     void aplicarNucleos(int n){int antes=getVidaMaxima();nucleosCasco=Math.max(0,Math.min(8,n));vida=Math.max(1,Math.min(getVidaMaxima(),vida+getVidaMaxima()-antes));}
     private int pisoPermanente,canhaoPermanente,motorPermanente;
@@ -48,7 +59,7 @@ public class Nave {
     void usarTruque() {
         int m = Math.max(0, Math.min(4, modeloVisual));
         if (truqueRecarga > 0 || vida <= 0) { SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
-        truqueRecarga = TRUQUE_RECARGA[m]; truqueAtivo = TRUQUE_DURACAO[m];
+        truqueRecarga = TRUQUE_RECARGA[m] * truqueRecPeca; truqueAtivo = TRUQUE_DURACAO[m] * truqueDurPeca;
         switch (m) {
             case 0: invulneravel = Math.max(invulneravel, .3); SomJogo.tocar(SomJogo.Efeito.DOBRA); break;
             case 1: camuflagemX = x; camuflagemY = y; SomJogo.tocar(SomJogo.Efeito.ESCUDO); break;
@@ -94,7 +105,7 @@ public class Nave {
         double d2 = n != 0 && n2 != 0 ? 0.7071068 : 1.0;
         this.motorFalhando = this.vida <= 3 && Math.sin(this.tempoVisual * 7.0) > 0.79;
         geloCapturado=Math.max(0,geloCapturado-d);
-        double d3 = (double)this.perfil().velocidade * (1+motorPermanente*(modeloVisual==1?.085:.045)) * (impulso>0?1.35:1.0) * (1.0 + (this.nivel / 2) * 0.025) * (this.motorFalhando ? 0.85 : 1.0)*(geloCapturado>0?.6:1)*(modeloVisual==0&&truqueAtivo>0?3.2:1);
+        double d3 = (double)this.perfil().velocidade * (1+motorPermanente*(modeloVisual==1?.085:.045)) * (impulso>0?1.35:1.0) * (1.0 + (this.nivel / 2) * 0.025) * (this.motorFalhando ? 0.85 : 1.0)*(geloCapturado>0?.6:1)*(modeloVisual==0&&truqueAtivo>0?3.2:1)*velocidadePeca;
         if (investindo()) { n = 1; d2 = 1; d3 = d3 * 2.6; }
         this.x = Nave.limitar(this.x + (double)n * d3 * d * d2, 8.0, 905.0);
         this.y = Nave.limitar(this.y + (double)n2 * d3 * d * d2, 90.0, 554.0);
@@ -158,7 +169,7 @@ public class Nave {
                 case 3: misseis.add(new Missel(bx, by + 19, 0)); if (nivel >= 3) misseis.add(new Missel(bx - 8, by + 19, 0)); break; // obus pesado
                 default: misseis.add(new Missel(bx, by + 6, 0)); misseis.add(new Missel(bx + 6, by + 19, 0)); misseis.add(new Missel(bx, by + 32, 0)); break; // tridente
             }
-            this.recarga = this.perfil().intervalo * (this.nivel >= 2 ? 0.65 : 1.0) * (emFuria() ? .5 : 1);
+            this.recarga = this.perfil().intervalo * (this.nivel >= 2 ? 0.65 : 1.0);
             if (this.riffJames && ++this.tirosAposRiff % 4 == 0) {
                 this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 14, 0, -18.0));
                 this.misseis.add(new Missel((int)this.x + 40, (int)this.y + 14, 0, 18.0));
@@ -181,6 +192,7 @@ public class Nave {
         }
         this.recarga *= 1-motorPermanente*(modeloVisual==4?.10:.05);
         this.recarga *= 1.0 - Math.max(0, this.nivel - 3) * 0.04;
+        this.recarga *= recargaPeca * (emFuria() ? .5 : 1); // furia acelera qualquer arma
         if (this.motorLemmy) {
             this.recarga /= 1.22;
         }
@@ -196,7 +208,7 @@ public class Nave {
             this.invulneravel = 0.55;
             return false;
         }
-        this.vida = Math.max(0, this.vida - Math.max(1, n - (this.blindagemHalford ? 1 : 0) - this.perfil().defesa));
+        this.vida = Math.max(0, this.vida - Math.max(1, n - (this.blindagemHalford ? 1 : 0) - this.perfil().defesa - defesaPeca));
         SomJogo.tocar(SomJogo.Efeito.DANO);this.invulneravel = 1.3;
         return true;
     }
@@ -289,11 +301,11 @@ public class Nave {
     }
 
     public int getVidaMaxima() {
-        return this.perfil().casco + this.nivel / 2 + blindagemComprada*4 + nucleosCasco*2;
+        return Math.max(3, this.perfil().casco + this.nivel / 2 + blindagemComprada*4 + nucleosCasco*2 + cascoPeca);
     }
 
     public int danoBalistico() {
-        return this.perfil().dano + (this.nivel >= 6 ? 1 : 0)+canhaoPermanente*(modeloVisual==3?2:1) + (modeloVisual == 4 ? (vida * 4 <= getVidaMaxima() ? 2 : vida * 2 <= getVidaMaxima() ? 1 : 0) : 0);
+        return Math.max(1, this.perfil().dano + (this.nivel >= 6 ? 1 : 0)+canhaoPermanente*(modeloVisual==3?2:1) + (modeloVisual == 4 ? (vida * 4 <= getVidaMaxima() ? 2 : vida * 2 <= getVidaMaxima() ? 1 : 0) : 0) + danoPeca);
     }
 
     public int getModeloVisual() {

@@ -3,19 +3,29 @@ import java.util.prefs.Preferences;
 /** Inventario persistente; copia isolada para testes. Um registro por transacao. */
 final class ProgressaoNave {
  private final Preferences prefs;
- private int nucleos,saldo,tanques,celulas,chaves,blindagem,gelo,fogo,fusao;
+ private int pecasCompradas,nucleos,saldo,tanques,celulas,chaves,blindagem,gelo,fogo,fusao;
  private final int[] carga=new int[4];
  private boolean retencao,reator;
  private final int[][] pecas=new int[5][3];
+ /** Peca equipada em cada encaixe de cada nave (-1 vazio). */
+ private final int[][] equipadas={{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1}};
  static final int[] ORDEM={8,2,3,4,5,6,7,1};
  ProgressaoNave(){this(Preferences.userNodeForPackage(ProgressaoNave.class).node("progressao098"));for(int i=0;i<8;i++)if(ProgressoJogo.temTrofeu(ORDEM[i]))chaves|=1<<i;}
  ProgressaoNave(Preferences p){prefs=p;if(p!=null)try{ler(p.get("perfil",""));}catch(SecurityException ignored){}}
  ProgressaoNave copiaTeste(){ProgressaoNave c=new ProgressaoNave(null);c.ler(serializar());return c;}
- private String serializar(){String base= saldo+";"+tanques+";"+celulas+";"+chaves+";"+blindagem+";"+gelo+";"+fogo+";"+(retencao?1:0)+";"+(reator?1:0)+";"+fusao+";"+carga[0]+";"+carga[1]+";"+carga[2]+";"+carga[3];StringBuilder b=new StringBuilder(base);for(int[] nave:pecas)for(int n:nave)b.append(';').append(n);b.append(';').append(nucleos);return b.toString();}
- private void ler(String s){try{String[] a=s.split(";");if(a.length<14)return;int[] v=new int[14];for(int i=0;i<14;i++)v[i]=Integer.parseInt(a[i]);saldo=lim(v[0],0,9999999);tanques=v[1]&15;celulas=lim(v[2],0,99);chaves=v[3]&255;blindagem=lim(v[4],0,3);gelo=lim(v[5],0,3);fogo=lim(v[6],0,3);retencao=v[7]==1;reator=v[8]==1;fusao=lim(v[9],0,8);for(int i=0;i<4;i++)carga[i]=temTanque(i)?lim(v[10+i],0,100):0;for(int m=0;m<5;m++)for(int k=0;k<3;k++)if(a.length>14+m*3+k)pecas[m][k]=lim(Integer.parseInt(a[14+m*3+k]),0,k==0?8:3);if(a.length>29)nucleos=Integer.parseInt(a[29])&255;}catch(NumberFormatException ignored){}}
+ private String serializar(){String base= saldo+";"+tanques+";"+celulas+";"+chaves+";"+blindagem+";"+gelo+";"+fogo+";"+(retencao?1:0)+";"+(reator?1:0)+";"+fusao+";"+carga[0]+";"+carga[1]+";"+carga[2]+";"+carga[3];StringBuilder b=new StringBuilder(base);for(int[] nave:pecas)for(int n:nave)b.append(';').append(n);b.append(';').append(nucleos);b.append(';').append(pecasCompradas);for(int[] e:equipadas)for(int v:e)b.append(';').append(v);return b.toString();}
+ private void ler(String s){try{String[] a=s.split(";");if(a.length<14)return;int[] v=new int[14];for(int i=0;i<14;i++)v[i]=Integer.parseInt(a[i]);saldo=lim(v[0],0,9999999);tanques=v[1]&15;celulas=lim(v[2],0,99);chaves=v[3]&255;blindagem=lim(v[4],0,3);gelo=lim(v[5],0,3);fogo=lim(v[6],0,3);retencao=v[7]==1;reator=v[8]==1;fusao=lim(v[9],0,8);for(int i=0;i<4;i++)carga[i]=temTanque(i)?lim(v[10+i],0,100):0;for(int m=0;m<5;m++)for(int k=0;k<3;k++)if(a.length>14+m*3+k)pecas[m][k]=lim(Integer.parseInt(a[14+m*3+k]),0,k==0?8:3);if(a.length>29)nucleos=Integer.parseInt(a[29])&255;if(a.length>30)pecasCompradas=Integer.parseInt(a[30]);for(int m=0;m<5;m++)for(int k=0;k<4;k++)if(a.length>31+m*4+k){int pv=Integer.parseInt(a[31+m*4+k]);Pecas p=Pecas.obter(pv);equipadas[m][k]=p!=null&&p.encaixe==k&&p.serveEm(m)&&temPeca(pv)?pv:-1;}}catch(NumberFormatException ignored){}}
  private static int lim(int n,int min,int max){return Math.max(min,Math.min(max,n));}
  private void salvar(){if(prefs!=null)try{prefs.put("perfil",serializar());prefs.flush();}catch(java.util.prefs.BackingStoreException|SecurityException e){System.err.println("Nao foi possivel persistir inventario: "+e.getMessage());}}
  /** Nucleos de Casco: um escondido em cada setor, +2 de casco maximo cada (permanente). */
+ boolean temPeca(int id){return id>=0&&id<31&&(pecasCompradas&(1<<id))!=0;}
+ int equipada(int modelo,int encaixe){return equipadas[lim(modelo,0,4)][lim(encaixe,0,3)];}
+ int[] equipamento(int modelo){return equipadas[lim(modelo,0,4)].clone();}
+ /** Compra (uma vez) e ja equipa; se ja tem: equipa, ou desequipa se ja estava no encaixe. */
+ String usarPeca(int modelo,int id){Pecas p=Pecas.obter(id);if(p==null||!p.serveEm(modelo))return "PECA INCOMPATIVEL";
+  if(!temPeca(id)){if(saldo<p.preco)return "CREDITOS INSUFICIENTES";saldo-=p.preco;pecasCompradas|=1<<id;equipadas[modelo][p.encaixe]=id;salvar();return "COMPRADA E EQUIPADA: "+p.nome;}
+  if(equipadas[modelo][p.encaixe]==id){equipadas[modelo][p.encaixe]=-1;salvar();return "DESEQUIPADA: "+p.nome;}
+  equipadas[modelo][p.encaixe]=id;salvar();return "EQUIPADA: "+p.nome;}
  boolean temNucleo(int setor){return setor>=0&&setor<8&&(nucleos&(1<<setor))!=0;}
  int quantidadeNucleos(){return Integer.bitCount(nucleos);}
  boolean coletarNucleo(int setor){if(setor<0||setor>7||temNucleo(setor))return false;nucleos|=1<<setor;salvar();return true;}

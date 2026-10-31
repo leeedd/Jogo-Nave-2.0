@@ -13,6 +13,8 @@ final class Pausa099 {
  static void txtCentro(Graphics2D g,String s,int x,int y,Color c){g.setFont(new Font(Font.MONOSPACED,Font.BOLD,9));txt(g,s,x-g.getFontMetrics().stringWidth(s)/2,y,c);}
  static void box(Graphics2D g,int x,int y,int w,int h,boolean sel){g.setColor(new Color(10,20,34));g.fillRect(x,y,w,h);g.setColor(sel?OURO:new Color(48,76,101));g.drawRect(x,y,w,h);g.setColor(sel?new Color(144,88,35):new Color(20,41,58));g.drawRect(x+1,y+1,w-2,h-2);}
  static void bar(Graphics2D g,int x,int y,int w,int carga,Color c){for(int i=0;i<w/4;i++){g.setColor(i*100<Math.max(0,carga)*(w/4)?c:new Color(32,47,62));g.fillRect(x+i*4,y,3,5);}}
+ /** Encaixe selecionado no mercado (0 arma, 1 motor, 2 blindagem, 3 modulo). */
+ static int encaixeMercado;
  static int CUSTO_I(int i){return Poderes099.CUSTO[i];}
  static int icone(int i){return new int[]{9,6,8,6,7,10}[i];}
  static void desenhar(Graphics2D tela,int aba,int cursor,ProgressaoNave inv,Nave nave,Energia098 energia,Poderes099 powers,boolean gelo,boolean fogo,double tempo,String aviso){
@@ -25,8 +27,20 @@ final class Pausa099 {
    txt(g,"Q GELO",12,256,AZUL);bar(g,52,250,100,gelo?energia.carga(0):0,AZUL);txt(g,"E FOGO",166,256,OURO);bar(g,206,250,100,fogo?energia.carga(1):0,OURO);txt(g,"V FUSAO",320,256,OURO);txtDir(g,"CAPSULAS RECARREGAM",466,256,CINZA);
   }else if(aba==1){box(g,12,56,282,183,false);txt(g,NAVES[m],24,74,OURO);Graphics2D a=(Graphics2D)g.create();a.translate(128,112);ArteNaves.desenharJogador(a,nave.getNivel(),m,0,0,tempo);a.dispose();txt(g,nave.perfil().funcao+"  /  SHIFT: "+Nave.TRUQUES[m],24,182,AZUL);txt(g,Nave.TRUQUES_DICA[m],24,192,CINZA);txt(g,"CASCO "+nave.getVida()+"/"+nave.getVidaMaxima(),24,200,Color.WHITE);bar(g,24,208,258,100*nave.getVida()/nave.getVidaMaxima(),Color.GREEN);txt(g,"DANO "+nave.danoBalistico()+" / EVOLUCAO "+nave.getNivel(),24,230,OURO);txtDir(g,"NUCLEOS DE CASCO "+inv.quantidadeNucleos()+"/8",282,230,new Color(255,110,110));for(int i=0;i<3;i++){txt(g,PECAS[m][i],302,68+i*28,Color.WHITE);bar(g,302,74+i*28,164,100*inv.peca(m,i)/(i==0?8:3),OURO);}txt(g,"RESERVAS / R: REPARAR",302,158,AZUL);for(int i=0;i<4;i++){box(g,302+i*42,166,38,73,false);Arte098.item(g,inv.temTanque(i)?Math.min(3,(inv.carga(i)+32)/33):9,306+i*42,176,30);bar(g,305+i*42,224,32,inv.carga(i),AZUL);}
   }else if(aba==2){for(int i=0;i<8;i++){int x=12+i%4*116,y=56+i/4*94;box(g,x,y,108,88,cursor==i);boolean tem=inv.temChaveIndice(i);Medalhas.desenhar(g,ProgressaoNave.ORDEM[i],tem,x+28,y+6,52,tempo);txtCentro(g,tem?Poderes099.NOMES[i]:"???",x+54,y+76,tem?OURO:CINZA);}txt(g,"RELIQUIAS LIBERAM PODERES PERMANENTES",12,256,AZUL);
-  }else if(aba==4){for(int i=0;i<6;i++){int y=56+i*31;box(g,12,y,282,28,cursor==i);Arte098.item(g,icone(i),15,y+2,24);txt(g,i<3?PECAS[m][i]:i==3?"CANHAO CRIOGENICO":i==4?"LANCADOR DE CHAMAS":"BLINDAGEM REFORCADA",44,y+12,Color.WHITE);int preco=inv.precoMercado(m,i);txt(g,preco==0?"NIVEL MAXIMO":"CR "+preco+" / ESPACO: COMPRAR",44,y+24,preco>inv.saldo()?Color.RED:OURO);}box(g,302,56,164,183,false);txt(g,"INSTALACAO PERMANENTE",312,74,OURO);txt(g,NAVES[m],312,90,AZUL);Arte098.item(g,icone(cursor),348,98,72);String[] d=cursor==0?new String[]{"Evolucao salva: +1","Nao cai ao sofrer dano"}:cursor==1?new String[]{m==3?"Artilharia: +2 dano":"Armamento: +1 dano","Por nivel comprado"}:cursor==2?new String[]{m==1?"Velocidade: +8,5%":"Velocidade: +4,5%",m==4?"Recarga: -10%":"Recarga: -5%"}:cursor==5?new String[]{"+4 pontos de casco","Por nivel comprado"}:new String[]{"Arma permanente","3 niveis de potencia"};txt(g,d[0],312,190,Color.WHITE);txt(g,d[1],312,205,CINZA);txt(g,"MORRER NAO REMOVE PECAS",312,228,AZUL);
+  }else if(aba==4){
+   // Mercado em encaixes: < > escolhe o encaixe, cima/baixo a peca, ESPACO compra / equipa / desequipa
+   int e=encaixeMercado;Color VERDE=new Color(110,230,130),VERM=new Color(240,100,100);
+   for(int k=0;k<4;k++){int bx=12+k*114;box(g,bx,56,110,40,k==e);txt(g,Pecas.ENCAIXES[k],bx+6,69,k==e?OURO:CINZA);Pecas q=Pecas.obter(inv.equipada(m,k));txtCabe(g,q==null?"VAZIO":q.nome,bx+6,86,98,q==null?CINZA:Color.WHITE);}
+   java.util.List<Pecas> lista=Pecas.doEncaixe(e,m);
+   for(int i=0;i<lista.size();i++){Pecas q=lista.get(i);int y=102+i*28;box(g,12,y,282,25,cursor==i);boolean tem=inv.temPeca(q.id),eq=inv.equipada(m,e)==q.id;
+    txtCabe(g,q.nome+(q.nave>=0?"  *EXCLUSIVA":""),20,y+11,180,q.nave>=0?OURO:Color.WHITE);
+    txt(g,eq?"EQUIPADA":tem?"COMPRADA":"CR "+q.preco,20,y+21,eq?VERDE:tem?AZUL:q.preco>inv.saldo()?VERM:OURO);}
+   box(g,302,102,164,137,false);
+   if(cursor<lista.size()){Pecas q=lista.get(cursor);txtCabe(g,q.nome,310,118,150,OURO);txt(g,q.nave>=0?"SO "+NAVES[q.nave]:"SERVE EM TODAS",310,131,CINZA);
+    txt(g,"+ "+q.bom,310,150,VERDE);txt(g,"- "+q.ruim,310,164,VERM);
+    boolean tem=inv.temPeca(q.id),eq=inv.equipada(m,e)==q.id;txt(g,eq?"ESPACO: DESEQUIPAR":tem?"ESPACO: EQUIPAR":"ESPACO: COMPRAR",310,184,AZUL);}
+   txt(g,"NAVE ATUAL",310,204,CINZA);txt(g,"DANO "+nave.danoBalistico()+"  CASCO "+nave.getVidaMaxima(),310,217,Color.WHITE);txt(g,"COMPRAS SAO PERMANENTES",310,232,AZUL);
   }else if(aba==5){String[] linhas={"ENTER / ESC: RETOMAR VOO","M: VOLTAR AO MENU INICIAL","F8: LABORATORIO DE TESTES","F9: OPCOES (AUDIO, JOGO, CONTROLES)","COMPRAS SALVAS AUTOMATICAMENTE","ROTA LIVRE: ESCOLHA O SETOR NO MAPA"};box(g,12,56,454,183,false);for(int i=0;i<linhas.length;i++)txt(g,linhas[i],30,82+i*28,i%2==0?Color.WHITE:OURO);}
-  if(aviso!=null&&!aviso.isEmpty())txt(g,aviso.substring(0,Math.min(69,aviso.length())),12,267,OURO);txt(g,aba==0?"C: USAR  X: TROCAR  1-8: ESCOLHER  ESPACO: EQUIPAR  TAB: ABA  ENTER: VOLTAR":"TAB: ABA  SETAS: SELECAO  ESPACO: CONFIRMAR  ENTER: VOLTAR",12,285,CINZA);g.dispose();tela.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);tela.drawImage(b,0,0,960,600,null);
+  if(aviso!=null&&!aviso.isEmpty())txt(g,aviso.substring(0,Math.min(69,aviso.length())),12,267,OURO);txt(g,aba==4?"< >: ENCAIXE  CIMA/BAIXO: PECA  ESPACO: COMPRAR / EQUIPAR  TAB: ABA  ENTER: VOLTAR":aba==0?"C: USAR  X: TROCAR  1-8: ESCOLHER  ESPACO: EQUIPAR  TAB: ABA  ENTER: VOLTAR":"TAB: ABA  SETAS: SELECAO  ESPACO: CONFIRMAR  ENTER: VOLTAR",12,285,CINZA);g.dispose();tela.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);tela.drawImage(b,0,0,960,600,null);
  }
 }
