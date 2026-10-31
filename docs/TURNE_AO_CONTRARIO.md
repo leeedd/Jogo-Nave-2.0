@@ -48,3 +48,20 @@ Usa o motor de cutscene ja pronto (CenaChefe: paineis com fusao, legenda e ENTER
   vencidos, os fantasmas no telao), o piloto chega e entra na multidao. Emenda nos creditos
   ja existentes: memorial, Ozzy fechando, Megazord, foto "Heavy metal never dies",
   "Obrigado por jogar".
+
+## Planetas com risco (cor e anel)
+- Cada planeta mostra o risco pela cor: verde (normal), amarelo, laranja, vermelho, roxo (extremo).
+- Planetas com anel, tipo Saturno, sao os de risco alto, faceis de reconhecer no mapa.
+- Risco maior = mais inimigos, comando inimigo comeca com ameaca maior, e mais CR na recompensa.
+- O planeta do chefe da banda e sempre o mais perigoso do sistema.
+
+## Cacador de recompensas (quadro de MISSOES da base, hoje "em breve")
+- Na base o piloto pega um CONTRATO: alvo, planeta, condicao e premio. Exemplos:
+  "Abater 40 piratas no Planeta Geada 2", "Derrotar a sentinela sem levar dano",
+  "Cacar o Carniceiro (alvo procurado)", "Escoltar a base aliada ate partir".
+- Contrato cumprido paga CR e XP. Falhou ou morreu: perde o contrato (sem multa).
+- XP sobe a PATENTE do piloto (nova): Recruta, Cadete, Cacador, Veterano, As, Lenda do Metal.
+- Naves bloqueadas passam a exigir trofeus + patente + um contrato especial da nave.
+  Hoje: Shadow 1 trofeu, Valkyrie 3, Berserker 5, Metal God lendaria (so trofeus).
+  Proposta: Shadow (1 trofeu, Cadete, contrato "Fantasma"), Valkyrie (3, Cacador, "Escudo de ouro"),
+  Berserker (5, Veterano, "Furia verde"), Metal God (8, Lenda do Metal, "Forja final").
