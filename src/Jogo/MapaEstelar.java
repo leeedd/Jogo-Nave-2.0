@@ -58,7 +58,9 @@ final class MapaEstelar {
   viagem=Math.max(0,Math.min(1,fracao));
  }
  void atualizar(double dt){
-  double f=1-Math.exp(-10*Math.max(0,dt));tempo+=Math.max(0,dt);
+  double f=1-Math.exp(-10*Math.max(0,dt));tempo+=Math.max(0,dt);orbita+=Math.max(0,dt);
+  // aproximado num planeta: a camera acompanha ele na orbita
+  if(planeta>=0&&alvoZoom>=100){double[] p=posicaoPlaneta(selecionado,planeta);alvoX=p[0];alvoY=p[1];}
   cameraX+=(alvoX-cameraX)*f;cameraY+=(alvoY-cameraY)*f;
   zoom+=(alvoZoom-zoom)*f;
  }
@@ -126,8 +128,11 @@ final class MapaEstelar {
   }
  }
  private static double raioPlaneta(int j){return .48+j*.12;}
+ /** Relogio das orbitas: os planetas giram em volta do sol, os de dentro mais rapido. */
+ private static double orbita;
+ private static double velocidadeOrbita(int j){return .16/(1+j*.55);}
  private static double[] posicaoPlaneta(int i,int j){
-  double ang=.9+i*.73+j*1.48,r=5+j*3.5;
+  double ang=.9+i*.73+j*1.48+orbita*velocidadeOrbita(j)*(i%2==0?1:-1),r=5+j*3.5;
   return new double[]{SISTEMAS[i][0]+Math.cos(ang)*r,SISTEMAS[i][1]+Math.sin(ang)*r*.78};
  }
  private double[] posicaoJogador(){
@@ -208,17 +213,21 @@ final class MapaEstelar {
     double r=(5+j*3.5)*zoom;
     g.setColor(new Color(100,145,170,65));g.drawOval((int)(x-r),(int)(y-r*.78),(int)(r*2),(int)(r*1.56));
     double[] pos=posicaoPlaneta(i,j);int qx=telaX(pos[0]),qy=telaY(pos[1]);
-    int tamanho=Math.max(4,(int)(raioPlaneta(j)*zoom*2));
+    int tamanho=Math.max(4,(int)(raioPlaneta(j)*zoom*2.9));
     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
     // cor do risco: halo em volta; risco alto ganha anel, como Saturno
     int risco=Turne.risco(i,j);Color cr=Turne.CORES_RISCO[risco];boolean anel=Turne.anel(i,j);
     for(int k=3;k>0;k--){g.setColor(new Color(cr.getRed(),cr.getGreen(),cr.getBlue(),26));int hr=tamanho/2+k*Math.max(2,tamanho/10);g.fillOval(qx-hr,qy-hr,hr*2,hr*2);}
     BufferedImage arte=arteDoPlaneta(i,j);boolean arteNova=arte!=PLANETAS[i][j];
-    if(anel&&!arteNova){Graphics2D a=(Graphics2D)g.create();a.setColor(cr.darker());a.setStroke(new BasicStroke(Math.max(1,tamanho/10f)));a.drawArc(qx-tamanho,qy-tamanho/4,tamanho*2,tamanho/2,0,180);a.dispose();}
-    // a arte nova ja traz o anel desenhado; os sprites tem margem, por isso saem um pouco maiores
-    int t2=arteNova?(int)(tamanho*(anel?1.9:1.35)):tamanho;
-    g.drawImage(arte,qx-t2/2,qy-t2/2,t2,t2,null);
-    if(anel&&!arteNova){Graphics2D a=(Graphics2D)g.create();a.setColor(cr);a.setStroke(new BasicStroke(Math.max(1,tamanho/10f)));a.drawArc(qx-tamanho,qy-tamanho/4,tamanho*2,tamanho/2,180,180);a.dispose();}
+    // os sprites tem margem, por isso saem um pouco maiores
+    int t2=arteNova?(int)(tamanho*(anel?1.6:1.35)):tamanho;
+    // anel de Saturno (o campo de meteoros do planeta): metade de tras antes, metade da frente depois
+    if(anel)anelSaturno(g,i,j,qx,qy,t2,cr,false);
+    // o planeta gira no proprio eixo (os de anel nao: a arte deles ja traz cinturao)
+    Graphics2D pg=(Graphics2D)g.create();
+    if(!anel){pg.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);pg.rotate(tempo*(.25+j*.04)*(j%2==0?1:-1),qx,qy);}
+    pg.drawImage(arte,qx-t2/2,qy-t2/2,t2,t2,null);pg.dispose();
+    if(anel)anelSaturno(g,i,j,qx,qy,t2,cr,true);
     if(i==selecionado&&j==planeta){g.setColor(Color.WHITE);g.drawOval(qx-tamanho/2-4,qy-tamanho/2-4,tamanho+8,tamanho+8);}
     boolean chefe=j==Turne.planetas(i)-1;String quem=chefe?CHEFES[i]:Turne.integrante(i,j);
     if(zoom>4){texto(g,(j+1)+". "+quem,qx+tamanho/2+5,qy+3,10,chefe?new Color(255,199,111):new Color(170,199,219));
@@ -230,13 +239,33 @@ final class MapaEstelar {
   if(ESTRELAS[i]!=null){
    // estrela pulsando devagar, cada uma no seu ritmo
    int t=(int)(Math.max(22,r*5)*(1+.05*Math.sin(tempo*2+i)));
-   Graphics2D e=(Graphics2D)g.create();e.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);e.drawImage(ESTRELAS[i],x-t/2,y-t/2,t,t,null);e.dispose();
+   Graphics2D e=(Graphics2D)g.create();e.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);e.drawImage(ESTRELAS[i],x-t/2,y-t/2,t,t,null);
+   // o sol e o ponto de referencia da cartografia; a base aliada do sistema orbita perto dele
+   if(zoom>1.2){BufferedImage base=EstacaoAliada.arte();double ab=-orbita*.3+i+2.2,rb=6.7*zoom;
+    if(base!=null){int bw=(int)Math.max(14,3.6*zoom),bh=bw*base.getHeight()/base.getWidth(),bx=(int)(x+Math.cos(ab)*rb),by=(int)(y+Math.sin(ab)*rb*.78);e.drawImage(base,bx-bw/2,by-bh/2,bw,bh,null);
+     if(zoom>4)texto(e,"BASE ALIADA",bx+bw/2+3,by+3,9,new Color(130,255,160));}
+    if(zoom>3)texto(e,"SOL DE "+NOMES[i],x-30,y+t/2+12,10,CORES[i]);}
+   e.dispose();
   }else{
   for(int k=3;k>0;k--){g.setColor(new Color(CORES[i].getRed(),CORES[i].getGreen(),CORES[i].getBlue(),35));g.fillOval(x-r*k,y-r*k,r*k*2,r*k*2);}
   g.setColor(CORES[i]);g.fillOval(x-r,y-r,2*r,2*r);g.setColor(Color.WHITE);g.fillOval(x-r/3,y-r/3,Math.max(2,r*2/3),Math.max(2,r*2/3));}
   if(i==selecionado&&planeta<0){g.setColor(new Color(255,199,111));g.drawOval(x-r-5,y-r-5,r*2+10,r*2+10);}
   if(escolha&&vencido(i)){g.setColor(new Color(110,230,120));g.setStroke(new BasicStroke(3));g.drawLine(x-r-2,y,x-2,y+r);g.drawLine(x-2,y+r,x+r+4,y-r-2);g.setStroke(new BasicStroke(1));}
   if(zoom>.09)texto(g,(i+1)+" / "+(escolha?CHEFES[i]:NOMES[i]),x+10+r,y+16,11,escolha?(vencido(i)?new Color(110,130,120):Color.WHITE):i<=atual?Color.WHITE:new Color(153,166,190));
+ }
+ /** Anel inclinado de pedras, como Saturno, girando em volta do planeta. frente: so a metade que passa na frente. */
+ private void anelSaturno(Graphics2D g,int i,int j,int qx,int qy,int t,Color cr,boolean frente){
+  Graphics2D a=(Graphics2D)g.create();a.rotate(-.32+(i%3)*.12,qx,qy);
+  double rx=t*.95,ry=rx*.26;int n=54,p=Math.max(1,t/26);java.util.Random r=new java.util.Random(i*31+j);
+  a.setColor(new Color(cr.getRed(),cr.getGreen(),cr.getBlue(),frente?70:45));a.setStroke(new BasicStroke(Math.max(1,t/40f)));
+  a.drawArc((int)(qx-rx*.88),(int)(qy-ry*.88),(int)(rx*1.76),(int)(ry*1.76),frente?180:0,180);
+  for(int k=0;k<n;k++){
+   double ang=k*Math.PI*2/n+tempo*.35+r.nextDouble()*.1,f=.82+r.nextDouble()*.26;
+   boolean naFrente=Math.sin(ang)>0;if(naFrente!=frente)continue;
+   int x=(int)(qx+Math.cos(ang)*rx*f),y=(int)(qy+Math.sin(ang)*ry*f),c=110+r.nextInt(90);
+   a.setColor(r.nextInt(4)==0?cr:new Color(c,c-10,c-25));a.fillRect(x,y,p+(k%3==0?1:0),p);
+  }
+  a.dispose();
  }
  private void desenharPainel(Graphics2D g){
   g.setColor(new Color(9,16,29));g.fillRect(736,82,208,440);
@@ -250,8 +279,10 @@ final class MapaEstelar {
    texto(g,"ESCOLHA O PROXIMO SETOR",748,223,13,new Color(255,199,111));
    texto(g,"SETAS: TROCAR SETOR",748,251,11,Color.WHITE);
    texto(g,"ENTER: INICIAR DOBRA",748,269,11,Color.WHITE);
-   texto(g,"Cada poder e o ponto fraco",748,300,10,new Color(154,182,205));
-   texto(g,"de outro chefe.",748,316,10,new Color(154,182,205));
+   texto(g,"Siga o sol do sistema: a base",748,300,10,new Color(154,182,205));
+   texto(g,"aliada orbita perto dele.",748,316,10,new Color(154,182,205));
+   texto(g,"Cada poder e o ponto fraco",748,332,10,new Color(154,182,205));
+   texto(g,"de outro chefe.",748,348,10,new Color(154,182,205));
   }else
   texto(g,selecionado<atual?"PERCORRIDO":selecionado==atual?"POSICAO DA CAMPANHA":"AINDA NAO ALCANCADO",748,181,11,new Color(165,190,214));
   if(planeta>=0){
