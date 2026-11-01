@@ -118,26 +118,22 @@ implements ActionListener {
     private boolean miniChefeEnfrentado;
     /** Turne ao contrario: planeta atual do sistema (0..integrantes); o ultimo e o do chefe. */
     private int planetaAtual;
-    /** Rota de risco escolhida no Mapa Estelar: +1 de risco em todo o setor, e o chefe entrega a reliquia da banda. */
-    private boolean rotaRisco;
-    /** Reliquias de banda conquistadas (bit = banda). Cada uma libera o show dela no festival; a Lula e sempre aberta. */
-    private int reliquiasBanda = 1;
-    int reliquiasBanda() { return reliquiasBanda; }
-    /** Fragmentos da reliquia de cada banda (um por integrante) e bandas cujo dourado ja falhou nesta jornada. */
-    private final int[] fragReliquia = new int[8];
+    /** Bandas cujo contrato dourado falhou nesta jornada: a base nao oferece outro dela. */
     private int douradoPerdido;
+    /** Hangar clandestino: aparece uma vez, na parada seguinte a um contrato dourado cumprido (e so para VETERANO). */
+    private boolean hangarPendente, hangarAberto, hangarTela;
+    private int cursorHangar = HangarClandestino.PRIMEIRA;
     /** Tempo de luta contra o integrante atual (para o contrato dourado de rapidez). */
     private double tempoIntegrante;
-    int fragmentosReliquia(int b) { return fragReliquia[Turne.setor(b)]; }
-    boolean rotaRisco() { return rotaRisco; }
-    /** Pistas do radio quando uma reliquia cai: dizem que vale alguma coisa, sem dizer o que. */
+    int fragmentosReliquia(int b) { return ProgressoJogo.fragmentosBanda(Turne.setor(b)); }
+    /** Pistas do radio quando um fragmento ou reliquia sai: dizem que vale alguma coisa, sem dizer o que. */
     private static final String[] PISTAS_RELIQUIA = {
-        "A reliquia da banda... o velho dizia que ela abre portas que dinheiro nenhum abre.",
-        "Mais uma reliquia. Guarda bem, cacador: no fim da estrada alguem vai pedir isso.",
+        "Ouro de banda... o velho dizia que isso abre portas que dinheiro nenhum abre.",
+        "Mais um pedaco dourado. Guarda bem, cacador: no fim da estrada alguem vai pedir isso.",
         "Contam que essas reliquias eram passes de uma epoca em que o metal ainda tocava ao vivo.",
-        "Ele ta juntando as reliquias. Quem junta todas, dizem, ve tudo o que tem pra ver.",
-        "Outra reliquia! Isso cheira a cerveja quente e amplificador estourado. Sei la por que."};
-    int riscoAtual() { return Math.min(4, Turne.risco(setorAtual, planetaAtual) + (rotaRisco && !reuniao ? 1 : 0)); }
+        "Tem gente no submundo que paga caro por isso. Gente que nao aparece em hangar nenhum.",
+        "Outro dourado! Isso cheira a cerveja quente e amplificador estourado. Sei la por que."};
+    int riscoAtual() { return Turne.risco(setorAtual, planetaAtual); }
     private int totalMiniChefesDerrotados;
     private double proximoAsteroide = 8.0;
     /** Pedacos de meteoro gigante quebrado: entram na lista depois do laco de colisao. */
@@ -428,6 +424,8 @@ implements ActionListener {
     }
     private void atracar() {
         naBase = true; menuBase = false; cursorBase = 0; modeloBase = modeloVisual; avisoBase = "";
+        hangarAberto = hangarPendente && ProgressoJogo.hangarLiberado(); hangarTela = false;
+        if (hangarAberto) avisoBase = "ALGUEM NOS FUNDOS DA BASE QUER FALAR COM VOCE";
         nave.soltarTeclas(); espacoPressionado = geloPressionado = fogoPressionado = false;
         tirosInimigos.clear(); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
         quadroBase = false; cursorQuadro = 0;
@@ -436,7 +434,7 @@ implements ActionListener {
             ofertasContrato = Contrato.ofertas(setorAtual, chefesDerrotados, inventario.reator(), aleatorio, campo);
             // rota de risco: a base oferece o contrato dourado da banda (um fragmento por parada)
             int b = Turne.setor(setorAtual);
-            if (rotaRisco && b > 0 && (douradoPerdido >> b & 1) == 0 && fragReliquia[b] < Turne.integrantes(b)) {
+            if (ProgressoJogo.douradosLiberados() && b > 0 && (douradoPerdido >> b & 1) == 0 && !ProgressoJogo.temReliquiaBanda(b)) {
                 boolean campoAntes = planetaAtual < Turne.integrantes(setorAtual) && Turne.anel(setorAtual, planetaAtual);
                 ofertasContrato.add(0, Contrato.dourado(b, planetaAtual >= Turne.integrantes(setorAtual), campoAntes, chefesDerrotados, aleatorio));
             }
@@ -466,12 +464,11 @@ implements ActionListener {
         }
         if (c.falhou) { SomJogo.tocar(SomJogo.Efeito.ERRO); mostrarAviso("CONTRATO " + c.titulo + " EXPIROU: " + c.motivo + ". PEGUE OUTRO NA BASE"); return; }
         if (c.dourado()) {
-            int b = c.banda, n = Turne.integrantes(b); fragReliquia[b] = Math.min(n, fragReliquia[b] + 1);
-            if (fragReliquia[b] >= n) {
-                reliquiasBanda |= 1 << b; SomJogo.tocar(SomJogo.Efeito.RELIQUIA);
-                mostrarAviso("RELIQUIA DO " + BANDAS[b] + " RESTAURADA!");
-                if (!partidaTeste) radio.urgente(PISTAS_RELIQUIA[Integer.bitCount(reliquiasBanda) % PISTAS_RELIQUIA.length]);
-            } else mostrarAviso("FRAGMENTO " + fragReliquia[b] + "/" + n + " DA RELIQUIA DO " + BANDAS[b] + "  +" + c.premioCR + " CR");
+            int b = c.banda, n = Turne.integrantes(b), f = partidaTeste ? n : ProgressoJogo.adicionarFragmento(b);
+            hangarPendente = true;
+            if (f >= n) { SomJogo.tocar(SomJogo.Efeito.RELIQUIA); mostrarAviso("RELIQUIA DOURADA DO " + BANDAS[b] + " RESTAURADA!"); }
+            else mostrarAviso("FRAGMENTO DOURADO " + f + "/" + n + " DO " + BANDAS[b] + "  +" + c.premioCR + " CR");
+            if (!partidaTeste) radio.urgente(PISTAS_RELIQUIA[aleatorio.nextInt(PISTAS_RELIQUIA.length)]);
             inventario.creditar(c.premioCR); if (!partidaTeste) ProgressoJogo.ganharXP(c.premioXP);
             return;
         }
@@ -481,16 +478,16 @@ implements ActionListener {
         else mostrarAviso("CONTRATO " + c.titulo + " CUMPRIDO: +" + c.premioCR + " CR  +" + c.premioXP + " XP");
         if (subiu) radio.urgente("O cacador subiu de patente: " + Contrato.PATENTES[ProgressoJogo.patente()] + ". Dobrem a recompensa pela cabeca dele.");
     }
-    private void partirDaBase() { naBase = false; if (base != null) base.partir(); gravarRetomada(); nave.tornarIntangivel(1.5); }
+    private void partirDaBase() { naBase = false; hangarPendente = hangarAberto = hangarTela = false; if (base != null) base.partir(); gravarRetomada(); nave.tornarIntangivel(1.5); }
     /** Retomada: setor, progresso do setor, pontos, nivel, casco e energia dos poderes no momento da atracagem. */
     private void gravarRetomada() {
         if (partidaTeste) return;
-        double[] r = new double[16 + 8 + 1 + 2 + 9];
+        double[] r = new double[16 + 8 + 1 + 1];
         r[0] = setorAtual; r[1] = setoresVencidos; r[2] = chefesDerrotados; r[3] = eliminados; r[4] = pontos;
         r[5] = nave.getNivel(); r[6] = nave.getVida(); r[7] = nave.temArmaSecundaria() ? 1 : 0; r[8] = geloColetado ? 1 : 0; r[9] = fogoColetado ? 1 : 0;
         r[10] = lancadosNoSetor; r[11] = numeroEsquadrao; r[12] = modeloVisual; r[13] = creditos; r[15] = planetaAtual;
         for (int i = 0; i < 8; i++) r[16 + i] = poderes.energia[i];
-        r[25] = rotaRisco ? 1 : 0; r[26] = reliquiasBanda; for (int i = 0; i < 8; i++) r[27 + i] = fragReliquia[i]; r[35] = douradoPerdido;
+        r[25] = douradoPerdido;
         retomada = r; comandoSalvo = comando.copia();
     }
     private void voltarParaBase() {
@@ -503,7 +500,7 @@ implements ActionListener {
         geloColetado = r[8] > 0; fogoColetado = r[9] > 0;
         lancadosNoSetor = (int) r[10]; numeroEsquadrao = (int) r[11]; planetaAtual = (int) r[15]; miniChefeEnfrentado = false;
         for (int i = 0; i < 8; i++) poderes.energia[i] = (int) r[16 + i];
-        if (r.length > 35) { rotaRisco = r[25] > 0; reliquiasBanda = (int) r[26] | 1; for (int i = 0; i < 8; i++) fragReliquia[i] = (int) r[27 + i]; douradoPerdido = (int) r[35]; }
+        if (r.length > 25) douradoPerdido = (int) r[25];
         nave.definirVida((int) r[6]);
         retomada = r; alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
         iniciarRitmoSetor(); fundoEspacial.definirProgresso(0, setorAtual);
@@ -528,6 +525,14 @@ implements ActionListener {
         nave.definirVida((int) Math.ceil(nave.getVidaMaxima() * fracao));
         avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.TROCA); gravarRetomada();
     }
+    /** Hangar clandestino: a reliquia dourada inteira vira o passe do show da banda. */
+    private void trocarReliquiaPorPasse() {
+        int b = cursorHangar;
+        if (ProgressoJogo.temPasse(b)) { avisoBase = "\"VOCE JA TEM ESSE PASSE, CACADOR.\""; SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
+        if (!ProgressoJogo.temReliquiaBanda(b)) { avisoBase = "\"VOLTA QUANDO A RELIQUIA ESTIVER INTEIRA.\""; SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
+        if (!partidaTeste) ProgressoJogo.trocarPorPasse(b);
+        SomJogo.tocar(SomJogo.Efeito.RELIQUIA); avisoBase = "PASSE DO FESTIVAL: " + BANDAS[b] + "! O PALCO DELES ESTA ABERTO PRA VOCE.";
+    }
     private void confirmarBase() {
         switch (cursorBase) {
             case 0: quadroBase = true; cursorQuadro = 0; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); break;
@@ -540,6 +545,7 @@ implements ActionListener {
                 avisoBase = "CASCO REPARADO: +" + pontosPagos; SomJogo.tocar(SomJogo.Efeito.REPARO); gravarRetomada(); break;
             }
             case 2: pausado = true; abaPausa = 4; cursorPausa = 0; break;
+            case 3: if (hangarAberto) { hangarTela = true; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); break; } partirDaBase(); break;
             default: partirDaBase();
         }
     }
@@ -1048,7 +1054,8 @@ implements ActionListener {
         }
         if (etapa == Etapa.COMBATE && !naBase) radio.desenhar(graphics2D);
         if (cenaChefe != null) cenaChefe.desenhar(graphics2D);
-        if (naBase && !pausado) { EstacaoAliada.desenharMenu(graphics2D, menuBase && !quadroBase, cursorBase, nave, inventario, modeloVisual, quadroBase ? "" : avisoBase, tempoTotal);
+        if (naBase && !pausado) { EstacaoAliada.desenharMenu(graphics2D, menuBase && !quadroBase, cursorBase, nave, inventario, modeloVisual, quadroBase ? "" : avisoBase, tempoTotal, hangarAberto);
+            if (hangarTela) HangarClandestino.desenhar(graphics2D, cursorHangar, avisoBase, tempoTotal);
             if (quadroBase) Contrato.desenharQuadro(graphics2D, ofertasContrato, cursorQuadro, contrato, avisoBase); }
         if (contrato != null && !naBase && (etapa == Etapa.COMBATE || etapa == Etapa.BATALHA_CHEFE)) {
             graphics2D.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); String ct = "CONTRATO " + contrato.hud();
@@ -1490,7 +1497,7 @@ implements ActionListener {
         if(trofeuPendente!=0)return;
         if(chefesDerrotados==TOTAL_SETORES&&!hellraiserVencido){iniciarHellraiser();return;}
         if(chefesDerrotados==TOTAL_SETORES&&!reuniaoVencida){iniciarReuniao(0);return;}
-        if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual, reliquiasBanda);MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
+        if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual, ProgressoJogo.passesFestival());MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
         this.itens.clear(); capsulas.clear();
         this.tempoAviso = 0.0;
         // Ordem livre: o jogador escolhe no Mapa Estelar o proximo setor ainda nao vencido.
@@ -1504,8 +1511,7 @@ implements ActionListener {
         if (destino < 0) { SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
         SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
         escolhendoSetor = false;
-        setorAtual = destino; rotaRisco = mapaEstelar.rotaRisco(); mapaEstelar.definirRotaRisco(false);
-        if (rotaRisco) { mostrarAviso("ROTA DE RISCO: A BASE VAI OFERECER CONTRATOS DOURADOS"); if (!partidaTeste) radio.falar("Ele pegou a rota da morte. Ninguem entra la a toa... o que tem naquele cofre?"); }
+        setorAtual = destino;
         this.etapa = Etapa.DOBRA;
         this.cenaNave = new CinematicaNave(this.nave, false, setorAtual);
         emboscadaPendente = !partidaTeste && !emboscadaUsada && chefesDerrotados >= 2
@@ -1852,7 +1858,7 @@ implements ActionListener {
         if (reuniao) {
             // banda reunida derrotada: proxima banda da fortaleza, ou o final
             bandaReuniao++;
-            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; emJogo = false; venceu = true; etapa = Etapa.CREDITOS; cenaFinal = new CenaFinal(modeloVisual, reliquiasBanda); MusicaJogo.trocarSeDisponivel("GoGoPowerRangers"); return; }
+            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; emJogo = false; venceu = true; etapa = Etapa.CREDITOS; cenaFinal = new CenaFinal(modeloVisual, ProgressoJogo.passesFestival()); MusicaJogo.trocarSeDisponivel("GoGoPowerRangers"); return; }
             esperaReuniao = 4; mostrarAviso(BANDAS[bandaReuniao - 1] + " DERROTADA! PROXIMA: " + BANDAS[bandaReuniao]);
         } else if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
             // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta
@@ -1903,7 +1909,7 @@ implements ActionListener {
         int id=chefe.getFase();cenaDerrota=new CenaDerrotaChefe(chefe);
         if(id==HELLRAISER){premiar(30000);hellraiserVencido=true;emHellraiser=false;trofeuPendente=0;}
         else{premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;
-            rotaRisco=false;}
+            }
         chefe=null;cenaChefe=null;
         if(contrato!=null){contrato.chefeDerrotado(tempoBatalhaChefe);resolverContrato();}
         tirosChefes.clear();tirosInimigos.clear();tirosElementais.clear();nave.getMisseis().clear();itens.clear();asteroides.clear();
@@ -2251,7 +2257,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;rotaRisco=false;reliquiasBanda=1;java.util.Arrays.fill(fragReliquia,0);douradoPerdido=0;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;douradoPerdido=0;hangarPendente=hangarAberto=false;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
@@ -2628,6 +2634,14 @@ implements ActionListener {
             if (naBase && !pausado) {
                 if (!teclasTeste.add(codigo)) return;
                 boolean esq = codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_A, dir = codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_D;
+                if (hangarTela) {
+                    int p = HangarClandestino.PRIMEIRA, u = HangarClandestino.ULTIMA;
+                    if (codigo == KeyEvent.VK_UP || codigo == KeyEvent.VK_W) { cursorHangar = cursorHangar <= p ? u : cursorHangar - 1; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    else if (codigo == KeyEvent.VK_DOWN || codigo == KeyEvent.VK_S) { cursorHangar = cursorHangar >= u ? p : cursorHangar + 1; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    else if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) trocarReliquiaPorPasse();
+                    else if (codigo == KeyEvent.VK_ESCAPE) { hangarTela = false; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.VOLTAR); }
+                    repaint(); return;
+                }
                 if (quadroBase) {
                     int n = Math.max(1, ofertasContrato.size());
                     if (codigo == KeyEvent.VK_UP || codigo == KeyEvent.VK_W) { cursorQuadro = Math.floorMod(cursorQuadro - 1, n); avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
@@ -2642,8 +2656,9 @@ implements ActionListener {
                     else if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) { menuBase = true; cursorBase = 0; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
                     else if (codigo == KeyEvent.VK_ESCAPE) partirDaBase();
                 } else {
-                    if (codigo == KeyEvent.VK_UP || codigo == KeyEvent.VK_W) { cursorBase = Math.floorMod(cursorBase - 1, 4); avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
-                    else if (codigo == KeyEvent.VK_DOWN || codigo == KeyEvent.VK_S) { cursorBase = (cursorBase + 1) % 4; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    int nOp = hangarAberto ? 5 : 4;
+                    if (codigo == KeyEvent.VK_UP || codigo == KeyEvent.VK_W) { cursorBase = Math.floorMod(cursorBase - 1, nOp); avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
+                    else if (codigo == KeyEvent.VK_DOWN || codigo == KeyEvent.VK_S) { cursorBase = (cursorBase + 1) % nOp; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.MENU); }
                     else if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) confirmarBase();
                     else if (codigo == KeyEvent.VK_ESCAPE) { menuBase = false; avisoBase = ""; SomJogo.tocar(SomJogo.Efeito.VOLTAR); }
                 }
@@ -2653,7 +2668,6 @@ implements ActionListener {
                 if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) confirmarSetor();
                 else if (codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_UP) mapaEstelar.escolherProximo(-1);
                 else if (codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_DOWN) mapaEstelar.escolherProximo(1);
-                else if (codigo == KeyEvent.VK_R) { mapaEstelar.definirRotaRisco(!mapaEstelar.rotaRisco()); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR); }
                 else mapaEstelar.tecla(codigo);
                 repaint(); return;
             }

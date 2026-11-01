@@ -51,6 +51,32 @@ public final class ProgressoJogo {
             return f;
         } catch (SecurityException ex) { return 1; }
     }
+    // ---- reliquias douradas das bandas: fragmentos -> reliquia -> passe do festival (tudo salvo) ----
+    private static final String FRAG_BANDA = "metalspace_fragmentos_banda_", RELIQ_BANDA = "metalspace_reliquias_banda", PASSES = "metalspace_passes_festival";
+    /** Contratos dourados aparecem a partir da patente CACADOR. */
+    static boolean douradosLiberados() { return patente() >= 2; }
+    /** O hangar clandestino (troca reliquia por passe) so atende a partir de VETERANO. */
+    static boolean hangarLiberado() { return patente() >= 3; }
+    static int fragmentosBanda(int b) { try { return dados().getInt(FRAG_BANDA + b, 0); } catch (SecurityException ex) { return 0; } }
+    /** Soma um fragmento; completou um por integrante, a reliquia da banda fica guardada. Devolve o total. */
+    static int adicionarFragmento(int b) {
+        int n = Math.min(Turne.integrantes(b), fragmentosBanda(b) + 1);
+        try { dados().putInt(FRAG_BANDA + b, n); if (n >= Turne.integrantes(b)) dados().putInt(RELIQ_BANDA, reliquiasBanda() | (1 << b)); }
+        catch (SecurityException ex) { System.err.println("Fragmento nao gravado"); }
+        return n;
+    }
+    static int reliquiasBanda() { try { return dados().getInt(RELIQ_BANDA, 0); } catch (SecurityException ex) { return 0; } }
+    static boolean temReliquiaBanda(int b) { return (reliquiasBanda() >> b & 1) != 0; }
+    /** Passes do festival (bit por banda); a Lula e sempre aberta. */
+    static int passesFestival() { try { return dados().getInt(PASSES, 0) | 1; } catch (SecurityException ex) { return 1; } }
+    static boolean temPasse(int b) { return (passesFestival() >> b & 1) != 0; }
+    /** Hangar clandestino: a reliquia inteira vira o passe do show da banda. */
+    static boolean trocarPorPasse(int b) {
+        if (!temReliquiaBanda(b) || temPasse(b)) return false;
+        try { dados().putInt(PASSES, passesFestival() | (1 << b)); return true; } catch (SecurityException ex) { return false; }
+    }
+    /** So para testes: zera fragmentos, reliquias e passes. */
+    static void zerarFestivalTeste() { try { for (int b = 0; b < 8; b++) dados().remove(FRAG_BANDA + b); dados().remove(RELIQ_BANDA); dados().remove(PASSES); } catch (SecurityException ex) { } }
     private static final String RELIQUIAS = "metalspace_reliquias";
     static boolean temReliquia(int m) { try { return (dados().getInt(RELIQUIAS, 0) & (1 << m)) != 0; } catch (SecurityException ex) { return false; } }
     static void guardarReliquia(int m) { try { dados().putInt(RELIQUIAS, dados().getInt(RELIQUIAS, 0) | (1 << m)); } catch (SecurityException ex) { System.err.println("Reliquia nao gravada"); } }

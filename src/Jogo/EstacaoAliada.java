@@ -93,7 +93,11 @@ final class EstacaoAliada {
     static final String[] OPCOES = {"MISSOES", "REPARAR CASCO", "MERCADO", "PARTIR"};
     static final int CUSTO_REPARO = 30;
 
-    static void desenharMenu(Graphics2D g, boolean menu, int cursor, Nave nave, ProgressaoNave inv, int modelo, String aviso, double tempo) {
+    static void desenharMenu(Graphics2D g, boolean menu, int cursor, Nave nave, ProgressaoNave inv, int modelo, String aviso, double tempo) { desenharMenu(g, menu, cursor, nave, inv, modelo, aviso, tempo, false); }
+    /** Opcoes da base; com o hangar clandestino aberto, ele entra antes de PARTIR. */
+    static String[] opcoes(boolean hangar) { return hangar ? new String[]{"MISSOES", "REPARAR CASCO", "MERCADO", "HANGAR CLANDESTINO", "PARTIR"} : OPCOES; }
+    static void desenharMenu(Graphics2D g, boolean menu, int cursor, Nave nave, ProgressaoNave inv, int modelo, String aviso, double tempo, boolean hangar) {
+        String[] OPCOES = opcoes(hangar);
         if (INTERIOR != null) g.drawImage(INTERIOR, 0, 0, null); else { g.setColor(new Color(0, 0, 0, 190)); g.fillRect(0, 0, 960, 600); }
         // nave estacionada no centro da plataforma
         Graphics2D a = (Graphics2D) g.create();
@@ -122,14 +126,15 @@ final class EstacaoAliada {
         // menu translucido por cima da nave
         Graphics2D m = (Graphics2D) g.create();
         Graphics2D fundo = (Graphics2D) m.create(); fundo.setComposite(java.awt.AlphaComposite.SrcOver.derive(.5f));
-        HudMetal.painel(fundo, 290, 150, 380, 320); fundo.dispose();
+        HudMetal.painel(fundo, 290, hangar ? 120 : 150, 380, hangar ? 380 : 320); fundo.dispose();
         int falta = nave.getVidaMaxima() - nave.getVida();
-        String[] detalhe = {"CONTRATOS DO SETOR", falta == 0 ? "CASCO INTEIRO" : "CR " + falta * CUSTO_REPARO + " / " + falta + " PONTOS", "PECAS E MELHORIAS", "VOLTAR AO COMBATE"};
+        String[] detalhe = hangar ? new String[]{"CONTRATOS DO SETOR", falta == 0 ? "CASCO INTEIRO" : "CR " + falta * CUSTO_REPARO + " / " + falta + " PONTOS", "PECAS E MELHORIAS", "UM CONTATO NOS FUNDOS... SO HOJE", "PROXIMO PLANETA"}
+                : new String[]{"CONTRATOS DO SETOR", falta == 0 ? "CASCO INTEIRO" : "CR " + falta * CUSTO_REPARO + " / " + falta + " PONTOS", "PECAS E MELHORIAS", "PROXIMO PLANETA"};
         for (int i = 0; i < OPCOES.length; i++) {
-            int oy = 206 + i * 62; boolean sel = i == cursor;
+            int oy = (hangar ? 176 : 206) + i * 62; boolean sel = i == cursor;
             m.setColor(sel ? new Color(40, 90, 60, 150) : new Color(10, 16, 26, 95)); m.fillRect(312, oy - 28, 336, 50);
             m.setColor(sel ? new Color(255, 206, 98) : new Color(48, 76, 101)); m.drawRect(312, oy - 28, 336, 50);
-            m.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); m.setColor(sel ? new Color(255, 206, 98) : Color.WHITE); m.drawString((sel ? "> " : "  ") + OPCOES[i], 324, oy - 5);
+            m.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); m.setColor(sel ? new Color(255, 206, 98) : hangar && i == 3 ? new Color(255, 170, 60) : Color.WHITE); m.drawString((sel ? "> " : "  ") + OPCOES[i], 324, oy - 5);
             m.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12));
             m.setColor(i == 1 && falta > 0 && falta * CUSTO_REPARO > inv.saldo() ? new Color(255, 90, 90) : new Color(170, 190, 210)); m.drawString(detalhe[i], 348, oy + 13);
         }
