@@ -162,7 +162,13 @@ final class CenaPouso {
     }
 
     /** Arte da cabine por cima do ombro (cabine_wenger.png); o para-brisa preto vira janela pro espaco. */
-    private static final BufferedImage CABINE = janela(ler("cabine_wenger.png"));
+    /** Cabine de cada nave (cabine_N.png); sem a da nave, usa a generica (cabine_wenger.png). */
+    private static final BufferedImage[] CABINES = new BufferedImage[5];
+    private static final BufferedImage CABINE_PADRAO = janela(ler("cabine_wenger.png"));
+    static { for (int i = 0; i < 5; i++) CABINES[i] = janela(ler("cabine_" + i + ".png")); }
+    private BufferedImage cabine() { BufferedImage c = CABINES[Math.max(0, Math.min(4, modelo))]; return c != null ? c : CABINE_PADRAO; }
+    /** A galera jogando o Wenger pra cima (wenger_galera.png, 4 quadros com as maos embaixo). */
+    private static final BufferedImage GALERA = ler("wenger_galera.png");
     private static BufferedImage janela(BufferedImage a) {
         if (a == null) return null;
         int w = a.getWidth(), h = a.getHeight(); boolean[] v = new boolean[w * h]; java.util.ArrayDeque<int[]> f = new java.util.ArrayDeque<>();
@@ -189,7 +195,8 @@ final class CenaPouso {
         }
         if (tl > 2.0) { double sol = Math.min(1, (tl - 2.0) / 1.5); v.setColor(new Color(255, 120, 200, (int) (90 * sol))); v.fillOval(cx - 60, cy - 40, 120, 80); v.setColor(new Color(255, 230, 240, (int) (230 * sol))); v.fillOval(cx - 10, cy - 8, 20, 16); }
         if (tl > 1.9 && tl < 2.6) { v.setColor(new Color(225, 240, 255, (int) (255 * Math.max(0, 1 - Math.abs(tl - 2.2) / .35)))); v.fillRect(-10, -10, W + 20, H + 20); }
-        if (CABINE != null) v.drawImage(CABINE, 0, 0, W, H, null);
+        BufferedImage cab = cabine();
+        if (cab != null) v.drawImage(cab, 0, 0, W, H, null);
         else cabineCodigo(v, tl);
         v.dispose();
     }
@@ -393,7 +400,7 @@ final class CenaPouso {
             return;
         }
         // a galera carrega ele deitado sobre as maos e joga pra cima de tempos em tempos
-        double esc = modo == 1 ? .5 : .24, ritmo = ts * 2.1, joga = Math.pow(Math.abs(Math.sin(ritmo)), 3) * (modo == 1 ? 70 : 30);
+        double esc = modo == 1 ? .5 : .24, ritmo = ts * 2.1, joga = GALERA != null ? 0 : Math.pow(Math.abs(Math.sin(ritmo)), 3) * (modo == 1 ? 70 : 30);
         double sx = modo == 1 ? 330 + Math.sin(ts * .5) * 180 : 300 + (ts * 30) % 380, sy = modo == 1 ? 425 - joga : 392 - joga;
         int ultimo = 3;
         for (int k = 0; k < pes.length; k++) {
@@ -403,6 +410,12 @@ final class CenaPouso {
     }
     /** O Wenger deitado sobre a galera, bracos pra cima, girando um pouco; maos embaixo segurando. */
     private void surf(Graphics2D g, double x, double y, double esc, double ritmo) {
+        if (GALERA != null) {
+            // a arte ja traz as maos e a altura de cada jogada: so troca o quadro no ritmo
+            int q = (int) (ritmo / 1.1) % 4; double e = esc * .85;
+            sprite(g, GALERA, 4, q, (int) x, (int) (y + esc * 150), e, false);
+            return;
+        }
         if (flavio == null) return;
         // maos levantadas embaixo dele
         g.setColor(new Color(225, 165, 125));
