@@ -86,7 +86,18 @@ final class PalcoCreditos {
     }
 
     /** Tenacious D: Jack e Kyle nas pontas, o Deezleboss no meio, sem emblema (telao em chamas). */
+    /** Jack e Kyle de violao (tenacious_d_palco.png, 4 quadros com a dupla). */
+    private static final BufferedImage DUPLA = ler("tenacious_d_palco.png");
     private static void tenacious(Graphics2D g, double t) {
+        if (DUPLA != null) {
+            // o Deezleboss assiste la de tras, no praticavel da bateria
+            if (ARCO != null) { int c = ARCO.getWidth() / 4, q = new int[]{0, 1, 0, 3}[(int) (t * 2) % 4], s = 200, x0 = 480 - s / 2, y0 = (int) (78 + Math.sin(t * 2) * 6);
+                g.drawImage(ARCO, x0, y0, x0 + s, y0 + s, q * c, 2 * c, q * c + c, 3 * c, null); }
+            int fw = DUPLA.getWidth() / 4, fh = DUPLA.getHeight(), q = new int[]{0, 1, 0, 2, 0, 3}[(int) (t * 2.4) % 6];
+            int h = 215, w = fw * h / fh, x0 = 480 - w / 2, y0 = PISO + 12 - h;
+            g.drawImage(DUPLA, x0, y0, x0 + w, y0 + h, q * fw, 0, q * fw + fw, fh, null);
+            return;
+        }
         if (ARCO == null) return;
         int c = ARCO.getWidth() / 4;
         int[] linha = {0, 2, 1}, xs = {320, 480, 640}, alvo = {150, 200, 150};
