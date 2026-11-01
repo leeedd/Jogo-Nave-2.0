@@ -14,11 +14,17 @@ import java.awt.RenderingHints;
  */
 final class CenaPouso {
     /** Abertura em quadros (final_pouso.png, 4 paineis): a nave chega ao festival e pousa. */
-    private static final Image QUADROS = Assets.imagem("final_pouso.png");
-    private static final double PAINEL = 1.9, ABERTURA = QUADROS != null ? PAINEL * 4 : 0;
+    /** Tiras de 4 quadros em sequencia: pouso, Flavio descendo e tirando o macacao, Flavio na multidao. */
+    private static final Image[] TIRAS = existentes(opcional("final_pouso.png"), opcional("final_flavio_desce.png"), opcional("final_flavio_multidao.png"));
+    private static final Image QUADROS = TIRAS.length > 0 ? TIRAS[0] : null;
+    private static Image opcional(String n) { try { return Assets.imagem(n); } catch (IllegalStateException e) { return null; } }
+    private static Image[] existentes(Image... l) { java.util.List<Image> r = new java.util.ArrayList<>(); for (Image i : l) if (i != null) r.add(i); return r.toArray(new Image[0]); }
+    private static final double PAINEL = 1.9, ABERTURA = PAINEL * 4 * TIRAS.length;
+    /** Com o Flavio em quadros, a cena desenhada em codigo nao entra mais: dos quadros vai direto aos creditos. */
+    private static final boolean SO_QUADROS = TIRAS.length >= 2;
     /** Com a abertura em quadros, a cena ja comeca com a nave pousada (pula a descida). */
     private static final double PULO = QUADROS != null ? 5.5 : 0;
-    static final double DURACAO = 17 + ABERTURA - PULO;
+    static final double DURACAO = SO_QUADROS ? ABERTURA + .8 : 17 + ABERTURA - PULO;
     private static final Image PALCO = Assets.imagem("show_final_098.png");
     /** Arte do piloto (piloto_099.png, grade 4x2): andando (0-3), tirando o macacao (4-5), chifrinho (6), bracos para cima (7). */
     private static final Image PILOTO = Assets.imagem("piloto_099.png");
@@ -36,7 +42,7 @@ final class CenaPouso {
     private static double suave(double x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
 
     void desenhar(Graphics2D base) {
-        if (t < ABERTURA) { abertura(base); return; }
+        if (t < ABERTURA || SO_QUADROS) { abertura(base); return; }
         double tReal = t; t = t - ABERTURA + PULO;
         try { desenharCena(base); } finally { t = tReal; }
     }
@@ -44,17 +50,31 @@ final class CenaPouso {
     private void abertura(Graphics2D base) {
         Graphics2D g = (Graphics2D) base.create(); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA);
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        int k = Math.min(3, (int) (t / PAINEL)); double dentro = t - k * PAINEL;
+        int k = Math.min(4 * TIRAS.length - 1, (int) (t / PAINEL)); double dentro = Math.min(PAINEL + .8, t - k * PAINEL);
         if (k > 0 && dentro < .35) painel(g, k - 1, 1, PAINEL + dentro);
         painel(g, k, (float) Math.min(1, dentro / .35), dentro);
+        // no aperto de mao da multidao, o parceiro de show: Wenger
+        if (MULTIDAO != null && TIRAS[k / 4] == MULTIDAO && k % 4 == 1 && dentro > .5) etiqueta(g, "WENGER", 790, 300, (float) Math.min(1, (dentro - .5) / .3));
+        if (SO_QUADROS && t > DURACAO - .8) { g.setComposite(AlphaComposite.SrcOver.derive((float) Math.min(1, (t - (DURACAO - .8)) / .8))); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); g.setComposite(AlphaComposite.SrcOver); }
         if (t < .4) { g.setComposite(AlphaComposite.SrcOver.derive((float) (1 - t / .4))); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); }
         g.dispose();
     }
+    private static final Image MULTIDAO = opcional("final_flavio_multidao.png");
+    /** Plaquinha de nome em pixel: caixa preta com borda vermelha e setinha para baixo. */
+    private static void etiqueta(Graphics2D g, String nome, int cx, int y, float a) {
+        Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));
+        q.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.BOLD, 16));
+        int w = q.getFontMetrics().stringWidth(nome) + 16, x = cx - w / 2;
+        q.setColor(new Color(12, 8, 10)); q.fillRect(x, y, w, 24); q.fillPolygon(new int[]{cx - 7, cx + 7, cx}, new int[]{y + 24, y + 24, y + 32}, 3);
+        q.setColor(new Color(200, 40, 40)); q.drawRect(x, y, w, 24); q.drawRect(x + 2, y + 2, w - 4, 20);
+        q.setColor(new Color(250, 235, 200)); q.drawString(nome, x + 8, y + 18); q.dispose();
+    }
     private void painel(Graphics2D g, int k, float a, double dt) {
-        int fw = QUADROS.getWidth(null) / 4, fh = QUADROS.getHeight(null); double z = 1 + .06 * dt / PAINEL;
+        Image tira = TIRAS[k / 4]; k %= 4;
+        int fw = tira.getWidth(null) / 4, fh = tira.getHeight(null); double z = 1 + .06 * dt / PAINEL;
         int w = (int) (Config.LARGURA * z), h = (int) (Config.LARGURA * fh / (double) fw * z), x = (Config.LARGURA - w) / 2, y = (Config.ALTURA - h) / 2;
         Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));
-        q.drawImage(QUADROS, x, y, x + w, y + h, k * fw, 0, k * fw + fw, fh, null); q.dispose();
+        q.drawImage(tira, x, y, x + w, y + h, k * fw, 0, k * fw + fw, fh, null); q.dispose();
     }
     private void desenharCena(Graphics2D base) {
         Graphics2D g = (Graphics2D) base.create();
