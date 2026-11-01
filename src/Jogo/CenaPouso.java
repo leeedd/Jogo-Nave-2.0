@@ -35,7 +35,7 @@ final class CenaPouso {
     /** Telao preto do palco (fracoes da arte do palco), onde acende o emblema da banda. */
     private static final double TELAO_X0 = 568 / 1586.0, TELAO_Y0 = 348 / 992.0, TELAO_X1 = 1018 / 1586.0, TELAO_Y1 = 558 / 992.0;
     private static final double[][] ESTAMPA = TEM_PILOTO ? ESTAMPA_PILOTO : ESTAMPA_FLAVIO;
-    static final double DURACAO = 24;
+    static final double DURACAO = 22;
     private static final int CHAO = 572;
 
     private final int modelo;
@@ -89,7 +89,7 @@ final class CenaPouso {
     private static double suave(double x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
 
     /** Quadro 1 (pista de pouso) ate CORTE; depois quadro 2 (o show lotado). */
-    private static final double CORTE = 14.2;
+    private static final double CORTE = 11.8;
 
     void desenhar(Graphics2D base) {
         if (banda < 0) { desenharEscolha(base); return; }
@@ -106,26 +106,24 @@ final class CenaPouso {
 
     /** Quadro 1: pista de pouso fora do festival. O show brilha no horizonte. */
     private void quadroPouso(Graphics2D g) {
-        int W = Config.LARGURA, H = Config.ALTURA, HOR = 372;
-        // ceu da noite
+        int W = Config.LARGURA, H = Config.ALTURA, HOR = 330;
         for (int y = 0; y < HOR; y += 4) { double f = y / (double) HOR; g.setColor(new Color((int) (12 + 40 * f), (int) (6 + 10 * f), (int) (28 + 50 * f))); g.fillRect(0, y, W, 4); }
         java.util.Random r = new java.util.Random(9);
-        for (int k = 0; k < 120; k++) { int c = 120 + r.nextInt(130); g.setColor(new Color(c, c, Math.min(255, c + 30))); g.fillRect(r.nextInt(W), r.nextInt(HOR - 60), 2, 2); }
+        for (int k = 0; k < 110; k++) { int c = 120 + r.nextInt(130); g.setColor(new Color(c, c, Math.min(255, c + 30))); g.fillRect(r.nextInt(W), r.nextInt(HOR - 60), 2, 2); }
         fogos(g);
-        // o festival la longe: palco pequeno no horizonte, fachos de luz e a mancha da multidao
-        int pw = 330, ph = pw * (PALCO != null ? PALCO.getHeight() : 1) / (PALCO != null ? PALCO.getWidth() : 1), px = 600, py = HOR + 22 - ph;
-        for (int k = 0; k < 5; k++) { double a = Math.sin(t * 1.2 + k * 1.7); int x0 = px + 60 + k * 50; g.setColor(new Color(k % 2 == 0 ? 255 : 170, 60, 220, 30)); g.fillPolygon(new int[]{x0, x0 + (int) (a * 160) - 30, x0 + (int) (a * 160) + 30}, new int[]{py + 40, 0, 0}, 3); }
-        if (PALCO != null) { // so a estrutura do palco, sem o ceu da arte
+        // o palco ali do lado, com os fachos de luz
+        int pw = 560, px = 420;
+        for (int k = 0; k < 5; k++) { double a = Math.sin(t * 1.2 + k * 1.7); int x0 = px + 100 + k * 80; g.setColor(new Color(k % 2 == 0 ? 255 : 170, 60, 220, 30)); g.fillPolygon(new int[]{x0, x0 + (int) (a * 200) - 35, x0 + (int) (a * 200) + 35}, new int[]{HOR - 120, 0, 0}, 3); }
+        if (PALCO != null) {
             int sx0 = (int) (PALCO.getWidth() * .05), sx1 = (int) (PALCO.getWidth() * .95), sy0 = (int) (PALCO.getHeight() * .1), sy1 = (int) (PALCO.getHeight() * .7);
-            int dw = pw, dh = dw * (sy1 - sy0) / (sx1 - sx0); g.drawImage(PALCO, px, HOR + 14 - dh, px + dw, HOR + 14, sx0, sy0, sx1, sy1, null); }
-        Graphics2D bri = (Graphics2D) g.create(); bri.setComposite(AlphaComposite.SrcOver.derive(.35f)); bri.setColor(new Color(255, 80, 160)); bri.fillOval(px - 40, HOR - 30, pw + 80, 70); bri.dispose();
-        for (int k = 0; k < 500; k++) { int x = px - 20 + r.nextInt(pw + 40), y = HOR + 2 + r.nextInt(16); g.setColor(new Color(20 + r.nextInt(30), 10, 25 + r.nextInt(30))); g.fillRect(x, y - (int) (Math.max(0, Math.sin(t * 6 + k)) * 2), 2, 2); }
-        // a pista: asfalto, faixas em perspectiva e o heliponto com luzes piscando
-        g.setColor(new Color(18, 16, 26)); g.fillRect(0, HOR + 18, W, H - HOR - 18);
-        g.setColor(new Color(40, 36, 52)); for (int k = -6; k <= 6; k++) g.drawLine(480 + k * 30, HOR + 18, 480 + k * 260, H);
-        for (int k = 0; k < 6; k++) { int y = HOR + 30 + k * k * 7; g.setColor(new Color(60, 55, 70)); g.drawLine(0, y, W, y); }
+            int dh = pw * (sy1 - sy0) / (sx1 - sx0); g.drawImage(PALCO, px, HOR + 20 - dh, px + pw, HOR + 20, sx0, sy0, sx1, sy1, null); }
+        // chao da pista
+        g.setColor(new Color(18, 16, 26)); g.fillRect(0, HOR + 20, W, H - HOR - 20);
+        g.setColor(new Color(40, 36, 52)); for (int k = -6; k <= 6; k++) g.drawLine(250 + k * 30, HOR + 20, 250 + k * 200, H);
         g.setColor(new Color(240, 200, 40, 90)); g.drawOval(250 - 170, CHAO - 34, 340, 64); g.drawOval(250 - 150, CHAO - 28, 300, 52);
         for (int k = 0; k < 10; k++) { double an = k * Math.PI / 5; boolean on = (int) (t * 4 + k) % 3 == 0; g.setColor(on ? new Color(120, 255, 140) : new Color(40, 80, 50)); g.fillRect(250 + (int) (Math.cos(an) * 175) - 3, CHAO + (int) (Math.sin(an) * 34) - 3, 6, 6); }
+        // a galera de costas, logo ali entre a pista e o palco
+        if (fasLonge != null) { fila(g, fasFundo, 372, .12, 430, 24, 21, -1); fila(g, fasLonge, 392, .15, 440, 30, 22, -1); fila(g, fasLonge, 416, .19, 460, 36, 23, -1); fila(g, fasMeio, 444, .23, 490, 44, 24, -1); }
         nave(g);
         piloto(g);
     }
@@ -135,14 +133,13 @@ final class CenaPouso {
         if (flavio == null || t < 4.4) return;
         int q; double x, pe, s = .6; float alfa = 1;
         if (t < 5.6) { q = 1; x = 400; pe = CHAO - 70 * (1 - (t - 4.4) / 1.2); }          // desce a escada
-        else if (t < 6.4) { q = 0; x = 400; pe = CHAO; }                                 // olha o festival
-        else if (t < 8) { q = 2 + (int) (t / .2) % 2; x = 400 + (t - 6.4) / 1.6 * 130; pe = CHAO; } // anda
-        else if (t < 8.9) { q = 4; x = 530; pe = CHAO; }                                 // ziper
-        else if (t < 9.8) { q = 5; x = 530; pe = CHAO; }                                 // tira o macacao
-        else if (t < 10.6) { q = 6; x = 530; pe = CHAO; }                                // a camisa da banda
-        else if (t < 11.6) { q = 7; x = 530; pe = CHAO; }                                // chifrinho
-        else { double c = suave((t - 11.6) / 2.4); q = 8 + (int) (t / .13) % 2; x = 530 + c * 230; pe = CHAO - c * 185; s = .6 - c * .52; alfa = (float) Math.min(1, (1 - c) * 4); } // corre para o show
-        if (t >= 9.8) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(500, CHAO - 10, 60, 12, 6, 6); g.setColor(new Color(160, 70, 20)); g.fillRect(508, CHAO - 6, 44, 3); }
+        else if (t < 6.2) { q = 0; x = 400; pe = CHAO; }                                 // olha o show
+        else if (t < 7) { q = 4; x = 400; pe = CHAO; }                                   // ziper
+        else if (t < 7.8) { q = 5; x = 400; pe = CHAO; }                                 // tira o macacao
+        else if (t < 8.4) { q = 6; x = 400; pe = CHAO; }                                 // a camisa da banda
+        else if (t < 9.4) { q = 7; x = 400; pe = CHAO; }                                 // chifrinho
+        else { double c = suave((t - 9.4) / 2.2); q = 8 + (int) (t / .13) % 2; x = 400 + c * 330; pe = CHAO - c * 110; s = .6 - c * .3; } // corre para a galera
+        if (t >= 7.8) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(370, CHAO - 10, 60, 12, 6, 6); g.setColor(new Color(160, 70, 20)); g.fillRect(378, CHAO - 6, 44, 3); }
         Graphics2D a = (Graphics2D) g.create(); a.setComposite(AlphaComposite.SrcOver.derive(Math.max(0, alfa)));
         sprite(a, flavio, 12, q, (int) x, (int) pe, s, false); a.dispose();
     }
@@ -166,19 +163,23 @@ final class CenaPouso {
                 if (((x * 31 + y * 17) & 3) == 0) { g.setColor(new Color(210, 150, 110)); int ar = (int) (esc * 1.6) + (int) (Math.sin(t * 5 + x) * esc * .6); g.fillRect(x - hs, y - pulo - ar, Math.max(1, hs / 2), Math.max(1, ar)); g.fillRect(x + hs + 1, y - pulo - ar, Math.max(1, hs / 2), Math.max(1, ar)); }
             }
         }
-        // a frente da galera em sprite, por profundidade; o Wenger entra entre elas e some
-        double c = suave((ts - .8) / 4.2); boolean noShow = ts > .8;
-        double wpe = H + 70 - c * 140, ws = .5 - c * .32; int wx = (int) (470 + c * 40);
+        // a frente da galera em sprite, por profundidade
         int[] pes = {486, 506, 530, 558, 592};
         double[] escs = {.18, .22, .27, .33, .4};
         BufferedImage[] imgs = {fasFundo, fasLonge, fasLonge, fasMeio, fasPerto};
-        boolean desenhou = false;
+        // o Wenger: vem correndo (0-1.1s), salta por cima das cabecas (1.1-2.6s) e cai no meio da galera
+        double wx = 480, wpe, ws, alt = 0; int wq; boolean noAr = false, caiu = ts > 2.6;
+        if (ts < 1.1) { double c = ts / 1.1; wpe = H + 90 - c * 60; ws = .55; wq = 8 + (int) (t / .12) % 2; }
+        else { double c = Math.min(1, (ts - 1.1) / 1.5); wpe = H + 30 - c * (H + 30 - 512); ws = .55 - c * .35; wx = 480 + c * 30; alt = Math.sin(c * Math.PI) * 170; wq = 11; noAr = c < .8; }
+        boolean desenhou = ts < .05 || caiu;
         for (int k = 0; k < pes.length; k++) {
-            if (!desenhou && noShow && wpe < pes[k]) { correndo(g, wx, wpe, ws); desenhou = true; }
+            if (!desenhou && !noAr && wpe < pes[k]) { sprite(g, flavio, 12, wq, (int) wx, (int) (wpe - alt), ws, false); desenhou = true; }
             if (imgs[k] != null) fila(g, imgs[k], pes[k], escs[k], k * 17, (int) (escs[k] * 230), 10 + k, -1);
         }
-        if (!desenhou && noShow) correndo(g, wx, wpe, ws);
-        if (ts > 6.2 && ts < 9) { // ninguem mais acha ele
+        if (!desenhou && flavio != null) sprite(g, flavio, 12, wq, (int) wx, (int) (wpe - alt), ws, false);
+        // onde ele caiu, a galera levanta as maos por um instante
+        if (ts > 2.5 && ts < 3.6) { g.setColor(new Color(230, 170, 130)); for (int k = 0; k < 8; k++) { int hx = 470 + (k - 4) * 12, hy = 452 - (int) (Math.sin((ts - 2.5) * 3 + k) * 6); g.fillRect(hx, hy, 4, 10); } }
+        if (ts > 4 && ts < 7.2) {
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); String s = "...E O CACADOR SE PERDEU NA MULTIDAO.";
             g.setColor(new Color(0, 0, 0, 170)); g.fillRect(W / 2 - 250, 548, 500, 34);
             g.setColor(new Color(255, 210, 110)); g.drawString(s, (W - g.getFontMetrics().stringWidth(s)) / 2, 571);
@@ -257,7 +258,10 @@ final class CenaPouso {
             int fx = x + r.nextInt(passo / 3 + 1) - passo / 6, q = 4 + r.nextInt(4); boolean esp = r.nextBoolean(); double fase = r.nextDouble() * 6;
             if (vao >= 0 && Math.abs(fx - vao) < passo * .9) continue;
             double pulo = Math.max(0, Math.sin(t * (3.4 + semente * .2) + fase)) * 9 * esc / .2;
-            sprite(g, img, 8, q, fx, (int) (pe - pulo), esc, esp);
+            // headbang: o corpo inclina pra frente e volta no ritmo
+            double bate = Math.max(0, Math.sin(t * 9 + fase * 3)) * .16 * (esp ? 1 : -1);
+            Graphics2D h = (Graphics2D) g.create(); h.rotate(bate, fx, pe);
+            sprite(h, img, 8, q, fx, (int) (pe - pulo), esc, esp); h.dispose();
         }
     }
     /** Desenha o quadro q de uma tira de n quadros com o pe em (cx, pe). */
