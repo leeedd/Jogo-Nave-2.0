@@ -118,7 +118,20 @@ implements ActionListener {
     private boolean miniChefeEnfrentado;
     /** Turne ao contrario: planeta atual do sistema (0..integrantes); o ultimo e o do chefe. */
     private int planetaAtual;
-    int riscoAtual() { return Turne.risco(setorAtual, planetaAtual); }
+    /** Rota de risco escolhida no Mapa Estelar: +1 de risco em todo o setor, e o chefe entrega a reliquia da banda. */
+    private boolean rotaRisco;
+    /** Reliquias de banda conquistadas (bit = banda). Cada uma libera o show dela no festival; a Lula e sempre aberta. */
+    private int reliquiasBanda = 1;
+    int reliquiasBanda() { return reliquiasBanda; }
+    boolean rotaRisco() { return rotaRisco; }
+    /** Pistas do radio quando uma reliquia cai: dizem que vale alguma coisa, sem dizer o que. */
+    private static final String[] PISTAS_RELIQUIA = {
+        "A reliquia da banda... o velho dizia que ela abre portas que dinheiro nenhum abre.",
+        "Mais uma reliquia. Guarda bem, cacador: no fim da estrada alguem vai pedir isso.",
+        "Contam que essas reliquias eram passes de uma epoca em que o metal ainda tocava ao vivo.",
+        "Ele ta juntando as reliquias. Quem junta todas, dizem, ve tudo o que tem pra ver.",
+        "Outra reliquia! Isso cheira a cerveja quente e amplificador estourado. Sei la por que."};
+    int riscoAtual() { return Math.min(4, Turne.risco(setorAtual, planetaAtual) + (rotaRisco && !reuniao ? 1 : 0)); }
     private int totalMiniChefesDerrotados;
     private double proximoAsteroide = 8.0;
     /** Pedacos de meteoro gigante quebrado: entram na lista depois do laco de colisao. */
@@ -444,11 +457,12 @@ implements ActionListener {
     /** Retomada: setor, progresso do setor, pontos, nivel, casco e energia dos poderes no momento da atracagem. */
     private void gravarRetomada() {
         if (partidaTeste) return;
-        double[] r = new double[16 + 8 + 1];
+        double[] r = new double[16 + 8 + 1 + 2];
         r[0] = setorAtual; r[1] = setoresVencidos; r[2] = chefesDerrotados; r[3] = eliminados; r[4] = pontos;
         r[5] = nave.getNivel(); r[6] = nave.getVida(); r[7] = nave.temArmaSecundaria() ? 1 : 0; r[8] = geloColetado ? 1 : 0; r[9] = fogoColetado ? 1 : 0;
         r[10] = lancadosNoSetor; r[11] = numeroEsquadrao; r[12] = modeloVisual; r[13] = creditos; r[15] = planetaAtual;
         for (int i = 0; i < 8; i++) r[16 + i] = poderes.energia[i];
+        r[25] = rotaRisco ? 1 : 0; r[26] = reliquiasBanda;
         retomada = r; comandoSalvo = comando.copia();
     }
     private void voltarParaBase() {
@@ -461,6 +475,7 @@ implements ActionListener {
         geloColetado = r[8] > 0; fogoColetado = r[9] > 0;
         lancadosNoSetor = (int) r[10]; numeroEsquadrao = (int) r[11]; planetaAtual = (int) r[15]; miniChefeEnfrentado = false;
         for (int i = 0; i < 8; i++) poderes.energia[i] = (int) r[16 + i];
+        if (r.length > 26) { rotaRisco = r[25] > 0; reliquiasBanda = (int) r[26] | 1; }
         nave.definirVida((int) r[6]);
         retomada = r; alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
         iniciarRitmoSetor(); fundoEspacial.definirProgresso(0, setorAtual);
@@ -1447,7 +1462,7 @@ implements ActionListener {
         if(trofeuPendente!=0)return;
         if(chefesDerrotados==TOTAL_SETORES&&!hellraiserVencido){iniciarHellraiser();return;}
         if(chefesDerrotados==TOTAL_SETORES&&!reuniaoVencida){iniciarReuniao(0);return;}
-        if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual);MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
+        if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual, reliquiasBanda);MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
         this.itens.clear(); capsulas.clear();
         this.tempoAviso = 0.0;
         // Ordem livre: o jogador escolhe no Mapa Estelar o proximo setor ainda nao vencido.
@@ -1461,7 +1476,8 @@ implements ActionListener {
         if (destino < 0) { SomJogo.tocar(SomJogo.Efeito.ERRO); return; }
         SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
         escolhendoSetor = false;
-        setorAtual = destino;
+        setorAtual = destino; rotaRisco = mapaEstelar.rotaRisco(); mapaEstelar.definirRotaRisco(false);
+        if (rotaRisco) { mostrarAviso("ROTA DE RISCO: DIZEM QUE O CHEFE GUARDA UMA RELIQUIA"); if (!partidaTeste) radio.falar("Ele pegou a rota da morte. Ninguem entra la a toa... o que tem naquele cofre?"); }
         this.etapa = Etapa.DOBRA;
         this.cenaNave = new CinematicaNave(this.nave, false, setorAtual);
         emboscadaPendente = !partidaTeste && !emboscadaUsada && chefesDerrotados >= 2
@@ -1808,7 +1824,7 @@ implements ActionListener {
         if (reuniao) {
             // banda reunida derrotada: proxima banda da fortaleza, ou o final
             bandaReuniao++;
-            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; emJogo = false; venceu = true; etapa = Etapa.CREDITOS; cenaFinal = new CenaFinal(modeloVisual); MusicaJogo.trocarSeDisponivel("GoGoPowerRangers"); return; }
+            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; emJogo = false; venceu = true; etapa = Etapa.CREDITOS; cenaFinal = new CenaFinal(modeloVisual, reliquiasBanda); MusicaJogo.trocarSeDisponivel("GoGoPowerRangers"); return; }
             esperaReuniao = 4; mostrarAviso(BANDAS[bandaReuniao - 1] + " DERROTADA! PROXIMA: " + BANDAS[bandaReuniao]);
         } else if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
             // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta
@@ -1857,7 +1873,11 @@ implements ActionListener {
         }
         int id=chefe.getFase();cenaDerrota=new CenaDerrotaChefe(chefe);
         if(id==HELLRAISER){premiar(30000);hellraiserVencido=true;emHellraiser=false;trofeuPendente=0;}
-        else{premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;}
+        else{premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;
+            // rota de risco vencida: o chefe entrega a reliquia da banda, que libera o show dela no festival
+            if(rotaRisco){reliquiasBanda|=1<<Turne.setor(setorAtual);mostrarAviso("RELIQUIA DO "+BANDAS[Turne.setor(setorAtual)]+" CONQUISTADA");
+                if(!partidaTeste)radio.urgente(PISTAS_RELIQUIA[Integer.bitCount(reliquiasBanda)%PISTAS_RELIQUIA.length]);}
+            rotaRisco=false;}
         chefe=null;cenaChefe=null;
         if(contrato!=null){contrato.chefeDerrotado(tempoBatalhaChefe);resolverContrato();}
         tirosChefes.clear();tirosInimigos.clear();tirosElementais.clear();nave.getMisseis().clear();itens.clear();asteroides.clear();
@@ -2205,7 +2225,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;rotaRisco=false;reliquiasBanda=1;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
@@ -2607,6 +2627,7 @@ implements ActionListener {
                 if (codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_SPACE) confirmarSetor();
                 else if (codigo == KeyEvent.VK_LEFT || codigo == KeyEvent.VK_UP) mapaEstelar.escolherProximo(-1);
                 else if (codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_DOWN) mapaEstelar.escolherProximo(1);
+                else if (codigo == KeyEvent.VK_R) { mapaEstelar.definirRotaRisco(!mapaEstelar.rotaRisco()); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR); }
                 else mapaEstelar.tecla(codigo);
                 repaint(); return;
             }

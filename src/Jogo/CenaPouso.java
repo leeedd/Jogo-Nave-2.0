@@ -39,20 +39,34 @@ final class CenaPouso {
     private double tEscolha;
     private BufferedImage flavio = FLAVIO, fasLonge, fasPerto;
 
-    CenaPouso(int modelo) { this.modelo = modelo; }
+    /** Palcos abertos: bit por banda, ganho com a reliquia de cada uma. A Lula (0) e sempre aberta. */
+    private final int abertos;
+    private double avisoFechado;
+    CenaPouso(int modelo) { this(modelo, 0xFF); }
+    CenaPouso(int modelo, int reliquias) {
+        this.modelo = modelo; abertos = reliquias | 1;
+        cursor = 0; for (int i = Fase.BANDAS.length - 1; i > 0; i--) if (aberto(i)) { cursor = i; break; }
+    }
+    /** Opcao extra para quem juntou todas as reliquias: o festival inteiro, banda por banda. */
+    static final int FESTIVAL = 8;
+    boolean aberto(int b) { return b == FESTIVAL ? palcosAbertos() == 8 : (abertos >> b & 1) != 0; }
+    private int opcoes() { return palcosAbertos() == 8 ? 9 : 8; }
+    int palcosAbertos() { return Integer.bitCount(abertos & 0xFF); }
     boolean escolhendo() { return banda < 0; }
     int banda() { return banda; }
-    void mover(int d) { if (banda < 0) { int n = Fase.BANDAS.length; cursor = ((cursor + d) % n + n) % n; SomJogo.tocar(SomJogo.Efeito.INTERDICAO); } }
+    void mover(int d) { if (banda < 0) { int n = Fase.BANDAS.length; n = opcoes(); cursor = ((cursor + d) % n + n) % n; SomJogo.tocar(SomJogo.Efeito.INTERDICAO); } }
     void moverLinha(int d) { if (banda < 0) mover(d * 4); }
     /** Fecha a escolha: a camisa do Flavio e o telao do festival passam a ser dessa banda. */
     void escolher(int b) {
         if (banda >= 0) return;
-        banda = Math.max(0, Math.min(Fase.BANDAS.length - 1, b));
-        if (FLAVIO != null) flavio = estampar(FLAVIO, CamisaShow.emblema(banda));
+        banda = Math.max(0, Math.min(aberto(FESTIVAL) ? FESTIVAL : Fase.BANDAS.length - 1, b));
+        // no festival completo a camisa e a da Lula, onde a jornada comecou
+        if (FLAVIO != null) flavio = estampar(FLAVIO, CamisaShow.emblema(banda == FESTIVAL ? 0 : banda));
+        MusicaJogo.tocarShow(banda);
         if (WENGER != null) { fasLonge = escurecer(WENGER, .45f); fasPerto = escurecer(WENGER, .7f); }
     }
-    void confirmar() { escolher(cursor); }
-    void atualizar(double dt) { if (banda < 0) { tEscolha += Math.max(0, dt); return; } t = Math.min(DURACAO, t + Math.max(0, dt)); }
+    void confirmar() { if (!aberto(cursor)) { avisoFechado = 1.6; SomJogo.tocar(SomJogo.Efeito.ERRO); return; } escolher(cursor); }
+    void atualizar(double dt) { if (banda < 0) { tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt)); return; } t = Math.min(DURACAO, t + Math.max(0, dt)); }
     boolean terminou() { return t >= DURACAO; }
     void pular() { if (banda < 0) confirmar(); else t = DURACAO; }
 
@@ -96,7 +110,8 @@ final class CenaPouso {
 
     /** O emblema da banda escolhida acende no telao, piscando como lampada velha antes de firmar. */
     private void telao(Graphics2D g, int W, int H) {
-        Image e = CamisaShow.emblema(banda);
+        // festival completo: o telao passa pelos emblemas de todas as bandas
+        Image e = CamisaShow.emblema(banda == FESTIVAL ? (int) (t / 1.5) % 8 : banda);
         if (e == null || t < 1) return;
         boolean pisca = t < 1.8 && (int) (t * 14) % 3 == 0;
         if (pisca) return;
@@ -228,27 +243,44 @@ final class CenaPouso {
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30)); g.setColor(new Color(250, 225, 140));
         String titulo = "QUAL SHOW VOCE VAI VER?"; g.drawString(titulo, (W - g.getFontMetrics().stringWidth(titulo)) / 2, 70);
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14)); g.setColor(new Color(190, 170, 200));
-        String sub = "O FESTIVAL TEM 8 PALCOS. A CAMISA VAI SER DA BANDA ESCOLHIDA."; g.drawString(sub, (W - g.getFontMetrics().stringWidth(sub)) / 2, 98);
+        int n0 = palcosAbertos();
+        String sub = n0 == 8 ? "FESTIVAL COMPLETO! TODOS OS 8 PALCOS ABERTOS." : n0 + " DE 8 PALCOS ABERTOS. CADA RELIQUIA DE BANDA ABRIA UM PALCO."; g.drawString(sub, (W - g.getFontMetrics().stringWidth(sub)) / 2, 98);
         for (int i = 0; i < Fase.BANDAS.length; i++) {
             int cx = 135 + (i % 4) * 230, cy = 210 + (i / 4) * 200; boolean sel = i == cursor;
             double pulso = sel ? 1 + .05 * Math.sin(tEscolha * 6) : .82;
             if (sel) { g.setColor(new Color(200, 40, 40)); g.fillRect(cx - 100, cy - 85, 200, 175); g.setColor(new Color(20, 10, 16)); g.fillRect(cx - 96, cy - 81, 192, 167); }
             Image e = CamisaShow.emblema(i);
-            if (e != null) {
+            boolean ab = aberto(i);
+            if (e != null && !ab) {
+                // palco fechado: so a sombra do emblema e um cadeado
+                double s = Math.min(150.0 / e.getWidth(null), 110.0 / e.getHeight(null));
+                int ew = (int) (e.getWidth(null) * s), eh = (int) (e.getHeight(null) * s);
+                Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(.18f));
+                q.drawImage(e, cx - ew / 2, cy - 10 - eh / 2, ew, eh, null); q.dispose();
+                g.setColor(new Color(120, 110, 120)); g.fillRect(cx - 14, cy - 12, 28, 22); g.drawArc(cx - 10, cy - 30, 20, 30, 0, 180);
+                g.setColor(new Color(30, 20, 30)); g.fillRect(cx - 2, cy - 4, 4, 8);
+            } else if (e != null) {
                 double s = Math.min(170.0 / e.getWidth(null), 125.0 / e.getHeight(null)) * pulso;
                 int ew = (int) (e.getWidth(null) * s), eh = (int) (e.getHeight(null) * s);
                 Graphics2D q = (Graphics2D) g.create(); if (!sel) q.setComposite(AlphaComposite.SrcOver.derive(.55f));
                 q.drawImage(e, cx - ew / 2, cy - 10 - eh / 2, ew, eh, null); q.dispose();
             }
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, sel ? 15 : 13)); g.setColor(sel ? Color.WHITE : new Color(150, 130, 150));
-            String n = Fase.BANDAS[i]; g.drawString(n, cx - g.getFontMetrics().stringWidth(n) / 2, cy + 75);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, sel ? 15 : 13)); g.setColor(!ab ? new Color(90, 80, 90) : sel ? Color.WHITE : new Color(150, 130, 150));
+            String n = ab ? Fase.BANDAS[i] : "PALCO FECHADO"; g.drawString(n, cx - g.getFontMetrics().stringWidth(n) / 2, cy + 75);
+        }
+        if (opcoes() == 9) {
+            boolean sel = cursor == FESTIVAL; int bx = W / 2 - 170, by = 505;
+            g.setColor(sel ? new Color(255, 200, 60) : new Color(120, 90, 40)); g.fillRect(bx, by, 340, 44);
+            g.setColor(new Color(20, 10, 16)); g.fillRect(bx + 4, by + 4, 332, 36);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, sel ? 22 : 19)); g.setColor(sel ? new Color(255, 220, 120) : new Color(170, 140, 90));
+            String f = "FESTIVAL COMPLETO"; g.drawString(f, W / 2 - g.getFontMetrics().stringWidth(f) / 2, by + 30);
         }
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14)); g.setColor(new Color(250, 225, 140));
-        String dica = "SETAS: ESCOLHER    ENTER: IR PARA O SHOW"; g.drawString(dica, (W - g.getFontMetrics().stringWidth(dica)) / 2, H - 30);
+        String dica = avisoFechado > 0 ? "FALTOU A RELIQUIA DESSA BANDA. FICA PRA PROXIMA JORNADA." : "SETAS: ESCOLHER    ENTER: IR PARA O SHOW";
+        if (avisoFechado > 0) g.setColor(new Color(255, 110, 100)); g.drawString(dica, (W - g.getFontMetrics().stringWidth(dica)) / 2, H - 30);
         if (tEscolha < .4) { g.setComposite(AlphaComposite.SrcOver.derive((float) (1 - tEscolha / .4))); g.setColor(Color.BLACK); g.fillRect(0, 0, W, H); }
         g.dispose();
     }
-    /** Plaquinha de nome em pixel: caixa preta com borda vermelha e setinha para baixo. */
     /** Plaquinha de nome em pixel: caixa preta com borda vermelha e setinha para baixo. */
     private static void etiqueta(Graphics2D g, String nome, int cx, int y, float a) {
         Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));

@@ -72,7 +72,9 @@ public final class CenaFinal {
     private final CenaPouso pouso;
     /** Sem escolha de show (testes e previas): vai direto ao palco do Slayer. */
     public CenaFinal(){this(0);pouso.escolher(CamisaShow.SLAYER);}
-    public CenaFinal(int modelo){SomJogo.tocar(SomJogo.Efeito.VITORIA);pouso=new CenaPouso(modelo);}
+    public CenaFinal(int modelo){this(modelo,0xFF);}
+    /** reliquias: bit por banda; so os shows das reliquias conquistadas abrem (a Lula sempre). */
+    public CenaFinal(int modelo,int reliquias){SomJogo.tocar(SomJogo.Efeito.VITORIA);pouso=new CenaPouso(modelo,reliquias);}
     boolean emPouso(){return !pouso.terminou();}
     void pularPouso(){pouso.pular();}
     boolean escolhendoShow(){return pouso.escolhendo();}
@@ -114,11 +116,14 @@ public final class CenaFinal {
     /** Banda no palco: o show escolhido abre; durante o rolo, sobe a banda de cada credito. */
     int bandaNoPalco() {
         double rolado = (tempo - INICIO_CREDITOS) * VELOCIDADE - 395;
-        if (rolado < 0) return Math.max(0, pouso.banda());
+        // show unico: a banda escolhida toca do comeco ao fim
+        if (pouso.banda() != CenaPouso.FESTIVAL) return Math.max(0, pouso.banda());
+        // festival completo: abre a Lula e cada banda sobe junto com a legenda dela
+        if (rolado < 0) return 0;
         int i = (int) (rolado / 190);
         if (i < 7) return i + 1;
         if (i == 7) return PalcoCreditos.TENACIOUS;
-        return Math.max(0, pouso.banda());
+        return 0;
     }
 
     private void desenharPalco(Graphics2D g, int w, int h) {

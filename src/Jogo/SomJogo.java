@@ -33,6 +33,16 @@ public final class SomJogo {
  public static synchronized void iniciar(){if(iniciado||OFFLINE)return;iniciado=true;Thread t=new Thread(SomJogo::executar,"MetalSpace-Audio");t.setDaemon(true);t.start();}
  public static void tocar(Efeito e){tocar(e,480);}
  public static synchronized void tocar(Efeito e,double x){if(pausado&&!e.ui())return;long now=System.nanoTime();int i=e.ordinal();if(now-ULTIMO[i]<e.intervalo*1000000L)return;ULTIMO[i]=now;CONTAGEM[i]++;if(OFFLINE)return;iniciar();FILA.offer(new Pedido(e,(float)Math.max(-.8,Math.min(.8,(x-480)/600)),now));}
+ /** Troca a musica de fundo por um arquivo local (pasta musicas/ ao lado do jogo, em .wav).
+  *  As musicas das bandas nao vao no repositorio: quem tem os arquivos coloca na pasta.
+  *  Sem o arquivo, volta a trilha original. Carrega em outra thread para nao travar o jogo. */
+ private static volatile String musicaPedida="";
+ public static void trocarMusica(String arquivo){
+  if(OFFLINE||arquivo==null||arquivo.equals(musicaPedida))return;musicaPedida=arquivo;
+  Thread t=new Thread(()->{try{java.io.File f=new java.io.File("musicas",arquivo+".wav");
+   URL u=f.isFile()?f.toURI().toURL():SomJogo.class.getResource("/Audio098/trilha_metal.wav");
+   float[] a=carregar(u,50331648);if(arquivo.equals(musicaPedida))MOTOR.musica(a);}catch(Exception e){diagnostico="MUSICA "+arquivo+": "+e.getMessage();}},"MetalSpace-Musica");
+  t.setDaemon(true);t.start();}
  public static void pausar(boolean p){if(pausado!=p){pausado=p;MOTOR.pausar(p);if(p)FILA.clear();}}
  public static void limpar(){FILA.clear();MOTOR.limpar();}
  static long emitidosTeste(Efeito e){return CONTAGEM[e.ordinal()];}
