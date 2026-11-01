@@ -70,8 +70,14 @@ public final class CenaFinal {
 
     private double tempo;
 
-    public CenaFinal(){SomJogo.tocar(SomJogo.Efeito.VITORIA);}
+    /** Prologo: a nave pousa no festival e o piloto entra na multidao (CenaPouso), depois os creditos. */
+    private final CenaPouso pouso;
+    public CenaFinal(){this(0);}
+    public CenaFinal(int modelo){SomJogo.tocar(SomJogo.Efeito.VITORIA);pouso=new CenaPouso(modelo);}
+    boolean emPouso(){return !pouso.terminou();}
+    void pularPouso(){pouso.pular();}
     public void atualizar(double dt) {
+        if (!pouso.terminou()) { pouso.atualizar(dt); return; }
         double antes = tempo;
         if (!Double.isNaN(dt) && !Double.isInfinite(dt)) tempo += Math.max(0, dt);
         if (passou(antes, INICIO_SILHUETA + .3)) SomJogo.tocar(SomJogo.Efeito.TROVAO);
@@ -84,6 +90,7 @@ public final class CenaFinal {
     static double duracaoTeste() { return FOTO_COMPLETA; }
 
     public void desenhar(Graphics2D base) {
+        if (!pouso.terminou()) { pouso.desenhar(base); return; }
         Graphics2D g = (Graphics2D) base.create();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                 RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
