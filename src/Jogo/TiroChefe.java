@@ -48,6 +48,9 @@ public final class TiroChefe {
     public void desenhar(Graphics2D g) {
         int px = (int) x, py = (int) y;
         // Cada artista tem um projetil com forma propria, combinando com o golpe da prancha.
+        // tiros dos vocalistas com arte propria (girada para onde voam)
+        int linha = estilo == 2 ? SpritesExtras.ROB : estilo == 3 ? SpritesExtras.BRUCE : estilo == 5 ? SpritesExtras.JAMES : estilo == 6 ? SpritesExtras.TOM : estilo == 7 ? SpritesExtras.CHUCK : -1;
+        if (linha >= 0 && SpritesExtras.temTiros()) { SpritesExtras.tiro(g, linha, x, y, vx, vy, pesado ? 82 : 60, tempo); return; }
         switch (estilo) {
             case FUMACA: desenharFumaca(g, px, py); return;
             case VAGAO: desenharVagao(g, px, py); return;

@@ -448,6 +448,8 @@ public class Alien {
         if(especieEnxame>=0){ArteEnxame.ataque(graphics2D,especieEnxame,(int)x,(int)y,tempoAnimacao,tempoAtaqueEnxame);}
         else if (universo > 0 && classe != Classe.INTERCEPTADOR && classe != Classe.ESQUADRAO) {
             InimigosUniversos.desenhar(graphics2D, universo, classe, (int)x, (int)y, tempoAnimacao, congelado > 0);
+        } else if (procurado && SpritesExtras.procurado(graphics2D, reliquia, x + largura / 2.0, y + 30, tempoAnimacao, congelado > 0)) {
+            // procurado de cacada: nave propria, maior que as outras
         } else if (this.tipo == Tipo.PIRATA) {
             // versao da nave: elite com escudo (procurado ou piloto que desvia), blindada (evoluida ou casco adaptado), normal
             if(Piratas094.temEvo()){int versao=procurado||adaptado(ComandoInimigo.DESVIO)?2:evoluido()||adaptacao!=0?1:0;
@@ -457,7 +459,7 @@ public class Alien {
             ArteNaves.desenharOrganico(graphics2D, this.variante, (int)this.x, (int)this.y, this.tempoAnimacao, this.congelado > 0.0);
         }
         // casco adaptado: brilho fraco na cor da arma que ele resiste
-        if(adaptado(ComandoInimigo.CASCO_FOGO)||adaptado(ComandoInimigo.CASCO_GELO)){int a=(int)(60+40*Math.sin(tempoAnimacao*5));graphics2D.setColor(adaptado(ComandoInimigo.CASCO_FOGO)?new Color(255,150,60,a):new Color(120,220,255,a));graphics2D.drawRoundRect((int)x-3,(int)y-3,66,62,18,18);}
+        if((adaptado(ComandoInimigo.CASCO_FOGO)||adaptado(ComandoInimigo.CASCO_GELO))&&!SpritesExtras.casco(graphics2D,adaptado(ComandoInimigo.CASCO_FOGO),x+largura/2.0,y+30,tempoAnimacao)){int a=(int)(60+40*Math.sin(tempoAnimacao*5));graphics2D.setColor(adaptado(ComandoInimigo.CASCO_FOGO)?new Color(255,150,60,a):new Color(120,220,255,a));graphics2D.drawRoundRect((int)x-3,(int)y-3,66,62,18,18);}
         if(queimando>0){for(int f=0;f<5;f++){graphics2D.setColor(f%2==0?Color.ORANGE:Color.RED);int yy=(int)y+45-(int)((tempoAnimacao*35+f*9)%40);graphics2D.fillRect((int)x+8+f*9,yy,4,8);}}
         if(escudoCapturado>0){graphics2D.setColor(new Color(110,225,255,170));graphics2D.drawPolygon(new int[]{(int)x-5,(int)x+10,(int)x+55,(int)x+70,(int)x+55,(int)x+10},new int[]{(int)y+28,(int)y-5,(int)y-5,(int)y+28,(int)y+62,(int)y+62},6);}
         if (this.congelado > 0.0 && !enrolado) {
