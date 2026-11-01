@@ -39,6 +39,8 @@ public final class MiniChefe {
     private Color corAtaque() { String[] a = ataque(); return a == null ? null : new Color(Integer.parseInt(a[2]), Integer.parseInt(a[3]), Integer.parseInt(a[4])); }
     private boolean atiraProjetil() { String p = padrao(); return !p.startsWith("RAIO") && !p.equals("VARRE"); }
     private double emissao; private int naveYAlvo;
+    /** Altura da nave agora (a sentinela acompanha com o olho). */
+    private int olharY = 330;
     private TiroChefe proj(double x0, double y0, double ang, double vel, TiroChefe.Movimento m) {
         String[] a = ataque(); String e = a == null ? "ENERGIA" : a[1];
         int estilo = e.equals("NOTA") ? TiroChefe.NOTA : e.equals("PRATO") ? TiroChefe.PRATO : e.equals("ONDA") ? TiroChefe.ONDA_SOM : e.equals("AS") ? TiroChefe.AS_ESPADAS : TiroChefe.ENERGIA;
@@ -142,6 +144,7 @@ public final class MiniChefe {
     private MiniChefe(int n, String membro) { this.membro = true; this.invasor = false; this.setor = n; this.vida = this.vidaMaxima = 24 + n * 7; }
 
     public void atualizar(double d, int n) {
+        olharY = n + 20;
         if(comandante!=null){comandante.atualizar(d,n);return;}
         if(banda!=null){
             // ataque combinado: o emblema da banda acende atras dela e todos carregam e disparam juntos
@@ -305,7 +308,8 @@ public final class MiniChefe {
             int q = this.disparando ? 2 : this.carregando ? 1 : instrumento() == 'C' || Turne.quadroQueda(integrante) ? (vida < vidaMaxima * .35 ? 3 : 0) : (int) (this.tempo * 2.2) % 2 == 0 ? 0 : 3;
             AtlasInimigos.integrante(graphics2D2, AtlasInimigos.integrante(integrante), n, n2 + 5, q);
         } else if (AtlasInimigos.temSentinelaOlho()) {
-            AtlasInimigos.sentinelaOlho(graphics2D2, n, n2 - 11, this.disparando ? 2 : this.carregando ? 1 : vida < vidaMaxima * .35 ? 3 : 0);
+            // olho aberto encarando o piloto; pisca de vez em quando (quadro 0); ferido, a iris racha
+            AtlasInimigos.sentinelaOlho(graphics2D2, n, n2 - 11, this.disparando ? 2 : vida < vidaMaxima * .35 ? 3 : (this.tempo % 3.4) < .14 ? 0 : 1, olharY);
         } else AtlasInimigos.sentinela(graphics2D2, n, n2, n3);
         graphics2D2.setColor(new Color(255, 205, 115));
         graphics2D2.setFont(new Font("Monospaced", 1, 12));

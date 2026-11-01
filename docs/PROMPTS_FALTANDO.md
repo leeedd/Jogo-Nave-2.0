@@ -7,7 +7,7 @@ Regras:
 
 ---
 
-## 1. base_estacao_anim.png: base aliada animada (mapa e viagem)
+## 1. estacao_aliada_anim.png: base aliada animada (mapa e viagem)
 Anexe a imagem da estação que você já fez e cole:
 ```
 Usando a estação espacial da imagem anexada como referência, faça uma sprite sheet de animação em pixel art 16-bit estilo Super Nintendo, fundo PRETO puro e liso, mesma estação, mesmo ângulo, mesmo tamanho e mesma posição em todos os quadros.

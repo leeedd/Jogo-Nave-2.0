@@ -15,6 +15,12 @@ final class EstacaoAliada {
     private static final BufferedImage ARTE = ler("base_aliada.png"), INTERIOR = ler("base_interior.png"), LUZES = ler("base_doca_luzes.png");
     private static final double PARADA = 560, ESPERA = 14;
     static BufferedImage arte() { return ARTE; }
+    /** Estacao vista de cima, animada (estacao_aliada_anim.png, 4 quadros): luzes do anel, doca e antena. */
+    private static final BufferedImage ANIM = ler("estacao_aliada_anim.png");
+    private static final BufferedImage[] QUADROS = new BufferedImage[4];
+    static { if (ANIM != null) { int fw = ANIM.getWidth() / 4; for (int k = 0; k < 4; k++) QUADROS[k] = ANIM.getSubimage(k * fw, 0, fw, ANIM.getHeight()); } }
+    /** Quadro da animacao no instante t (ou a arte antiga, se faltar a animada). */
+    static BufferedImage quadro(double t) { return ANIM == null ? ARTE : QUADROS[(int) (t * 3.5) % 4]; }
     private double x = 1000, y = 200, tempo, parada;
     private boolean saindo;
 

@@ -35,8 +35,8 @@ final class ViagemBase {
         BufferedImage estrela = MapaEstelar.estrela(setor);
         if (estrela != null) { int s = 220; g.drawImage(estrela, W - s - 40, 40, s, s, null); }
         if (ida) {
-            BufferedImage est = EstacaoAliada.arte();
-            double z = .25 + p * p * 1.6; // cresce ate encher a tela
+            BufferedImage est = EstacaoAliada.quadro(t);
+            double z = (est != null && est.getWidth() > 300 ? .12 : .25) + p * p * (est != null && est.getWidth() > 300 ? .9 : 1.6); // cresce ate encher a tela
             if (est != null) { int w = (int) (est.getWidth() * z), h = (int) (est.getHeight() * z); g.drawImage(est, W / 2 - w / 2, H / 2 - h / 2, w, h, null); }
             titulo(g, "BASE ALIADA DO SISTEMA " + MapaEstelar.NOMES[Math.max(0, Math.min(7, setor))], "DESCANSO, REPARO, MERCADO E MISSOES", W);
         } else {

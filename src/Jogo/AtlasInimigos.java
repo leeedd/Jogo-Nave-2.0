@@ -103,6 +103,40 @@ public final class AtlasInimigos {
         a.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         a.drawImage(arte, x0, y0, x0 + w, y0 + h, quadro * fw, 0, quadro * fw + fw, arte.getHeight(), null); a.dispose();
     }
+    /** Iris da sentinela (sentinela_iris.png: normal e rachada): o miolo vermelho entra no olho e acompanha o piloto. */
+    private static final BufferedImage[] IRIS = new BufferedImage[2];
+    static {
+        BufferedImage t = imagemOpcional("sentinela_iris.png");
+        if (t != null) {
+            int fw = t.getWidth() / 2; double cx = 408.0 / 810 * fw, cy = 410.0 / 803 * t.getHeight(), r = 212.0 / 810 * fw;
+            for (int k = 0; k < 2; k++) {
+                int d = (int) (r * 2); BufferedImage disco = new BufferedImage(d, d, BufferedImage.TYPE_INT_ARGB);
+                for (int y = 0; y < d; y++) for (int x = 0; x < d; x++) {
+                    double dx = x - r, dy = y - r; if (dx * dx + dy * dy > r * r) continue;
+                    int sx = (int) (k * fw + cx - r + x), sy = (int) (cy - r + y);
+                    if (sx >= 0 && sy >= 0 && sx < t.getWidth() && sy < t.getHeight()) disco.setRGB(x, y, t.getRGB(sx, sy) | 0xFF000000);
+                }
+                IRIS[k] = disco;
+            }
+        }
+    }
+    /** Centro e raio do olho em cada quadro da sentinela_olho.png (pixels do quadro 320x280); quadro 1 aberto, 3 ferido. */
+    private static final double[][] OLHO_POS = {null, {155, 157, 32}, null, {168, 162, 29}};
+    /** Sentinela olhando para o piloto: a iris desliza dentro do olho na direcao da nave. */
+    static void sentinelaOlho(Graphics2D g, int x, int y, int quadro, int alvoY) {
+        sentinelaOlho(g, x, y, quadro);
+        if (IRIS[0] == null || OLHO == null || OLHO_POS[quadro] == null) return;
+        double e = 175.0 / OLHO.getHeight(), fw = OLHO.getWidth() / 4.0;
+        double ex = x - fw * e / 2 + OLHO_POS[quadro][0] * e, ey = y - 87.5 + OLHO_POS[quadro][1] * e, r = OLHO_POS[quadro][2] * e;
+        double oy = Math.max(-1, Math.min(1, (alvoY - ey) / 180.0)) * r * .28, ox = -r * .22; // o piloto vem sempre da esquerda
+        Graphics2D a = (Graphics2D) g.create();
+        a.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        a.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+        a.clip(new java.awt.geom.Ellipse2D.Double(ex - r, ey - r, r * 2, r * 2));
+        int d = (int) (r * 2.3);
+        a.drawImage(IRIS[quadro == 3 ? 1 : 0], (int) (ex + ox - d / 2.0), (int) (ey + oy - d / 2.0), d, d, null);
+        a.dispose();
+    }
     static void sentinelaOlho(Graphics2D g, int x, int y, int quadro) {
         int fw = OLHO.getWidth() / 4, h = 175, w = fw * h / OLHO.getHeight();
         Graphics2D a = (Graphics2D) g.create();

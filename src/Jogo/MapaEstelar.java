@@ -241,8 +241,8 @@ final class MapaEstelar {
    int t=(int)(Math.max(22,r*5)*(1+.05*Math.sin(tempo*2+i)));
    Graphics2D e=(Graphics2D)g.create();e.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);e.drawImage(ESTRELAS[i],x-t/2,y-t/2,t,t,null);
    // o sol e o ponto de referencia da cartografia; a base aliada do sistema orbita perto dele
-   if(zoom>1.2){BufferedImage base=EstacaoAliada.arte();double ab=-orbita*.3+i+2.2,rb=6.7*zoom;
-    if(base!=null){int bw=(int)Math.max(14,3.6*zoom),bh=bw*base.getHeight()/base.getWidth(),bx=(int)(x+Math.cos(ab)*rb),by=(int)(y+Math.sin(ab)*rb*.78);e.drawImage(base,bx-bw/2,by-bh/2,bw,bh,null);
+   if(zoom>1.2){BufferedImage base=EstacaoAliada.quadro(tempo+i);double ab=-orbita*.3+i+2.2,rb=6.7*zoom;
+    if(base!=null){int bw=(int)Math.max(18,3.4*zoom),bh=bw*base.getHeight()/base.getWidth(),bx=(int)(x+Math.cos(ab)*rb),by=(int)(y+Math.sin(ab)*rb*.78);e.drawImage(base,bx-bw/2,by-bh/2,bw,bh,null);
      if(zoom>4)texto(e,"BASE ALIADA",bx+bw/2+3,by+3,9,new Color(130,255,160));}
     if(zoom>3)texto(e,"SOL DE "+NOMES[i],x-30,y+t/2+12,10,CORES[i]);}
    e.dispose();
