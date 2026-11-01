@@ -43,7 +43,9 @@ final class CenaPouso {
     /** Show escolhido (indice de Fase.BANDAS) ou -1 enquanto o jogador ainda esta escolhendo. */
     private int banda = -1, cursor = CamisaShow.SLAYER;
     private double tEscolha;
-    private BufferedImage flavio = FLAVIO, fasLonge, fasPerto;
+    private BufferedImage flavio = FLAVIO, fasFundo, fasLonge, fasMeio, fasPerto;
+    /** Onde o piloto fica no meio da galera. */
+    private static final int PILOTO_X = 600;
 
     /** Palcos abertos: bit por banda (1 a 7), ganho com o passe de cada uma. A Lula e chefe generico, nao tem show. */
     private final int abertos;
@@ -77,7 +79,7 @@ final class CenaPouso {
         // no festival completo a camisa e a da Lula, onde a jornada comecou
         if (FLAVIO != null) flavio = banda == COMUM || banda == FESTIVAL ? FLAVIO : estampar(FLAVIO, CamisaShow.emblema(banda));
         if (banda != COMUM) MusicaJogo.tocarShow(banda);
-        if (WENGER != null) { fasLonge = escurecer(WENGER, .45f); fasPerto = escurecer(WENGER, .7f); }
+        if (WENGER != null) { fasFundo = escurecer(WENGER, .3f); fasLonge = escurecer(WENGER, .45f); fasMeio = escurecer(WENGER, .6f); fasPerto = escurecer(WENGER, .7f); }
     }
     void confirmar() { if (!aberto(cursor)) { avisoFechado = 1.6; SomJogo.tocar(SomJogo.Efeito.ERRO); return; } escolher(cursor); }
     void atualizar(double dt) { if (banda < 0) { tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt)); return; } t = Math.min(DURACAO, t + Math.max(0, dt)); }
@@ -96,20 +98,24 @@ final class CenaPouso {
         telao(g, W, H);
         luzes(g, W);
         fogos(g);
-        // fas la no fundo, colados na grade do palco, balancando
-        if (fasLonge != null) for (int i = 0; i < 16; i++) {
-            double bal = Math.abs(Math.sin(t * 3.2 + i * 1.3)) * 4;
-            sprite(g, fasLonge, 8, 4 + (i * 3) % 4, 40 + i * 60 + (i % 2) * 18, (int) (488 - bal), .2, i % 3 == 0);
+        // festival lotado: fileiras de fas em profundidade (as de tras menores e mais escuras)
+        if (fasLonge != null) {
+            fila(g, fasFundo, 462, .14, 0, 30, 1, -1);
+            fila(g, fasFundo, 472, .17, 12, 36, 2, -1);
+            fila(g, fasLonge, 482, .2, 0, 42, 3, -1);
+            fila(g, fasLonge, 492, .24, 20, 50, 4, -1);
         }
         nave(g);
         flavioEWenger(g);
+        // fileira logo a frente do piloto: cobre as pernas dele quando ele entra na galera (com um vao onde ele esta)
+        if (fasMeio != null) { fila(g, fasMeio, 512, .29, 450, 62, 5, t > 12 ? PILOTO_X : -1); fila(g, fasMeio, 538, .34, 680, 74, 6, t > 12 ? PILOTO_X : -1); }
         // a galera da frente chega no fim, quando o show pega fogo
         if (fasPerto != null && t > 16) {
             double sob = suave((t - 16) / 1.2);
             for (int i = 0; i < 7; i++) {
                 double bal = Math.abs(Math.sin(t * 4 + i * 2.1)) * 8;
-                if (i == 3) continue; // vao no meio da galera: e ali que o piloto esta
-                sprite(g, fasPerto, 8, 4 + (i * 5) % 4, 40 + i * 140, (int) (H + 200 - sob * 110 - bal), .42, i % 2 == 1);
+                int fx = 40 + i * 140; if (Math.abs(fx - PILOTO_X) < 80) continue; // vao no meio da galera: e ali que o piloto esta
+                sprite(g, fasPerto, 8, 4 + (i * 5) % 4, fx, (int) (H + 200 - sob * 110 - bal), .42, i % 2 == 1);
             }
         }
         if (t < .6) cobrir(g, 1 - t / .6);
@@ -190,14 +196,24 @@ final class CenaPouso {
         else if (t < 9.8) { q = 5; x = 530; pe = CHAO; }                                 // tira o macacao
         else if (t < 10.6) { q = 6; x = 530; pe = CHAO; }                                // a camisa da banda
         else if (t < 12) { q = 7; x = 530; pe = CHAO; }                                  // chifrinho
-        else if (t < 14.6) { double c = suave((t - 12) / 2.6); q = 8 + (int) (t / .14) % 2; x = 530 - c * 90; pe = CHAO - c * 78; s = .6 - c * .24; } // corre
-        else if (t < 16) { q = 10; x = 440; pe = CHAO - 78; s = .36; }                   // chega na galera
-        else { q = (int) ((t - 16) / .45) % 3 == 2 ? 11 : 10; x = 440; pe = CHAO - 78 - (q == 11 ? 10 : 0); s = .36; } // pula com a galera
+        else if (t < 14.6) { double c = suave((t - 12) / 2.6); q = 8 + (int) (t / .14) % 2; x = 530 + c * (PILOTO_X - 530); pe = CHAO - c * 70; s = .6 - c * .3; } // corre para o meio da galera
+        else if (t < 16) { q = 10; x = PILOTO_X; pe = CHAO - 70; s = .3; }               // chega na galera
+        else { q = (int) ((t - 16) / .45) % 3 == 2 ? 11 : 10; x = PILOTO_X; pe = CHAO - 70 - (q == 11 ? 10 : 0); s = .3; } // pula com a galera
         // o macacao fica jogado no chao depois que ele tira
         if (t >= 9.8) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(500, CHAO - 10, 60, 12, 6, 6); g.setColor(new Color(160, 70, 20)); g.fillRect(508, CHAO - 6, 44, 3); }
         sprite(g, flavio, 12, q, (int) x, (int) pe, s, false);
     }
 
+    /** Uma fileira de fas de costas, de x0 ate a borda, cada um pulando no seu tempo; vao em volta de 'vao' (ou -1). */
+    private void fila(Graphics2D g, BufferedImage img, int pe, double esc, int x0, int passo, int semente, int vao) {
+        java.util.Random r = new java.util.Random(semente);
+        for (int x = x0; x < Config.LARGURA + passo; x += passo) {
+            int fx = x + r.nextInt(passo / 3 + 1) - passo / 6, q = 4 + r.nextInt(4); boolean esp = r.nextBoolean(); double fase = r.nextDouble() * 6;
+            if (vao >= 0 && Math.abs(fx - vao) < passo * .9) continue;
+            double pulo = Math.max(0, Math.sin(t * (3.4 + semente * .2) + fase)) * 9 * esc / .2;
+            sprite(g, img, 8, q, fx, (int) (pe - pulo), esc, esp);
+        }
+    }
     /** Desenha o quadro q de uma tira de n quadros com o pe em (cx, pe). */
     private static void sprite(Graphics2D g, BufferedImage tira, int n, int q, int cx, int pe, double s, boolean espelhar) {
         int fw = tira.getWidth() / n, fh = tira.getHeight(), w = (int) (fw * s), h = (int) (fh * s);
