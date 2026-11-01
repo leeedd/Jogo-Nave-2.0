@@ -2640,7 +2640,7 @@ implements ActionListener {
             }
 
             if(!emJogo){
-                if(venceu&&!mostrarPlacarFinal){if(keyEvent.getKeyCode()==KeyEvent.VK_ENTER&&cenaFinal!=null&&cenaFinal.emPouso()){cenaFinal.pularPouso();return;}if(keyEvent.getKeyCode()==KeyEvent.VK_ENTER && cenaFinal!=null&&cenaFinal.podeEncerrar())mostrarPlacarFinal=true;return;}
+                if(venceu&&!mostrarPlacarFinal){if(cenaFinal!=null&&cenaFinal.escolhendoShow()){int kc=keyEvent.getKeyCode();if(kc==KeyEvent.VK_LEFT||kc==KeyEvent.VK_A)cenaFinal.moverShow(-1);else if(kc==KeyEvent.VK_RIGHT||kc==KeyEvent.VK_D)cenaFinal.moverShow(1);else if(kc==KeyEvent.VK_UP||kc==KeyEvent.VK_W||kc==KeyEvent.VK_DOWN||kc==KeyEvent.VK_S)cenaFinal.moverShowLinha(1);else if(kc==KeyEvent.VK_ENTER||kc==KeyEvent.VK_SPACE)cenaFinal.pularPouso();return;}if(keyEvent.getKeyCode()==KeyEvent.VK_ENTER&&cenaFinal!=null&&cenaFinal.emPouso()){cenaFinal.pularPouso();return;}if(keyEvent.getKeyCode()==KeyEvent.VK_ENTER && cenaFinal!=null&&cenaFinal.podeEncerrar())mostrarPlacarFinal=true;return;}
                 if(!venceu&&cenaNave!=null&&!cenaNave.terminou())return;
                 int k=keyEvent.getKeyCode();
                 if(k==KeyEvent.VK_TAB&&retomada!=null&&!partidaTeste){voltarParaBase();return;}

@@ -72,10 +72,16 @@ public final class CenaFinal {
 
     /** Prologo: a nave pousa no festival e o piloto entra na multidao (CenaPouso), depois os creditos. */
     private final CenaPouso pouso;
-    public CenaFinal(){this(0);}
+    /** Sem escolha de show (testes e previas): vai direto ao palco do Slayer. */
+    public CenaFinal(){this(0);pouso.escolher(CamisaShow.SLAYER);}
     public CenaFinal(int modelo){SomJogo.tocar(SomJogo.Efeito.VITORIA);pouso=new CenaPouso(modelo);}
     boolean emPouso(){return !pouso.terminou();}
     void pularPouso(){pouso.pular();}
+    boolean escolhendoShow(){return pouso.escolhendo();}
+    void moverShow(int d){pouso.mover(d);}
+    void moverShowLinha(int d){pouso.moverLinha(d);}
+    void escolherShow(int b){pouso.escolher(b);}
+    int bandaShow(){return pouso.banda();}
     public void atualizar(double dt) {
         if (!pouso.terminou()) { pouso.atualizar(dt); return; }
         double antes = tempo;

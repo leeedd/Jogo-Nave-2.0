@@ -33,15 +33,36 @@ final class CenaPouso {
     private final int modelo;
     private double t;
 
-    CenaPouso(int modelo) { this.modelo = modelo; }
-    void atualizar(double dt) { t = Math.min(DURACAO, t + Math.max(0, dt)); }
+    /** Show escolhido (indice de Fase.BANDAS) ou -1 enquanto o jogador ainda esta escolhendo. */
+    private int banda = -1, cursor = CamisaShow.SLAYER;
+    private double tEscolha;
+    /** Tiras desta partida, ja com a camisa e o palco do show escolhido. */
+    private final Image[] tiras = TIRAS.clone();
+
+    CenaPouso(int modelo) { this.modelo = modelo; if (TIRAS.length == 0) banda = CamisaShow.SLAYER; }
+    boolean escolhendo() { return banda < 0; }
+    int banda() { return banda; }
+    void mover(int d) { if (banda < 0) { int n = Fase.BANDAS.length; cursor = ((cursor + d) % n + n) % n; SomJogo.tocar(SomJogo.Efeito.INTERDICAO); } }
+    void moverLinha(int d) { if (banda < 0) mover(d * 4); }
+    /** Fecha a escolha: a camisa do Flavio e o palco do festival passam a ser dessa banda. */
+    void escolher(int b) {
+        if (banda >= 0) return;
+        banda = Math.max(0, Math.min(Fase.BANDAS.length - 1, b));
+        for (int i = 0; i < TIRAS.length; i++) {
+            int linha = TIRAS[i] == DESCE ? 0 : TIRAS[i] == MULTIDAO ? 1 : -1;
+            if (linha >= 0) tiras[i] = CamisaShow.ajustar(TIRAS[i], linha, banda);
+        }
+    }
+    void confirmar() { escolher(cursor); }
+    void atualizar(double dt) { if (banda < 0) { tEscolha += Math.max(0, dt); return; } t = Math.min(DURACAO, t + Math.max(0, dt)); }
     boolean terminou() { return t >= DURACAO; }
-    void pular() { t = DURACAO; }
+    void pular() { if (banda < 0) confirmar(); else t = DURACAO; }
 
     private static final int CHAO = 470;
     private static double suave(double x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
 
     void desenhar(Graphics2D base) {
+        if (banda < 0) { desenharEscolha(base); return; }
         if (t < ABERTURA || SO_QUADROS) { abertura(base); return; }
         double tReal = t; t = t - ABERTURA + PULO;
         try { desenharCena(base); } finally { t = tReal; }
@@ -59,7 +80,37 @@ final class CenaPouso {
         if (t < .4) { g.setComposite(AlphaComposite.SrcOver.derive((float) (1 - t / .4))); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); }
         g.dispose();
     }
-    private static final Image MULTIDAO = opcional("final_flavio_multidao.png");
+    private static final Image MULTIDAO = opcional("final_flavio_multidao.png"), DESCE = opcional("final_flavio_desce.png");
+    /** Antes do pouso: o jogador escolhe qual palco do festival vai ver. */
+    private void desenharEscolha(Graphics2D base) {
+        Graphics2D g = (Graphics2D) base.create();
+        int W = Config.LARGURA, H = Config.ALTURA;
+        g.setColor(new Color(10, 6, 16)); g.fillRect(0, 0, W, H);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30)); g.setColor(new Color(250, 225, 140));
+        String titulo = "QUAL SHOW VOCE VAI VER?"; g.drawString(titulo, (W - g.getFontMetrics().stringWidth(titulo)) / 2, 70);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14)); g.setColor(new Color(190, 170, 200));
+        String sub = "O FESTIVAL TEM 8 PALCOS. A CAMISA VAI SER DA BANDA ESCOLHIDA."; g.drawString(sub, (W - g.getFontMetrics().stringWidth(sub)) / 2, 98);
+        for (int i = 0; i < Fase.BANDAS.length; i++) {
+            int cx = 135 + (i % 4) * 230, cy = 210 + (i / 4) * 200; boolean sel = i == cursor;
+            double pulso = sel ? 1 + .05 * Math.sin(tEscolha * 6) : .82;
+            if (sel) { g.setColor(new Color(200, 40, 40)); g.fillRect(cx - 100, cy - 85, 200, 175); g.setColor(new Color(20, 10, 16)); g.fillRect(cx - 96, cy - 81, 192, 167); }
+            Image e = CamisaShow.emblema(i);
+            if (e != null) {
+                double s = Math.min(170.0 / e.getWidth(null), 125.0 / e.getHeight(null)) * pulso;
+                int ew = (int) (e.getWidth(null) * s), eh = (int) (e.getHeight(null) * s);
+                Graphics2D q = (Graphics2D) g.create(); if (!sel) q.setComposite(AlphaComposite.SrcOver.derive(.55f));
+                q.drawImage(e, cx - ew / 2, cy - 10 - eh / 2, ew, eh, null); q.dispose();
+            }
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, sel ? 15 : 13)); g.setColor(sel ? Color.WHITE : new Color(150, 130, 150));
+            String n = Fase.BANDAS[i]; g.drawString(n, cx - g.getFontMetrics().stringWidth(n) / 2, cy + 75);
+        }
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14)); g.setColor(new Color(250, 225, 140));
+        String dica = "SETAS: ESCOLHER    ENTER: IR PARA O SHOW"; g.drawString(dica, (W - g.getFontMetrics().stringWidth(dica)) / 2, H - 30);
+        if (tEscolha < .4) { g.setComposite(AlphaComposite.SrcOver.derive((float) (1 - tEscolha / .4))); g.setColor(Color.BLACK); g.fillRect(0, 0, W, H); }
+        g.dispose();
+    }
     /** Plaquinha de nome em pixel: caixa preta com borda vermelha e setinha para baixo. */
     private static void etiqueta(Graphics2D g, String nome, int cx, int y, float a) {
         Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));
@@ -70,7 +121,7 @@ final class CenaPouso {
         q.setColor(new Color(250, 235, 200)); q.drawString(nome, x + 8, y + 18); q.dispose();
     }
     private void painel(Graphics2D g, int k, float a, double dt) {
-        Image tira = TIRAS[k / 4]; k %= 4;
+        Image tira = tiras[k / 4]; k %= 4;
         int fw = tira.getWidth(null) / 4, fh = tira.getHeight(null); double z = 1 + .06 * dt / PAINEL;
         int w = (int) (Config.LARGURA * z), h = (int) (Config.LARGURA * fh / (double) fw * z), x = (Config.LARGURA - w) / 2, y = (Config.ALTURA - h) / 2;
         Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));
