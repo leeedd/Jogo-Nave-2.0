@@ -1511,7 +1511,7 @@ implements ActionListener {
         if(trofeuPendente!=0)return;
         if(chefesDerrotados==TOTAL_SETORES&&!hellraiserVencido){iniciarHellraiser();return;}
         if(chefesDerrotados==TOTAL_SETORES&&!reuniaoVencida){iniciarReuniao(0);return;}
-        if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual, ProgressoJogo.passesFestival());MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
+        if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual, ProgressoJogo.passesFestival());cenaFinal.nivelNave(nave.getNivel());MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
         this.itens.clear(); capsulas.clear();
         this.tempoAviso = 0.0;
         // Ordem livre: o jogador escolhe no Mapa Estelar o proximo setor ainda nao vencido.
@@ -1874,7 +1874,7 @@ implements ActionListener {
         if (reuniao) {
             // banda reunida derrotada: proxima banda da fortaleza, ou o final
             bandaReuniao++;
-            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; emJogo = false; venceu = true; etapa = Etapa.CREDITOS; cenaFinal = new CenaFinal(modeloVisual, ProgressoJogo.passesFestival()); MusicaJogo.trocarSeDisponivel("GoGoPowerRangers"); return; }
+            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; emJogo = false; venceu = true; etapa = Etapa.CREDITOS; cenaFinal = new CenaFinal(modeloVisual, ProgressoJogo.passesFestival()); cenaFinal.nivelNave(nave.getNivel()); MusicaJogo.trocarSeDisponivel("GoGoPowerRangers"); return; }
             esperaReuniao = 4; mostrarAviso(BANDAS[bandaReuniao - 1] + " DERROTADA! PROXIMA: " + BANDAS[bandaReuniao]);
         } else if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
             // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta

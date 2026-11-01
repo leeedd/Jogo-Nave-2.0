@@ -77,6 +77,7 @@ public final class CenaFinal {
     public CenaFinal(int modelo,int reliquias){SomJogo.tocar(SomJogo.Efeito.VITORIA);pouso=new CenaPouso(modelo,reliquias);}
     boolean emPouso(){return !pouso.terminou();}
     void pularPouso(){pouso.pular();}
+    void nivelNave(int n){pouso.nivelNave(n);}
     boolean escolhendoShow(){return pouso.escolhendo();}
     void moverShow(int d){pouso.mover(d);}
     void moverShowLinha(int d){pouso.moverLinha(d);}

@@ -35,7 +35,7 @@ final class CenaPouso {
     /** Telao preto do palco (fracoes da arte do palco), onde acende o emblema da banda. */
     private static final double TELAO_X0 = 568 / 1586.0, TELAO_Y0 = 348 / 992.0, TELAO_X1 = 1018 / 1586.0, TELAO_Y1 = 558 / 992.0;
     private static final double[][] ESTAMPA = TEM_PILOTO ? ESTAMPA_PILOTO : ESTAMPA_FLAVIO;
-    static final double DURACAO = 24;
+    static final double DURACAO = 33;
     private static final int CHAO = 572;
 
     private final int modelo;
@@ -95,7 +95,10 @@ final class CenaPouso {
         Graphics2D c = tela.createGraphics(); c.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         c.setColor(Color.BLACK); c.fillRect(0, 0, Config.LARGURA, Config.ALTURA); return c;
     }
-    private static final double P2 = 5.6, P3 = 11.6, P4 = 17.2;
+    /** Tomadas da cutscene (inicio de cada uma); cada corte entra como um quadro novo deslizando sobre o gibi. */
+    private static final double[] TOMADA = {0, 5.6, 10.2, 14.8, 22.0, 24.8};
+    private int nivelNave = 6;
+    void nivelNave(int n) { nivelNave = Math.max(0, n); }
 
     void desenhar(Graphics2D base) {
         if (banda < 0) { desenharEscolha(base); return; }
@@ -105,53 +108,124 @@ final class CenaPouso {
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         papel(g, W, H);
+        int i = 0; while (i + 1 < TOMADA.length && tReal >= TOMADA[i + 1]) i++;
+        double tl = tReal - TOMADA[i], entra = Math.min(1, tl / .45);
         try {
-            if (tReal < P2) {
-                // pagina 1: saida da dobra e o festival visto de cima
-                Graphics2D c = telaG(); cenaDobra(c, tReal); c.dispose();
-                painel(g, 24, 22, 912, 268, 0, 0, 960, 600, tReal, 0, -.008);
-                legenda(g, 40, 38, "SISTEMA DO FESTIVAL. A TURNE ACABOU... O SHOW NAO.");
-                if (tReal > 1.1 && tReal < 2.6) sfx(g, "VWOOOOM!", 700, 220, 64, new Color(120, 220, 255), -.12, tReal - 1.1);
-                if (tReal > 2.2) {
-                    c = telaG(); cenaAerea(c, tReal - 2.2); c.dispose();
-                    painel(g, 24, 306, 912, 272, 0, 0, 960, 600, tReal, 2.2, .006);
-                    legenda(g, 40, 322, "LA EMBAIXO: 100 MIL HEADBANGERS.");
-                }
-            } else if (tReal < P3) {
-                // pagina 2: o pouso e o piloto descendo
-                double tl = tReal - P2;
-                Graphics2D c = telaG(); t = Math.min(4.6, tl); quadroPouso(c); c.dispose();
-                painel(g, 24, 22, 560, 556, 20, 180, 560, 600, tReal, P2, -.006);
-                legenda(g, 40, 38, "POUSO AUTORIZADO.");
-                if (tl > 2.6 && tl < 4.4) sfx(g, "FSSSHHH!", 330, 520, 48, new Color(255, 200, 90), .1, tl - 2.6);
-                if (tl > 2.8) {
-                    c = telaG(); t = Math.min(9.39, 4.4 + (tl - 2.8) * 1.75); quadroPouso(c); c.dispose();
-                    painel(g, 600, 60, 336, 518, 300, 260, 520, 600, tReal, P2 + 2.8, .012);
-                    legenda(g, 612, 76, "HORA DE TIRAR O MACACAO.");
-                }
-            } else if (tReal < P4) {
-                // pagina 3: corre, mergulha e a galera carrega ele
-                double tl = tReal - P3;
-                Graphics2D c = telaG(); cenaShow(c, Math.min(2.7, tl), 0); c.dispose();
-                painel(g, 24, 22, 912, 268, 0, 150, 960, 500, tReal, P3, .007);
-                if (tl > 1.1 && tl < 2.8) sfx(g, "STAGE DIVE!!", 560, 120, 58, new Color(255, 90, 70), -.14, tl - 1.1);
-                if (tl > 2.4) {
-                    c = telaG(); cenaShow(c, tl - 2.4, 1); c.dispose();
-                    painel(g, 24, 306, 912, 272, 0, 230, 960, 560, tReal, P3 + 2.4, -.006);
-                    legenda(g, 40, 322, "E A GALERA SEGUROU O CACADOR NOS OMBROS.");
-                    if (((int) ((tl - 2.4) * 1.1)) % 2 == 0) sfx(g, "HEY! HEY! HEY!", 640, 560, 34, new Color(255, 230, 120), .06, (tl - 2.4) % 1.8);
-                }
-            } else {
-                // pagina 4: pagina inteira, o show; ele la no meio, sendo carregado
-                double tl = tReal - P4;
-                Graphics2D c = telaG(); cenaShow(c, tl, 2); c.dispose();
-                painel(g, 24, 22, 912, 556, 0, 0, 960, 600, tReal, P4, 0);
-                if (tl > .8) legenda(g, 40, 38, "...E FOI ASSIM QUE O CACADOR VIU O SHOW.");
-            }
+            // o quadro anterior fica parado embaixo enquanto o novo desliza por cima
+            if (i > 0 && entra < 1) { tomada(g, i - 1, TOMADA[i] - TOMADA[i - 1] - .01, 0, -.004); }
+            tomada(g, i, tl, (1 - suave(entra)) * (W + 40), i % 2 == 0 ? -.004 : .004);
         } finally { t = tReal; }
-        if (t < .5) cobrir(g, 1 - t / .5);
-        if (t > DURACAO - 1) cobrir(g, t - (DURACAO - 1));
+        if (tReal < .5) cobrir(g, 1 - tReal / .5);
+        if (tReal > DURACAO - 1) cobrir(g, tReal - (DURACAO - 1));
         g.dispose();
+    }
+
+    /** Desenha a tomada i no instante tl, como um quadro de gibi em tela cheia (deslocado em dx). */
+    private void tomada(Graphics2D g, int i, double tl, double dx, double giro) {
+        Graphics2D c = telaG();
+        switch (i) {
+            case 0: cenaCabine(c, tl); break;
+            case 1: cenaSobrevoo(c, tl); break;
+            case 2: t = Math.min(4.6, tl); quadroPouso(c); break;
+            case 3: t = Math.min(11.6, 4.4 + tl); quadroPouso(c); break;
+            case 4: cenaShow(c, tl, 0); break;
+            default: cenaShow(c, tl, 1);
+        }
+        c.dispose();
+        Graphics2D q = (Graphics2D) g.create(); q.translate(dx, 0);
+        painel(q, 16, 14, Config.LARGURA - 32, Config.ALTURA - 28, 0, 0, Config.LARGURA, Config.ALTURA, 99, 0, giro);
+        switch (i) {
+            case 0:
+                legenda(q, 34, 30, "SAINDO DA DOBRA. O FESTIVAL ESTA LOGO ALI.");
+                if (tl > 2.0 && tl < 3.6) sfx(q, "VWOOOOM!", 330, 200, 70, new Color(120, 220, 255), -.12, tl - 2.0);
+                break;
+            case 1:
+                legenda(q, 34, 30, "100 MIL HEADBANGERS. E UM CACADOR CHEGANDO.");
+                if (tl > .8 && tl < 2.8) sfx(q, "VRRRROOOM!", 480, 140, 64, new Color(255, 170, 60), .08, tl - .8);
+                break;
+            case 2:
+                legenda(q, 34, 30, "POUSO AUTORIZADO.");
+                if (tl > 2.6 && tl < 4.4) sfx(q, "FSSSHHH!", 250, 470, 50, new Color(255, 200, 90), .1, tl - 2.6);
+                break;
+            case 3:
+                if (tl > 1.8 && tl < 4.8) legenda(q, 34, 30, "HORA DE TIRAR O MACACAO.");
+                break;
+            case 4:
+                if (tl > 1.0) sfx(q, "STAGE DIVE!!", 540, 150, 64, new Color(255, 90, 70), -.14, tl - 1.0);
+                break;
+            default:
+                legenda(q, 34, 30, "E A GALERA LEVOU O CACADOR NOS OMBROS.");
+                if ((int) (tl * 1.1) % 2 == 0) sfx(q, "HEY! HEY! HEY!", 700, 520, 38, new Color(255, 230, 120), .06, tl % 1.8);
+                if (tl > 3.5) legenda(q, 34, 528, "...E FOI ASSIM QUE O CACADOR ZEROU A TURNE.");
+        }
+        q.dispose();
+    }
+
+    /** Arte da cabine por cima do ombro (cabine_wenger.png); o para-brisa preto vira janela pro espaco. */
+    private static final BufferedImage CABINE = janela(ler("cabine_wenger.png"));
+    private static BufferedImage janela(BufferedImage a) {
+        if (a == null) return null;
+        int w = a.getWidth(), h = a.getHeight(); boolean[] v = new boolean[w * h]; java.util.ArrayDeque<int[]> f = new java.util.ArrayDeque<>();
+        int[] semente = {w / 2, h / 4}; f.add(semente); v[semente[1] * w + semente[0]] = true;
+        while (!f.isEmpty()) { int[] p = f.poll(); int x = p[0], y = p[1], c = a.getRGB(x, y); if (Math.max(c >> 16 & 255, Math.max(c >> 8 & 255, c & 255)) > 22) continue; a.setRGB(x, y, 0);
+            int[][] viz = {{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}}; for (int[] n : viz) if (n[0] >= 0 && n[1] >= 0 && n[0] < w && n[1] < h && !v[n[1] * w + n[0]]) { v[n[1] * w + n[0]] = true; f.add(n); } }
+        return a;
+    }
+
+    /** Tomada 1: dentro da cabine, por cima do ombro do Wenger, saindo da dobra espacial. */
+    private void cenaCabine(Graphics2D g, double tl) {
+        int W = Config.LARGURA, H = Config.ALTURA, cx = W / 2, cy = 220;
+        double treme = tl < 2.2 ? (Math.sin(tl * 60) * 3) : 0;
+        Graphics2D v = (Graphics2D) g.create(); v.translate(treme, treme * .6);
+        // o espaco la fora: tunel de dobra, clarao e depois as estrelas com o sol do festival ao longe
+        v.setColor(Color.BLACK); v.fillRect(-10, -10, W + 20, H + 20);
+        java.util.Random r = new java.util.Random(5);
+        double vel = tl < 2.2 ? 1 : Math.max(0, 1 - (tl - 2.2) * 2);
+        for (int k = 0; k < 320; k++) {
+            double an = r.nextDouble() * Math.PI * 2, d0 = (r.nextDouble() * 700 + tl * 1100 * (.15 + vel)) % 720, len = 2 + vel * 110;
+            int c = 140 + r.nextInt(110); v.setColor(vel > .2 ? new Color(c / 2, c * 3 / 4, c) : new Color(c, c, c));
+            v.setStroke(new java.awt.BasicStroke(1 + (float) vel * 2));
+            v.drawLine(cx + (int) (Math.cos(an) * d0), cy + (int) (Math.sin(an) * d0 * .7), cx + (int) (Math.cos(an) * (d0 + len)), cy + (int) (Math.sin(an) * (d0 + len) * .7));
+        }
+        if (tl > 2.0) { double sol = Math.min(1, (tl - 2.0) / 1.5); v.setColor(new Color(255, 120, 200, (int) (90 * sol))); v.fillOval(cx - 60, cy - 40, 120, 80); v.setColor(new Color(255, 230, 240, (int) (230 * sol))); v.fillOval(cx - 10, cy - 8, 20, 16); }
+        if (tl > 1.9 && tl < 2.6) { v.setColor(new Color(225, 240, 255, (int) (255 * Math.max(0, 1 - Math.abs(tl - 2.2) / .35)))); v.fillRect(-10, -10, W + 20, H + 20); }
+        if (CABINE != null) v.drawImage(CABINE, 0, 0, W, H, null);
+        else cabineCodigo(v, tl);
+        v.dispose();
+    }
+    /** Cabine provisoria (ate chegar a arte): montantes do vidro, painel aceso e o Wenger de costas, de macacao. */
+    private void cabineCodigo(Graphics2D g, double tl) {
+        int W = Config.LARGURA, H = Config.ALTURA;
+        g.setColor(new Color(22, 22, 30));
+        g.fillPolygon(new int[]{0, 260, 150, 0}, new int[]{0, 0, 600, 600}, 4); g.fillPolygon(new int[]{W, W - 260, W - 150, W}, new int[]{0, 0, 600, 600}, 4);
+        g.fillRect(0, 0, W, 28);
+        g.setColor(new Color(50, 50, 64)); g.setStroke(new java.awt.BasicStroke(6)); g.drawLine(260, 0, 150, 600); g.drawLine(W - 260, 0, W - 150, 600);
+        // painel
+        g.setColor(new Color(30, 30, 40)); g.fillPolygon(new int[]{0, W, W, 0}, new int[]{410, 380, H, H}, 4);
+        g.setColor(new Color(60, 60, 76)); g.drawLine(0, 410, W, 380);
+        for (int k = 0; k < 6; k++) { boolean on = (int) (tl * 3 + k) % 4 != 0; g.setColor(on ? (k % 3 == 0 ? new Color(255, 80, 80) : new Color(80, 255, 140)) : new Color(40, 60, 50)); g.fillRect(80 + k * 70, 440 + (k % 2) * 30, 46, 20); }
+        g.setColor(new Color(20, 60, 50)); g.fillRect(300, 430, 160, 90); g.setColor(new Color(100, 255, 170)); g.drawRect(300, 430, 160, 90);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13)); g.drawString(tl < 2.2 ? "DOBRA ATIVA" : "DESTINO: FESTIVAL", 310, 455); g.drawString(tl < 2.2 ? (int) (99 - tl * 40) + "% ..." : "DIST: 0.3 UA", 310, 480);
+        // o Wenger de costas: ombros do macacao laranja, nuca careca, fones e a barba aparecendo dos lados
+        int bx = 700, by = 470;
+        g.setColor(new Color(170, 80, 20)); g.fillRoundRect(bx - 170, by + 30, 340, 200, 80, 80);
+        g.setColor(new Color(220, 110, 30)); g.fillRoundRect(bx - 160, by + 38, 320, 60, 60, 60);
+        g.setColor(new Color(90, 50, 30)); g.fillOval(bx - 78, by - 18, 156, 80);                    // barba larga
+        g.setColor(new Color(200, 140, 100)); g.fillOval(bx - 70, by - 130, 140, 160);              // cabeca careca
+        g.setColor(new Color(230, 170, 125)); g.fillOval(bx - 48, by - 120, 70, 60);                 // brilho da careca
+        g.setColor(new Color(180, 120, 85)); g.fillOval(bx - 80, by - 70, 24, 40); g.fillOval(bx + 56, by - 70, 24, 40); // orelhas
+        g.setColor(new Color(30, 30, 30)); g.setStroke(new java.awt.BasicStroke(8)); g.drawArc(bx - 74, by - 140, 148, 120, 10, 160);  // fone
+        g.fillRect(bx - 86, by - 74, 18, 34); g.fillRect(bx + 68, by - 74, 18, 34);
+    }
+
+    /** Tomada 2: a nave passa voando por cima da multidao, rumo ao heliponto; a sombra corre sobre a galera. */
+    private void cenaSobrevoo(Graphics2D g, double tl) {
+        cenaShow(g, tl, 3);
+        double c = Math.min(1, tl / 4.4), x = -260 + c * 1400, y = 300 - Math.sin(c * Math.PI) * 70;
+        g.setColor(new Color(0, 0, 0, 110)); g.fillOval((int) x - 40, 455, 260, 40);
+        Graphics2D n = (Graphics2D) g.create(); n.translate(x, y); n.scale(3.4, 3.4);
+        ArteNaves.desenharJogador(n, nivelNave, modelo, 0, 0, tl);
+        n.dispose();
     }
 
     /** Fundo de papel de gibi, amarelado, com pontinhos de retícula. */
@@ -308,6 +382,7 @@ final class CenaPouso {
         int[] pes = {486, 506, 530, 558, 592};
         double[] escs = {.18, .22, .27, .33, .4};
         BufferedImage[] imgs = {fasFundo, fasLonge, fasLonge, fasMeio, fasPerto};
+        if (modo == 3) { for (int k = 0; k < pes.length; k++) if (imgs[k] != null) fila(g, imgs[k], pes[k], escs[k], k * 17, (int) (escs[k] * 230), 10 + k, -1); return; }
         if (modo == 0) {
             // vem correndo e salta por cima das cabecas
             double wx = 480, wpe, ws, alt = 0; int wq;
@@ -318,8 +393,8 @@ final class CenaPouso {
             return;
         }
         // a galera carrega ele deitado sobre as maos e joga pra cima de tempos em tempos
-        double esc = modo == 1 ? .34 : .24, ritmo = ts * 2.1, joga = Math.pow(Math.abs(Math.sin(ritmo)), 3) * (modo == 1 ? 70 : 30);
-        double sx = modo == 1 ? 260 + (ts * 55) % 520 : 300 + (ts * 30) % 380, sy = modo == 1 ? 385 - joga : 392 - joga;
+        double esc = modo == 1 ? .5 : .24, ritmo = ts * 2.1, joga = Math.pow(Math.abs(Math.sin(ritmo)), 3) * (modo == 1 ? 70 : 30);
+        double sx = modo == 1 ? 330 + Math.sin(ts * .5) * 180 : 300 + (ts * 30) % 380, sy = modo == 1 ? 425 - joga : 392 - joga;
         int ultimo = 3;
         for (int k = 0; k < pes.length; k++) {
             if (k == ultimo) surf(g, sx, sy, esc, ritmo);
