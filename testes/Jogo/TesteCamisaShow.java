@@ -9,10 +9,15 @@ public class TesteCamisaShow {
         if (!p.escolhendo()) throw new AssertionError("o final deve comecar na escolha do show");
         p.mover(-3); p.confirmar();
         if (p.escolhendo() || p.banda() != 4) throw new AssertionError("escolha errada: " + p.banda());
+        // sem passe nenhum: zeramento comum, sem tela de escolha
+        CenaPouso comum = new CenaPouso(0, 0);
+        if (comum.escolhendo() || !comum.comum()) throw new AssertionError("sem passe o final e o zeramento comum, direto");
+        CenaPouso um = new CenaPouso(0, 1 << 6);
+        if (um.escolhendo() || um.banda() != 6) throw new AssertionError("com um passe so, vai direto para o show dele");
         // so abrem os palcos das reliquias conquistadas; a Lula sempre
-        CenaPouso r = new CenaPouso(0, 1 << 3);
-        if (!r.aberto(0) || !r.aberto(3) || r.aberto(5) || r.palcosAbertos() != 2) throw new AssertionError("palcos abertos errados");
-        r.mover(2); r.confirmar();
+        CenaPouso r = new CenaPouso(0, 1 << 3 | 1 << 6);
+        if (!r.aberto(0) || !r.aberto(3) || r.aberto(5) || r.palcosAbertos() != 3) throw new AssertionError("palcos abertos errados");
+        r.mover(-1); r.confirmar();
         if (!r.escolhendo()) throw new AssertionError("palco fechado nao pode ser escolhido");
         r.mover(-2); r.confirmar();
         if (r.escolhendo() || r.banda() != 3) throw new AssertionError("palco aberto deveria ser escolhido: " + r.banda());

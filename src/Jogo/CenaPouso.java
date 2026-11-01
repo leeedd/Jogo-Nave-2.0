@@ -46,7 +46,14 @@ final class CenaPouso {
     CenaPouso(int modelo, int reliquias) {
         this.modelo = modelo; abertos = reliquias | 1;
         cursor = 0; for (int i = Fase.BANDAS.length - 1; i > 0; i--) if (aberto(i)) { cursor = i; break; }
+        // sem passe: zeramento comum; com um passe so: direto para aquele show. Escolha so com dois ou mais.
+        int passes = Integer.bitCount(abertos & 0xFE);
+        if (passes == 0) escolher(COMUM);
+        else if (passes == 1) escolher(Integer.numberOfTrailingZeros(abertos & 0xFE));
     }
+    /** Zeramento comum (a Lula): camiseta lisa, trilha do jogo e as bandas se revezando nos creditos. */
+    static final int COMUM = 0;
+    boolean comum() { return banda == COMUM; }
     /** Opcao extra para quem juntou todas as reliquias: o festival inteiro, banda por banda. */
     static final int FESTIVAL = 8;
     boolean aberto(int b) { return b == FESTIVAL ? palcosAbertos() == 8 : (abertos >> b & 1) != 0; }
@@ -61,8 +68,8 @@ final class CenaPouso {
         if (banda >= 0) return;
         banda = Math.max(0, Math.min(aberto(FESTIVAL) ? FESTIVAL : Fase.BANDAS.length - 1, b));
         // no festival completo a camisa e a da Lula, onde a jornada comecou
-        if (FLAVIO != null) flavio = estampar(FLAVIO, CamisaShow.emblema(banda == FESTIVAL ? 0 : banda));
-        MusicaJogo.tocarShow(banda);
+        if (FLAVIO != null) flavio = banda == COMUM ? FLAVIO : estampar(FLAVIO, CamisaShow.emblema(banda == FESTIVAL ? 0 : banda));
+        if (banda != COMUM) MusicaJogo.tocarShow(banda);
         if (WENGER != null) { fasLonge = escurecer(WENGER, .45f); fasPerto = escurecer(WENGER, .7f); }
     }
     void confirmar() { if (!aberto(cursor)) { avisoFechado = 1.6; SomJogo.tocar(SomJogo.Efeito.ERRO); return; } escolher(cursor); }

@@ -117,8 +117,8 @@ public final class CenaFinal {
     int bandaNoPalco() {
         double rolado = (tempo - INICIO_CREDITOS) * VELOCIDADE - 395;
         // show unico: a banda escolhida toca do comeco ao fim
-        if (pouso.banda() != CenaPouso.FESTIVAL) return Math.max(0, pouso.banda());
-        // festival completo: abre a Lula e cada banda sobe junto com a legenda dela
+        if (pouso.banda() != CenaPouso.FESTIVAL && pouso.banda() != CenaPouso.COMUM) return Math.max(0, pouso.banda());
+        // zeramento comum e festival completo: abre a Lula e cada banda sobe junto com a legenda dela
         if (rolado < 0) return 0;
         int i = (int) (rolado / 190);
         if (i < 7) return i + 1;
