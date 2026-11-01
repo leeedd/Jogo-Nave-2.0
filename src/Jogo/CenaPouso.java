@@ -6,81 +6,218 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 
 /**
- * Prologo dos creditos (versao provisoria, desenhada em codigo ate chegar a arte do PROMPTS_FINAL):
- * a nave pousa no festival, o Flavio desce de macacao laranja, tira o macacao, esta com a camisa
- * da banda e entra na multidao. Depois seguem os creditos.
+ * Cutscene que abre os creditos. O jogador escolhe o show; a nave pousa de frente no festival,
+ * o piloto desce pela escada, tira o macacao laranja e esta com a camisa da banda escolhida
+ * (o emblema dela tambem acende no telao do palco). Ele corre para a multidao
+ * e cai no show de bracos para cima. Depois seguem os creditos.
  */
 final class CenaPouso {
-    /** Abertura em quadros (final_pouso.png, 4 paineis): a nave chega ao festival e pousa. */
-    /** Tiras de 4 quadros em sequencia: pouso, Flavio descendo e tirando o macacao, Flavio na multidao. */
-    private static final Image[] TIRAS = existentes(opcional("final_pouso.png"), opcional("final_flavio_desce.png"), opcional("final_flavio_multidao.png"));
-    private static final Image QUADROS = TIRAS.length > 0 ? TIRAS[0] : null;
-    private static Image opcional(String n) { try { return Assets.imagem(n); } catch (IllegalStateException e) { return null; } }
-    private static Image[] existentes(Image... l) { java.util.List<Image> r = new java.util.ArrayList<>(); for (Image i : l) if (i != null) r.add(i); return r.toArray(new Image[0]); }
-    private static final double PAINEL = 1.9, ABERTURA = PAINEL * 4 * TIRAS.length;
-    /** Com o Flavio em quadros, a cena desenhada em codigo nao entra mais: dos quadros vai direto aos creditos. */
-    private static final boolean SO_QUADROS = TIRAS.length >= 2;
-    /** Com a abertura em quadros, a cena ja comeca com a nave pousada (pula a descida). */
-    private static final double PULO = QUADROS != null ? 5.5 : 0;
-    static final double DURACAO = SO_QUADROS ? ABERTURA + .8 : 17 + ABERTURA - PULO;
-    private static final Image PALCO = Assets.imagem("show_final_098.png");
-    /** Arte do piloto (piloto_099.png, grade 4x2): andando (0-3), tirando o macacao (4-5), chifrinho (6), bracos para cima (7). */
-    private static final Image PILOTO = Assets.imagem("piloto_099.png");
-    private static final java.awt.image.BufferedImage[] FRENTE = new java.awt.image.BufferedImage[5];
-    static { for (int i = 0; i < 5; i++) { java.net.URL u = CenaPouso.class.getResource("/ImagemIcon/nave_" + i + "_frente.png"); if (u != null) try { FRENTE[i] = javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { } } }
+    private static final BufferedImage PALCO = ler("palco_festival.png");
+    /** Piloto (12 quadros): parado, escada, andando x2, ziper, tirando, camisa, chifrinho, correndo x2 (costas), bracos para cima, pulo.
+     *  final_piloto_sprites.png e o Wenger; enquanto ele nao chega, usa a folha antiga. */
+    private static final BufferedImage FLAVIO = ler("final_piloto_sprites.png") != null ? ler("final_piloto_sprites.png") : ler("final_flavio_sprites.png");
+    /** Folha da galera: 4 quadros do Wenger e 4 fas de costas (os fas enchem a plateia). */
+    private static final BufferedImage WENGER = ler("final_wenger_sprites.png");
+    private static final BufferedImage[] FRENTE = new BufferedImage[5];
+    static { for (int i = 0; i < 5; i++) FRENTE[i] = ler("nave_" + i + "_frente.png"); }
+    /** Onde fica a estampa no peito/costas de cada quadro do Flavio (fracoes do quadro). */
+    private static final double[][] ESTAMPA = {null, null, null, null, null,
+        {.333, .316, .634, .500}, {.352, .317, .640, .493}, {.320, .300, .592, .465},
+        {.430, .393, .674, .542}, {.439, .384, .703, .545}, {.350, .308, .633, .480}, {.372, .263, .616, .411}};
+    /** Telao preto do palco (fracoes da arte do palco), onde acende o emblema da banda. */
+    private static final double TELAO_X0 = 568 / 1586.0, TELAO_Y0 = 348 / 992.0, TELAO_X1 = 1018 / 1586.0, TELAO_Y1 = 558 / 992.0;
+    static final double DURACAO = 21;
+    private static final int CHAO = 572;
+
     private final int modelo;
     private double t;
-
     /** Show escolhido (indice de Fase.BANDAS) ou -1 enquanto o jogador ainda esta escolhendo. */
     private int banda = -1, cursor = CamisaShow.SLAYER;
     private double tEscolha;
-    /** Tiras desta partida, ja com a camisa e o palco do show escolhido. */
-    private final Image[] tiras = TIRAS.clone();
+    private BufferedImage flavio = FLAVIO, fasLonge, fasPerto;
 
-    CenaPouso(int modelo) { this.modelo = modelo; if (TIRAS.length == 0) banda = CamisaShow.SLAYER; }
+    CenaPouso(int modelo) { this.modelo = modelo; }
     boolean escolhendo() { return banda < 0; }
     int banda() { return banda; }
     void mover(int d) { if (banda < 0) { int n = Fase.BANDAS.length; cursor = ((cursor + d) % n + n) % n; SomJogo.tocar(SomJogo.Efeito.INTERDICAO); } }
     void moverLinha(int d) { if (banda < 0) mover(d * 4); }
-    /** Fecha a escolha: a camisa do Flavio e o palco do festival passam a ser dessa banda. */
+    /** Fecha a escolha: a camisa do Flavio e o telao do festival passam a ser dessa banda. */
     void escolher(int b) {
         if (banda >= 0) return;
         banda = Math.max(0, Math.min(Fase.BANDAS.length - 1, b));
-        for (int i = 0; i < TIRAS.length; i++) {
-            int linha = TIRAS[i] == DESCE ? 0 : TIRAS[i] == MULTIDAO ? 1 : -1;
-            if (linha >= 0) tiras[i] = CamisaShow.ajustar(TIRAS[i], linha, banda);
-        }
+        if (FLAVIO != null) flavio = estampar(FLAVIO, CamisaShow.emblema(banda));
+        if (WENGER != null) { fasLonge = escurecer(WENGER, .45f); fasPerto = escurecer(WENGER, .7f); }
     }
     void confirmar() { escolher(cursor); }
     void atualizar(double dt) { if (banda < 0) { tEscolha += Math.max(0, dt); return; } t = Math.min(DURACAO, t + Math.max(0, dt)); }
     boolean terminou() { return t >= DURACAO; }
     void pular() { if (banda < 0) confirmar(); else t = DURACAO; }
 
-    private static final int CHAO = 470;
     private static double suave(double x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
 
     void desenhar(Graphics2D base) {
         if (banda < 0) { desenharEscolha(base); return; }
-        if (t < ABERTURA || SO_QUADROS) { abertura(base); return; }
-        double tReal = t; t = t - ABERTURA + PULO;
-        try { desenharCena(base); } finally { t = tReal; }
-    }
-    /** Os 4 paineis com fusao e um leve zoom, como as cutscenes do jogo. */
-    private void abertura(Graphics2D base) {
-        Graphics2D g = (Graphics2D) base.create(); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA);
+        Graphics2D g = (Graphics2D) base.create();
+        int W = Config.LARGURA, H = Config.ALTURA;
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        int k = Math.min(4 * TIRAS.length - 1, (int) (t / PAINEL)); double dentro = Math.min(PAINEL + .8, t - k * PAINEL);
-        if (k > 0 && dentro < .35) painel(g, k - 1, 1, PAINEL + dentro);
-        painel(g, k, (float) Math.min(1, dentro / .35), dentro);
-        // no aperto de mao da multidao, o parceiro de show: Wenger
-        if (MULTIDAO != null && TIRAS[k / 4] == MULTIDAO && k % 4 == 1 && dentro > .5) etiqueta(g, "WENGER", 655, 150, (float) Math.min(1, (dentro - .5) / .3));
-        if (SO_QUADROS && t > DURACAO - .8) { g.setComposite(AlphaComposite.SrcOver.derive((float) Math.min(1, (t - (DURACAO - .8)) / .8))); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); g.setComposite(AlphaComposite.SrcOver); }
-        if (t < .4) { g.setComposite(AlphaComposite.SrcOver.derive((float) (1 - t / .4))); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); }
+        g.setColor(Color.BLACK); g.fillRect(0, 0, W, H);
+        if (PALCO != null) g.drawImage(PALCO, 0, 0, W, H, null);
+        telao(g, W, H);
+        luzes(g, W);
+        fogos(g);
+        // fas la no fundo, colados na grade do palco, balancando
+        if (fasLonge != null) for (int i = 0; i < 16; i++) {
+            double bal = Math.abs(Math.sin(t * 3.2 + i * 1.3)) * 4;
+            sprite(g, fasLonge, 8, 4 + (i * 3) % 4, 40 + i * 60 + (i % 2) * 18, (int) (488 - bal), .2, i % 3 == 0);
+        }
+        nave(g);
+        flavioEWenger(g);
+        // a galera da frente chega no fim, quando o show pega fogo
+        if (fasPerto != null && t > 16) {
+            double sob = suave((t - 16) / 1.2);
+            for (int i = 0; i < 7; i++) {
+                double bal = Math.abs(Math.sin(t * 4 + i * 2.1)) * 8;
+                if (i == 3) continue; // vao no meio da galera: e ali que o piloto esta
+                sprite(g, fasPerto, 8, 4 + (i * 5) % 4, 40 + i * 140, (int) (H + 200 - sob * 110 - bal), .42, i % 2 == 1);
+            }
+        }
+        if (t < .6) cobrir(g, 1 - t / .6);
+        if (t > DURACAO - 1) cobrir(g, t - (DURACAO - 1));
         g.dispose();
     }
-    private static final Image MULTIDAO = opcional("final_flavio_multidao.png"), DESCE = opcional("final_flavio_desce.png");
+
+    private static void cobrir(Graphics2D g, double a) {
+        Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive((float) Math.max(0, Math.min(1, a))));
+        q.setColor(Color.BLACK); q.fillRect(0, 0, Config.LARGURA, Config.ALTURA); q.dispose();
+    }
+
+    /** O emblema da banda escolhida acende no telao, piscando como lampada velha antes de firmar. */
+    private void telao(Graphics2D g, int W, int H) {
+        Image e = CamisaShow.emblema(banda);
+        if (e == null || t < 1) return;
+        boolean pisca = t < 1.8 && (int) (t * 14) % 3 == 0;
+        if (pisca) return;
+        int x0 = (int) (TELAO_X0 * W), y0 = (int) (TELAO_Y0 * H), x1 = (int) (TELAO_X1 * W), y1 = (int) (TELAO_Y1 * H);
+        double pulso = 1 + .03 * Math.sin(t * 5);
+        double s = Math.min((x1 - x0) / (double) e.getWidth(null), (y1 - y0) / (double) e.getHeight(null)) * .92 * pulso;
+        int ew = (int) (e.getWidth(null) * s), eh = (int) (e.getHeight(null) * s);
+        g.drawImage(e, (x0 + x1 - ew) / 2, (y0 + y1 - eh) / 2, ew, eh, null);
+    }
+
+    /** Fachos de luz varrendo do teto do palco. */
+    private void luzes(Graphics2D g, int W) {
+        for (int k = 0; k < 6; k++) {
+            double a = Math.sin(t * 1.1 + k * 1.9); int x0 = 280 + k * 80;
+            g.setColor(new Color(k % 2 == 0 ? 255 : 170, 50, k % 2 == 0 ? 90 : 255, 26));
+            int pe = x0 + (int) (a * 260);
+            g.fillPolygon(new int[]{x0, pe - 60, pe + 60}, new int[]{150, 500, 500}, 3);
+        }
+    }
+
+    /** Fogos estourando no ceu, em pixel: anel de pontos que abre e apaga. */
+    private void fogos(Graphics2D g) {
+        for (int k = 0; k < 5; k++) {
+            double ciclo = 2.6 + k * .4, fase = (t + k * 1.3) % ciclo / ciclo;
+            if (t < 2 + k) continue;
+            java.util.Random r = new java.util.Random(k * 31 + (long) ((t + k * 1.3) / ciclo));
+            int cx = 60 + r.nextInt(840), cy = 30 + r.nextInt(110), raio = (int) (8 + fase * 55);
+            Color c = new Color[]{new Color(255, 80, 90), new Color(200, 100, 255), new Color(255, 200, 90)}[r.nextInt(3)];
+            int al = (int) (255 * (1 - fase));
+            g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.max(0, al)));
+            for (int i = 0; i < 16; i++) { double an = i * Math.PI / 8; g.fillRect(cx + (int) (Math.cos(an) * raio), cy + (int) (Math.sin(an) * raio), 3, 3); }
+        }
+    }
+
+    /** A nave de frente, como no hangar: desce na vertical com os jatos e pousa na pista. */
+    private void nave(Graphics2D g) {
+        BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
+        double p = suave(t / 4.0);
+        int cx = 250, fh = 210;
+        int ny = CHAO - fh + 6 - (int) ((1 - p) * (CHAO + 80));
+        int sombra = (int) (80 + 220 * p); g.setColor(new Color(0, 0, 0, (int) (40 + 90 * p))); g.fillOval(cx - sombra / 2, CHAO - 12, sombra, 24);
+        if (frente == null) return;
+        int fw = frente.getWidth() * fh / frente.getHeight();
+        if (p < 1) for (int k = -1; k <= 1; k += 2) {
+            int jx = cx + k * fw / 4;
+            for (int j = 0; j < 7; j++) { g.setColor(new Color(120, 200, 255, Math.max(0, 190 - j * 26))); g.fillRect(jx - 7 + (int) (Math.sin(t * 40 + j) * 2), ny + fh - 12 + j * 11, 14, 11); }
+        }
+        g.drawImage(frente, cx - fw / 2, ny, fw, fh, null);
+        if (t > 3.2 && t < 5.6) { // poeira do pouso
+            double q = (t - 3.2) / 2.4; g.setColor(new Color(150, 120, 150, (int) (140 * (1 - q))));
+            for (int k = 0; k < 14; k++) { int r = (int) (12 + q * 44); g.fillOval(cx - 150 + k * 22 - r / 2, CHAO - r / 2 - 6, r, r / 2); }
+        }
+    }
+
+    private void flavioEWenger(Graphics2D g) {
+        if (flavio == null || t < 4.4) return;
+        int q; double x, pe, s = .6;
+        if (t < 5.6) { q = 1; x = 400; pe = CHAO - 70 * (1 - (t - 4.4) / 1.2); }          // desce a escada
+        else if (t < 6.4) { q = 0; x = 400; pe = CHAO; }                                 // olha o festival
+        else if (t < 8) { q = 2 + (int) (t / .2) % 2; x = 400 + (t - 6.4) / 1.6 * 130; pe = CHAO; } // anda
+        else if (t < 8.9) { q = 4; x = 530; pe = CHAO; }                                 // ziper
+        else if (t < 9.8) { q = 5; x = 530; pe = CHAO; }                                 // tira o macacao
+        else if (t < 10.6) { q = 6; x = 530; pe = CHAO; }                                // a camisa da banda
+        else if (t < 12) { q = 7; x = 530; pe = CHAO; }                                  // chifrinho
+        else if (t < 14.6) { double c = suave((t - 12) / 2.6); q = 8 + (int) (t / .14) % 2; x = 530 - c * 90; pe = CHAO - c * 78; s = .6 - c * .24; } // corre
+        else if (t < 16) { q = 10; x = 440; pe = CHAO - 78; s = .36; }                   // chega na galera
+        else { q = (int) ((t - 16) / .45) % 3 == 2 ? 11 : 10; x = 440; pe = CHAO - 78 - (q == 11 ? 10 : 0); s = .36; } // pula com a galera
+        // o macacao fica jogado no chao depois que ele tira
+        if (t >= 9.8) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(500, CHAO - 10, 60, 12, 6, 6); g.setColor(new Color(160, 70, 20)); g.fillRect(508, CHAO - 6, 44, 3); }
+        sprite(g, flavio, 12, q, (int) x, (int) pe, s, false);
+    }
+
+    /** Desenha o quadro q de uma tira de n quadros com o pe em (cx, pe). */
+    private static void sprite(Graphics2D g, BufferedImage tira, int n, int q, int cx, int pe, double s, boolean espelhar) {
+        int fw = tira.getWidth() / n, fh = tira.getHeight(), w = (int) (fw * s), h = (int) (fh * s);
+        int x0 = cx - w / 2, y0 = pe - h;
+        if (espelhar) g.drawImage(tira, x0 + w, y0, x0, y0 + h, q * fw, 0, q * fw + fw, fh, null);
+        else g.drawImage(tira, x0, y0, x0 + w, y0 + h, q * fw, 0, q * fw + fw, fh, null);
+    }
+
+    /** Pinta o emblema da banda na camisa preta do Flavio (so onde e camisa, nunca em braco ou mao). */
+    static BufferedImage estampar(BufferedImage tira, Image emblema) {
+        BufferedImage b = new BufferedImage(tira.getWidth(), tira.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = b.createGraphics(); g.drawImage(tira, 0, 0, null); g.dispose();
+        if (emblema == null) return b;
+        int fw = tira.getWidth() / 12, fh = tira.getHeight();
+        for (int k = 0; k < 12; k++) {
+            if (ESTAMPA[k] == null) continue;
+            int x0 = k * fw + (int) (ESTAMPA[k][0] * fw), y0 = (int) (ESTAMPA[k][1] * fh), x1 = k * fw + (int) (ESTAMPA[k][2] * fw), y1 = (int) (ESTAMPA[k][3] * fh);
+            int cw = x1 - x0, ch = y1 - y0;
+            double s = Math.min(cw / (double) emblema.getWidth(null), ch / (double) emblema.getHeight(null));
+            int ew = Math.max(1, (int) (emblema.getWidth(null) * s)), eh = Math.max(1, (int) (emblema.getHeight(null) * s));
+            BufferedImage e = new BufferedImage(ew, eh, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D eg = e.createGraphics(); eg.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            eg.drawImage(emblema, 0, 0, ew, eh, null); eg.dispose();
+            int ex = x0 + (cw - ew) / 2, ey = y0 + (ch - eh) / 2;
+            for (int y = 0; y < eh; y++) for (int x = 0; x < ew; x++) {
+                int o = b.getRGB(ex + x, ey + y), r = o >> 16 & 255, gg = o >> 8 & 255, bl = o & 255;
+                if ((o >>> 24) < 200 || Math.max(r, Math.max(gg, bl)) > 70) continue; // so tecido preto
+                int p = e.getRGB(x, y); double f = (p >>> 24) / 255.0 * .9;
+                if (f <= .05) continue;
+                int nr = (int) (r * (1 - f) + (p >> 16 & 255) * .85 * f), ng = (int) (gg * (1 - f) + (p >> 8 & 255) * .85 * f), nb = (int) (bl * (1 - f) + (p & 255) * .85 * f);
+                b.setRGB(ex + x, ey + y, 0xFF000000 | nr << 16 | ng << 8 | nb);
+            }
+        }
+        return b;
+    }
+
+    private static BufferedImage escurecer(BufferedImage src, float f) {
+        return new java.awt.image.RescaleOp(new float[]{f, f, f * 1.1f, 1}, new float[4], null).filter(src, null);
+    }
+
+    private static BufferedImage ler(String n) {
+        java.net.URL u = CenaPouso.class.getResource("/ImagemIcon/" + n);
+        if (u == null) return null;
+        try { BufferedImage i = javax.imageio.ImageIO.read(u); if (i == null) return null;
+            BufferedImage b = new BufferedImage(i.getWidth(), i.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = b.createGraphics(); g.drawImage(i, 0, 0, null); g.dispose(); return b;
+        } catch (java.io.IOException e) { return null; }
+    }
+
     /** Antes do pouso: o jogador escolhe qual palco do festival vai ver. */
     private void desenharEscolha(Graphics2D base) {
         Graphics2D g = (Graphics2D) base.create();
@@ -112,6 +249,7 @@ final class CenaPouso {
         g.dispose();
     }
     /** Plaquinha de nome em pixel: caixa preta com borda vermelha e setinha para baixo. */
+    /** Plaquinha de nome em pixel: caixa preta com borda vermelha e setinha para baixo. */
     private static void etiqueta(Graphics2D g, String nome, int cx, int y, float a) {
         Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));
         q.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.BOLD, 16));
@@ -119,121 +257,5 @@ final class CenaPouso {
         q.setColor(new Color(12, 8, 10)); q.fillRect(x, y, w, 24); q.fillPolygon(new int[]{cx - 7, cx + 7, cx}, new int[]{y + 24, y + 24, y + 32}, 3);
         q.setColor(new Color(200, 40, 40)); q.drawRect(x, y, w, 24); q.drawRect(x + 2, y + 2, w - 4, 20);
         q.setColor(new Color(250, 235, 200)); q.drawString(nome, x + 8, y + 18); q.dispose();
-    }
-    private void painel(Graphics2D g, int k, float a, double dt) {
-        Image tira = tiras[k / 4]; k %= 4;
-        int fw = tira.getWidth(null) / 4, fh = tira.getHeight(null); double z = 1 + .06 * dt / PAINEL;
-        int w = (int) (Config.LARGURA * z), h = (int) (Config.LARGURA * fh / (double) fw * z), x = (Config.LARGURA - w) / 2, y = (Config.ALTURA - h) / 2;
-        Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));
-        q.drawImage(tira, x, y, x + w, y + h, k * fw, 0, k * fw + fw, fh, null); q.dispose();
-    }
-    private void desenharCena(Graphics2D base) {
-        Graphics2D g = (Graphics2D) base.create();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        int W = Config.LARGURA, H = Config.ALTURA;
-        g.setColor(Color.BLACK); g.fillRect(0, 0, W, H);
-        // o palco do festival ao fundo, com luzes varrendo
-        // ceu de estrelas e o palco (arte em pe) na direita, sem esticar
-        java.util.Random ce = new java.util.Random(4); for (int k = 0; k < 160; k++) { int v = 80 + ce.nextInt(170); g.setColor(new Color(v, v, Math.min(255, v + 30))); g.fillRect(ce.nextInt(W), ce.nextInt(CHAO), 2, 2); }
-        if (PALCO != null) { int q = (int) (t * 6) % 4, sw = PALCO.getWidth(null) / 2, sh = PALCO.getHeight(null) / 2, lado = CHAO + 20, px0 = W - lado + 40;
-            g.drawImage(PALCO, px0, -20, px0 + lado, lado - 20, (q % 2) * sw, (q / 2) * sh, (q % 2) * sw + sw, (q / 2) * sh + sh, null);
-            g.setColor(new Color(0, 0, 0, 70)); g.fillRect(px0, -20, lado, lado); }
-        for (int k = 0; k < 5; k++) {
-            double a = Math.sin(t * 1.3 + k * 1.7) * .5; int x0 = 560 + k * 60;
-            g.setColor(new Color(k % 2 == 0 ? 255 : 160, 60 + k * 30, 255 - k * 40, 38));
-            g.fillPolygon(new int[]{x0, x0 + (int) (Math.sin(a) * 600) - 70, x0 + (int) (Math.sin(a) * 600) + 70}, new int[]{60, CHAO, CHAO}, 3);
-        }
-        // chao
-        g.setColor(new Color(20, 16, 22)); g.fillRect(0, CHAO, W, H - CHAO);
-        g.setColor(new Color(50, 40, 50)); for (int x = 0; x < W; x += 8) g.fillRect(x, CHAO + (x * 7 % 11), 4, 2);
-
-        // 1) nave descendo e pousando (0 a 5 s)
-        // nave de frente, como no hangar da base: desce na vertical, freia e pousa sobre a sombra
-        double p = suave(t / 5.0);
-        int baseX = 250, fh = 230, nx = baseX - 110, ny = CHAO - fh + 14 - (int) ((1 - p) * (CHAO + 60));
-        java.awt.image.BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
-        int sombra = (int) (60 + 200 * p); g.setColor(new Color(0, 0, 0, (int) (60 + 80 * p))); g.fillOval(baseX - sombra / 2, CHAO - 10, sombra, 22);
-        if (frente != null) {
-            int fw = frente.getWidth() * fh / frente.getHeight(); Graphics2D n = (Graphics2D) g.create();
-            n.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            n.drawImage(frente, baseX - fw / 2, ny, fw, fh, null);
-            // jatos de pouso empurrando para baixo enquanto desce
-            if (p < 1) { for (int k = -1; k <= 1; k += 2) { int jx = baseX + k * fw / 4; for (int j = 0; j < 6; j++) { n.setColor(new Color(120, 200, 255, 180 - j * 28)); n.fillRect(jx - 6 + (int) (Math.sin(t * 40 + j) * 2), ny + fh - 10 + j * 10, 12, 10); } } }
-            n.dispose();
-        } else { Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny + 120); n.scale(3.2, 3.2); ArteNaves.desenharJogador(n, 6, modelo, 0, 0, t); n.dispose(); }
-        if (t > 3.6 && t < 6.5) { // poeira do pouso
-            double q = (t - 3.6) / 2.9; g.setColor(new Color(150, 130, 120, (int) (150 * (1 - q))));
-            for (int k = 0; k < 12; k++) { int r = (int) (10 + q * 40); g.fillOval(baseX - 100 + k * 18 - r / 2, CHAO - r / 2 - 4, r, r / 2); }
-        }
-
-        // 2) o piloto: desce (6 s), anda (7-9 s), tira o macacao (9-11 s), vai para a multidao (11-15 s)
-        if (t > 6) {
-            double andar = t < 7 ? 0 : t < 9 ? (t - 7) / 2 : 1;
-            double sai = t < 11.5 ? 0 : (t - 11.5) / 3.5;
-            int px = baseX + 30 + (int) (andar * 190) + (int) (suave(sai) * 300), py = CHAO + (int) (suave(sai) * 60);
-            boolean semMacacao = t > 10.2;
-            double tirando = t > 9 && t < 10.2 ? (t - 9) / 1.2 : 0;
-            if (semMacacao && PILOTO == null) macacaoNoChao(g, baseX + 210, CHAO);
-            if (PILOTO != null) {
-                int q = t < 7 ? 0 : t < 9 ? (int) (t * 8) % 4 : t < 9.6 ? 4 : t < 10.2 ? 5 : t < 11.5 ? 6 : sai < 1 ? (int) (t * 8) % 2 == 0 ? 6 : 7 : 7;
-                int cw = PILOTO.getWidth(null) / 4, ch = PILOTO.getHeight(null) / 2, h = 190, w = cw * h / ch;
-                Graphics2D pg = (Graphics2D) g.create(); pg.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                pg.drawImage(PILOTO, px - w / 2, py - h + 6, px + w / 2, py + 6, (q % 4) * cw, (q / 4) * ch, (q % 4) * cw + cw, (q / 4) * ch + ch, null); pg.dispose();
-            } else piloto(g, px, py, semMacacao, tirando, (andar > 0 && andar < 1) || sai > 0, t);
-        }
-
-        // 3) multidao em primeiro plano, pulando
-        for (int k = 0; k < 24; k++) {
-            int x = 520 + k * 18 + (k % 3) * 5, pulo = (int) (Math.abs(Math.sin(t * 6 + k * 1.3)) * 8), h = 70 + (k * 7 % 18);
-            g.setColor(new Color(150, 70, 200)); g.fillRect(x - 1, H - h - pulo - 1, 22, h + pulo); g.fillOval(x + 1, H - h - pulo - 17, 18, 20); g.setColor(new Color(12, 10, 14)); g.fillRect(x, H - h - pulo, 20, h + pulo); g.fillOval(x + 2, H - h - pulo - 16, 16, 18); g.setColor(new Color(40 + k % 3 * 20, 30, 40)); g.fillRect(x + 2, H - h - pulo - 14, 16, 4); g.setColor(new Color(12, 10, 14));
-            if (k % 2 == 0) { g.fillRect(x + (k % 4 == 0 ? -4 : 18), H - h - pulo - 30, 5, 22); g.fillRect(x + (k % 4 == 0 ? -6 : 18), H - h - pulo - 34, 3, 6); g.fillRect(x + (k % 4 == 0 ? -1 : 21), H - h - pulo - 34, 3, 6); }
-        }
-
-        // textos
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22));
-        texto(g, t < 6 ? "O ULTIMO GRANDE FESTIVAL DO UNIVERSO" : t < 11.5 ? "O SHOW VAI COMECAR" : "HEAVY METAL NEVER DIES", t < 6 ? 0 : 6, W);
-        if (t > DURACAO - 1) { g.setComposite(AlphaComposite.SrcOver.derive((float) Math.min(1, t - (DURACAO - 1)))); g.setColor(Color.BLACK); g.fillRect(0, 0, W, H); }
-        g.dispose();
-    }
-
-    private void texto(Graphics2D g, String s, double inicio, int W) {
-        float a = (float) Math.max(0, Math.min(1, (t - inicio) / .6));
-        Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));
-        int w = q.getFontMetrics().stringWidth(s);
-        q.setColor(new Color(0, 0, 0, 170)); q.fillRect((W - w) / 2 - 14, 22, w + 28, 36);
-        q.setColor(new Color(255, 206, 98)); q.drawString(s, (W - w) / 2, 48); q.dispose();
-    }
-
-    /** Flavio em pixel art provisorio: macacao laranja de piloto, ou camisa preta de banda com pentagrama. */
-    private static void piloto(Graphics2D g, int x, int pe, boolean camisa, double tirando, boolean andando, double t) {
-        int u = 5, perna = andando ? (int) (Math.sin(t * 12) * 2) : 0, y = pe - 34 * u;
-        Color pele = new Color(222, 172, 130), cabelo = new Color(40, 28, 22), laranja = new Color(240, 120, 30), preto = new Color(22, 22, 26);
-        // pernas
-        g.setColor(camisa ? new Color(30, 32, 44) : laranja); g.fillRect(x, y + 20 * u, 3 * u, 12 * u + perna * u); g.fillRect(x + 4 * u, y + 20 * u, 3 * u, 12 * u - perna * u);
-        g.setColor(preto); g.fillRect(x - u, pe - 2 * u + perna * u, 5 * u, 2 * u); g.fillRect(x + 3 * u, pe - 2 * u - perna * u, 5 * u, 2 * u);
-        // tronco
-        g.setColor(camisa ? preto : laranja); g.fillRect(x - u, y + 9 * u, 9 * u, 12 * u);
-        if (camisa) { // estampa de banda: pentagrama vermelho
-            g.setColor(new Color(220, 30, 30)); int cx = x + 3 * u + 2, cy = y + 14 * u;
-            int[] xs = new int[5], ys = new int[5]; for (int k = 0; k < 5; k++) { double a = -Math.PI / 2 + k * 4 * Math.PI / 5; xs[k] = cx + (int) (Math.cos(a) * 9); ys[k] = cy + (int) (Math.sin(a) * 9); }
-            g.drawPolygon(xs, ys, 5); g.drawOval(cx - 10, cy - 10, 20, 20);
-        } else {
-            g.setColor(new Color(245, 245, 240)); g.fillRect(x - u, y + 9 * u, 9 * u, 3 * u); // colete branco
-            if (tirando > 0) { g.setColor(new Color(30, 30, 30)); g.fillRect(x + 3 * u, y + 9 * u, u, (int) (12 * u * tirando)); } // ziper abrindo
-        }
-        // bracos: um erguido fazendo chifrinho quando ja esta de camisa
-        g.setColor(camisa ? pele : laranja);
-        g.fillRect(x - 3 * u, y + 10 * u, 2 * u, 9 * u);
-        if (camisa) { g.fillRect(x + 8 * u, y + 2 * u, 2 * u, 9 * u); g.setColor(pele); g.fillRect(x + 8 * u, y, u, 3 * u); g.fillRect(x + 10 * u - u, y, u, 3 * u); }
-        else { g.fillRect(x + 8 * u, y + 10 * u, 2 * u, 9 * u); g.setColor(Color.WHITE); g.fillRect(x + 9 * u, y + 15 * u, 4 * u, 4 * u); } // capacete na mao
-        // cabeca
-        g.setColor(pele); g.fillRect(x, y + 2 * u, 7 * u, 7 * u);
-        g.setColor(cabelo); g.fillRect(x, y + u, 7 * u, 2 * u); g.fillRect(x, y + 6 * u, 7 * u, 3 * u); // cabelo e barba
-        g.setColor(pele); g.fillRect(x + u, y + 6 * u, 5 * u, u);
-        g.setColor(Color.BLACK); g.fillRect(x + 4 * u, y + 4 * u, u, u);
-    }
-    private static void macacaoNoChao(Graphics2D g, int x, int pe) {
-        g.setColor(new Color(200, 95, 25)); g.fillRect(x, pe - 10, 44, 10); g.setColor(new Color(240, 120, 30)); g.fillRect(x + 4, pe - 14, 30, 6);
-        g.setColor(Color.WHITE); g.fillOval(x + 36, pe - 18, 16, 16);
     }
 }
