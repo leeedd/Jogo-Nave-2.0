@@ -25,7 +25,11 @@ final class MapaEstelar {
  private static final int[] TEMA={3,1,5,8,2,6,9,0};
  static BufferedImage estrela(int i){return ESTRELAS[Math.max(0,Math.min(7,i))];}
  static BufferedImage planeta(int i,int j){return arteDoPlaneta(i,j);}
+ /** Planetas proprios de cada sistema (planetas_sistema_N.png: tira com um planeta por integrante e o do chefe). */
+ private static final BufferedImage[][] DO_SISTEMA=new BufferedImage[8][];
+ static{for(int i=0;i<8;i++){BufferedImage t=ler("planetas_sistema_"+i+".png");if(t==null)continue;int n=Turne.planetas(i),fw=t.getWidth()/n;DO_SISTEMA[i]=new BufferedImage[n];for(int j=0;j<n;j++)DO_SISTEMA[i][j]=t.getSubimage(j*fw,0,fw,t.getHeight());}}
  private static BufferedImage arteDoPlaneta(int i,int j){
+  if(DO_SISTEMA[i]!=null&&j>=0&&j<DO_SISTEMA[i].length)return DO_SISTEMA[i][j];
   if(Turne.anel(i,j))return ARTE_PLANETA[i%2==0?11:10];
   int k=j==0?TEMA[i]:(TEMA[i]+j*3+i)%10;return ARTE_PLANETA[k]!=null?ARTE_PLANETA[k]:PLANETAS[i][j];
  }
