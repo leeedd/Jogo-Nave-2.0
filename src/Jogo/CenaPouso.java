@@ -13,7 +13,12 @@ import java.awt.RenderingHints;
  * da banda e entra na multidao. Depois seguem os creditos.
  */
 final class CenaPouso {
-    static final double DURACAO = 17;
+    /** Abertura em quadros (final_pouso.png, 4 paineis): a nave chega ao festival e pousa. */
+    private static final Image QUADROS = Assets.imagem("final_pouso.png");
+    private static final double PAINEL = 1.9, ABERTURA = QUADROS != null ? PAINEL * 4 : 0;
+    /** Com a abertura em quadros, a cena ja comeca com a nave pousada (pula a descida). */
+    private static final double PULO = QUADROS != null ? 5.5 : 0;
+    static final double DURACAO = 17 + ABERTURA - PULO;
     private static final Image PALCO = Assets.imagem("show_final_098.png");
     /** Arte do piloto (piloto_099.png, grade 4x2): andando (0-3), tirando o macacao (4-5), chifrinho (6), bracos para cima (7). */
     private static final Image PILOTO = Assets.imagem("piloto_099.png");
@@ -31,6 +36,27 @@ final class CenaPouso {
     private static double suave(double x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
 
     void desenhar(Graphics2D base) {
+        if (t < ABERTURA) { abertura(base); return; }
+        double tReal = t; t = t - ABERTURA + PULO;
+        try { desenharCena(base); } finally { t = tReal; }
+    }
+    /** Os 4 paineis com fusao e um leve zoom, como as cutscenes do jogo. */
+    private void abertura(Graphics2D base) {
+        Graphics2D g = (Graphics2D) base.create(); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        int k = Math.min(3, (int) (t / PAINEL)); double dentro = t - k * PAINEL;
+        if (k > 0 && dentro < .35) painel(g, k - 1, 1, PAINEL + dentro);
+        painel(g, k, (float) Math.min(1, dentro / .35), dentro);
+        if (t < .4) { g.setComposite(AlphaComposite.SrcOver.derive((float) (1 - t / .4))); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); }
+        g.dispose();
+    }
+    private void painel(Graphics2D g, int k, float a, double dt) {
+        int fw = QUADROS.getWidth(null) / 4, fh = QUADROS.getHeight(null); double z = 1 + .06 * dt / PAINEL;
+        int w = (int) (Config.LARGURA * z), h = (int) (Config.LARGURA * fh / (double) fw * z), x = (Config.LARGURA - w) / 2, y = (Config.ALTURA - h) / 2;
+        Graphics2D q = (Graphics2D) g.create(); q.setComposite(AlphaComposite.SrcOver.derive(a));
+        q.drawImage(QUADROS, x, y, x + w, y + h, k * fw, 0, k * fw + fw, fh, null); q.dispose();
+    }
+    private void desenharCena(Graphics2D base) {
         Graphics2D g = (Graphics2D) base.create();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         int W = Config.LARGURA, H = Config.ALTURA;
