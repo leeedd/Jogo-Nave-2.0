@@ -19,8 +19,6 @@ import java.util.List;
 public final class CenaFinal {
     private static final double INICIO_CREDITOS = 14.0, VELOCIDADE = 47, TRANSICAO = 1.5;
     private static final int TOPO_ROLAGEM = 80;
-    private static final Image PALCO = Assets.imagem("show_final_098.png");
-    private static final BufferedImage PALCO_PB = cinza(PALCO);
     private static final Image SILHUETA = olhosAmarelos(Assets.imagem("megazord_relampago_16bits.png"));
     private static final Image REVELACAO = Assets.imagem("megazord_cabeca_099.png");
     private static final BufferedImage FOTO_EQUIPE = escalar(pixelar(nitida(Assets.imagem("flavio_wenger.jpg"), 150), 12), 2);
@@ -113,19 +111,21 @@ public final class CenaFinal {
         g.dispose();
     }
 
-    private void desenharFundoPalco(Graphics2D g, int w, int h, Image palco) {
-        int quadro = ((int) (tempo * 6)) % 4;
-        int sw = palco.getWidth(null) / 2, sh = palco.getHeight(null) / 2;
-        int sx = (quadro % 2) * sw, sy = (quadro / 2) * sh;
-        // Preserve aspect ratio: concert artwork is square, never stretch musicians.
-        int lado = Math.min(w, h), margem = (w - lado) / 2;
-        g.drawImage(palco, margem, 0, margem + lado, lado, sx, sy, sx + sw, sy + sh, null);
+    /** Banda no palco: o show escolhido abre; durante o rolo, sobe a banda de cada credito. */
+    int bandaNoPalco() {
+        double rolado = (tempo - INICIO_CREDITOS) * VELOCIDADE - 395;
+        if (rolado < 0) return Math.max(0, pouso.banda());
+        int i = (int) (rolado / 190);
+        if (i < 7) return i + 1;
+        if (i == 7) return PalcoCreditos.TENACIOUS;
+        return Math.max(0, pouso.banda());
     }
 
     private void desenharPalco(Graphics2D g, int w, int h) {
         g.setColor(new Color(1, 1, 12));
         g.fillRect(0, 0, w, h);
-        desenharFundoPalco(g, w, h, PALCO);
+        PalcoCreditos.fundo(g, w, h, false);
+        PalcoCreditos.banda(g, w, h, bandaNoPalco(), tempo);
         for (int i = 0; i < 6; i++) {
             int x = 45 + i * 170;
             int ponta = x + (int) (Math.sin(tempo * 1.4 + i) * 110);
@@ -139,19 +139,65 @@ public final class CenaFinal {
             g.drawString(titulo, (w - g.getFontMetrics().stringWidth(titulo)) / 2, 35);
             return;
         }
-        g.setColor(new Color(0, 0, 15, 170));
-        g.fillRect(0, 0, w, h);
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 25));
         g.setColor(new Color(253, 214, 120));
-        centralizar(g, "AS LENDAS SOBEM AO PALCO!", w, 58);
-        // Os creditos sobem durante a musica, como em um arcade.
-        rolar(g, ROLO_CHEFES, (int) (h - (tempo - INICIO_CREDITOS) * VELOCIDADE), w, h);
+        sombreado(g, "AS LENDAS SOBEM AO PALCO!", w, 40);
+        // Cada banda toca enquanto a legenda dela aparece embaixo, como numa transmissao de show.
+        double rolado = (tempo - INICIO_CREDITOS) * VELOCIDADE - 395, passo = 190;
+        int i = (int) Math.floor(rolado / passo);
+        if (i < 0) {
+            double f = Math.min(1, (tempo - INICIO_CREDITOS) / .6);
+            rodape(g, w, h, f);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24)); g.setColor(new Color(255, 210, 94)); sombreado(g, "METAL SPACE - LEGENDS OF METAL", w, 505);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); g.setColor(Color.WHITE); sombreado(g, "UMA HOMENAGEM AO HEAVY METAL", w, 540);
+        } else if (i < CHEFES.length) {
+            double dentro = (rolado - i * passo) / VELOCIDADE, dur = passo / VELOCIDADE;
+            float f = (float) Math.max(0, Math.min(1, Math.min(dentro / .35, (dur - dentro) / .35)));
+            rodape(g, w, h, 1);
+            Graphics2D c = (Graphics2D) g.create(); c.setComposite(AlphaComposite.SrcOver.derive(f));
+            Object[] it = CHEFES[i];
+            int lado = 104, x = 60, y = 462;
+            retrato(c, (Integer) it[0], x, y, lado);
+            int tx = x + lado + 30;
+            c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26)); c.setColor(new Color(255, 210, 94)); c.drawString((String) it[1], tx, y + 26);
+            c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 17)); c.setColor(new Color(110, 222, 245)); c.drawString((String) it[2], tx, y + 52);
+            c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15)); c.setColor(new Color(232, 232, 232));
+            c.drawString((String) it[3], tx, y + 80); c.drawString((String) it[4], tx, y + 100);
+            c.dispose();
+        } else {
+            // encerramento: as linhas acendem uma a uma sobre o palco escurecido
+            double dentro = (rolado - CHEFES.length * passo) / VELOCIDADE;
+            g.setColor(new Color(0, 0, 10, (int) Math.min(170, dentro * 120))); g.fillRect(0, 0, w, h);
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 21));
+            for (int k = 0; k < ENCERRAMENTO_CREDITOS.length; k++) {
+                double f = Math.max(0, Math.min(1, (dentro - .5 - k * .6) / .5));
+                if (f <= 0) continue;
+                Graphics2D c = (Graphics2D) g.create(); c.setComposite(AlphaComposite.SrcOver.derive((float) f));
+                c.setColor(k == 0 ? new Color(255, 210, 94) : Color.WHITE);
+                sombreado(c, ENCERRAMENTO_CREDITOS[k], w, 200 + k * 44); c.dispose();
+            }
+        }
         escurecer(g, w, h, (tempo - (FIM_CHEFES - TRANSICAO)) / TRANSICAO);
+    }
+
+    /** Faixa escura no pe da tela, onde entra a legenda de cada banda. */
+    private static void rodape(Graphics2D g, int w, int h, double f) {
+        for (int k = 0; k < 40; k++) {
+            g.setColor(new Color(0, 0, 10, (int) (f * Math.min(215, k * 9))));
+            g.fillRect(0, 440 + k * 2, w, 2);
+        }
+        g.setColor(new Color(0, 0, 10, (int) (f * 215))); g.fillRect(0, 520, w, h - 520);
+    }
+    /** Texto centralizado com sombra, para ler por cima do palco. */
+    private static void sombreado(Graphics2D g, String s, int w, int y) {
+        Color c = g.getColor(); int x = (w - g.getFontMetrics().stringWidth(s)) / 2;
+        g.setColor(new Color(0, 0, 0, Math.min(220, c.getAlpha()))); g.drawString(s, x + 2, y + 2);
+        g.setColor(c); g.drawString(s, x, y);
     }
 
     private void desenharLendas(Graphics2D g, int w, int h) {
         // O palco fica em preto e branco: homenagem a quem partiu.
-        desenharFundoPalco(g, w, h, PALCO_PB);
+        PalcoCreditos.fundo(g, w, h, true);
         g.setColor(new Color(0, 0, 0, 200));
         g.fillRect(0, 0, w, h);
         if (tempo < INICIO_ROLO_LENDAS) {
