@@ -228,3 +228,19 @@ text, letters, words, watermark, logo, signature, frame, border, multiple charac
 ```
 16-bit pixel art sprite, SNES arcade style like Metal Slug, crisp pixels, bold dark outline, limited palette, plain solid white background, side view of a heavy forge spaceship with an anvil on the front and orange embers, facing LEFT, single sprite
 ```
+
+---
+
+# FINAL: continuacao da cena do pouso (mesmo festival da imagem do Gemini)
+Gere 2 imagens, cada uma com 4 quadros, no MESMO cenario do pouso (palco vermelho e roxo com
+telões, torres de luz, fogos, multidão). Se o gerador aceitar, anexe a imagem do pouso como referência.
+
+### final_flavio_desce.png   (aspect ratio 16:9, grade 2x2)
+```
+16-bit pixel art cutscene, SNES arcade style, the same night heavy metal festival scene as the reference: big red and purple stage with screens, light towers, fireworks, crowd. A 2x2 grid of 4 panels with the same camera: panel 1 the red and white starfighter landed with the cockpit open and a young pilot in an ORANGE flight suit with a white vest climbing down the ladder; panel 2 the pilot standing next to the ship holding a white helmet; panel 3 the pilot unzipping and taking off the orange flight suit; panel 4 the pilot now wearing a black band t-shirt with a red pentagram, making the devil horns hand sign, the orange suit on the ground. Short dark hair and short beard. No text.
+```
+
+### final_flavio_multidao.png   (aspect ratio 16:9, grade 2x2)
+```
+16-bit pixel art cutscene, SNES arcade style, the same night heavy metal festival scene: a 2x2 grid of 4 panels: panel 1 the pilot in a black band t-shirt running toward the crowd, seen from behind; panel 2 the pilot entering the crowd, fans welcoming him with raised fists; panel 3 close view of the pilot in the middle of the crowd headbanging; panel 4 wide view of the whole festival from behind the crowd, the pilot among the fans with arms raised, stage exploding with fire and lights. Short dark hair and short beard. No text.
+```
