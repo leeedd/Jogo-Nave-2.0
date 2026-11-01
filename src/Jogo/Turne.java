@@ -23,7 +23,7 @@ final class Turne {
     /** Instrumento de cada integrante (mesma ordem de INTEGRANTES): G guitarra, B baixo, D bateria, C criatura. */
     static final String[] INSTRUMENTOS = {"CC", "GGBD", "BGGGD", "GD", "GDB", "GGD", "GGB", "GBDG"};
     /** Integrantes cuja arte traz o quadro 4 caido (derrotado) em vez do bate-cabeca. */
-    static boolean quadroQueda(String nome) { return nome.equals("GLENN TIPTON") || nome.equals("RICHIE FAULKNER") || nome.equals("ROB HALFORD"); }
+    static boolean quadroQueda(String nome) { return nome.equals("GLENN TIPTON") || nome.equals("ROB HALFORD"); }
     static char instrumento(String nome) {
         for (int s = 0; s < 8; s++) for (int p = 0; p < INTEGRANTES[s].length; p++) if (INTEGRANTES[s][p].equals(nome)) return INSTRUMENTOS[s].charAt(p);
         return idVocalista(nome) > 0 ? 'V' : 'C';
@@ -36,7 +36,7 @@ final class Turne {
      */
     static final String[][] ATAQUES = {
         {"ZIGUE ENERGIA 60 220 255", "ANEL ENERGIA 170 70 220"},
-        {"ESPIRAL ENERGIA 255 150 40", "LEQUE7 ENERGIA 80 170 255", "PAREDE ONDA 255 150 60", "CHUVA PRATO 255 200 80"},
+        {"ESPIRAL ENERGIA 255 150 40", "LEQUE7 ENERGIA 255 90 30", "PAREDE ONDA 255 150 60", "CHUVA PRATO 255 200 80"},
         {"RAJADA NOTA 70 140 255", "RAIO2 ENERGIA 80 230 255", "VARRE ENERGIA 120 240 255", "ESPIRAL NOTA 90 220 255", "ANEL PRATO 255 210 90"},
         {"LEQUE AS 255 120 40", "RAJADA PRATO 255 120 30"},
         {"RAIO ENERGIA 170 60 255", "LEQUE PRATO 255 210 90", "LEQUE ONDA 80 150 255"},
