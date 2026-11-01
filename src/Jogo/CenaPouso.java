@@ -182,7 +182,9 @@ final class CenaPouso {
     private void cenaCabine(Graphics2D g, double tl) {
         int W = Config.LARGURA, H = Config.ALTURA, cx = W / 2, cy = 220;
         double treme = tl < 2.2 ? (Math.sin(tl * 60) * 3) : 0;
+        // camera inclinada (dutch angle) e um pouco mais perto: a cabine e o espaco giram juntos
         Graphics2D v = (Graphics2D) g.create(); v.translate(treme, treme * .6);
+        v.rotate(-.11, W / 2.0, H / 2.0); v.translate(W / 2.0, H / 2.0); v.scale(1.16, 1.16); v.translate(-W / 2.0, -H / 2.0);
         // o espaco la fora: tunel de dobra, clarao e depois as estrelas com o sol do festival ao longe
         v.setColor(Color.BLACK); v.fillRect(-10, -10, W + 20, H + 20);
         java.util.Random r = new java.util.Random(5);

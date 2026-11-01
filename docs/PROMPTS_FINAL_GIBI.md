@@ -17,12 +17,15 @@ As naves:
 ## 1. Cabine de cada nave: cabine_0.png ... cabine_4.png (5 imagens)
 Anexe a imagem de frente da nave e cole, trocando o que está entre colchetes:
 ```
-Pixel art 16-bit estilo Super Nintendo, formato paisagem 16:10, vista de DENTRO da cabine desta nave espacial (a da imagem anexada), com o interior combinando com ela: [RAPTOR: painéis brancos e vermelhos / SHADOW: interior preto com luzes vermelhas / VALKYRIE: interior branco e dourado com detalhes azuis / BERSERKER: interior verde militar blindado, rebites e alavancas / METAL GOD: interior preto e dourado com espinhos].
-Câmera atrás e um pouco acima do OMBRO DIREITO do piloto: o piloto aparece de costas no LADO ESQUERDO da imagem, pegando parte dele: careca, barba longa castanho-escura aparecendo do lado do rosto, óculos escuros, fone de ouvido, macacão de piloto laranja.
-Mostre os detalhes da nave: painel com telas e botões acesos, manche, e no lado direito o NÚCLEO DO MOTOR visível por uma janelinha/tubo de vidro, brilhando e pulsando (energia na cor da nave).
-O VIDRO DA FRENTE da cabine deve ser PRETO PURO E LISO, sem estrelas e sem reflexo: eu coloco o espaço e a dobra por trás no jogo.
+Pixel art 16-bit estilo Super Nintendo, formato paisagem 16:10, cena de cinema vista de DENTRO da cabine desta nave espacial (a da imagem anexada).
+CÂMERA: atrás do piloto, por cima do ombro DIREITO dele, bem perto, com a câmera INCLINADA uns 10 graus (ângulo holandês), em perspectiva diagonal: o painel e o vidro fogem em diagonal para o fundo à direita.
+PILOTO: olhando PARA A FRENTE, na mesma direção da câmera, NUNCA de perfil. Vemos a NUCA e as costas dele, o ombro direito em primeiro plano no canto INFERIOR ESQUERDO da imagem, e só uma pontinha da barba e dos óculos aparecendo do lado do rosto. Careca, barba longa castanho-escura, fone de ouvido, macacão de piloto laranja, mão direita no manche.
+INTERIOR combinando com a nave: [RAPTOR: painéis brancos e vermelhos / SHADOW: interior preto com luzes vermelhas / VALKYRIE: interior branco e dourado com detalhes azuis / BERSERKER: interior verde militar blindado, rebites e alavancas / METAL GOD: interior preto e dourado com espinhos].
+Detalhes: painel com telas e botões acesos e, no lado direito, o NÚCLEO DO MOTOR visível por um tubo de vidro, brilhando na cor da nave.
+O VIDRO DA FRENTE deve ser PRETO PURO E LISO, sem estrelas e sem reflexo: eu coloco o espaço por trás no jogo.
 Sem texto.
 ```
+Se ele fizer o piloto de perfil de novo, responda no mesmo chat: "o piloto está de perfil; refaça com ele de costas olhando pra frente, só a nuca e o ombro direito aparecendo, câmera inclinada por cima do ombro direito".
 
 ## 2. Cada nave vista de costas: nave_0_costas.png ... nave_4_costas.png (5 imagens)
 Anexe a imagem de frente da nave e cole:
