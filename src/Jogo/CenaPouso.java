@@ -54,7 +54,7 @@ final class CenaPouso {
         if (k > 0 && dentro < .35) painel(g, k - 1, 1, PAINEL + dentro);
         painel(g, k, (float) Math.min(1, dentro / .35), dentro);
         // no aperto de mao da multidao, o parceiro de show: Wenger
-        if (MULTIDAO != null && TIRAS[k / 4] == MULTIDAO && k % 4 == 1 && dentro > .5) etiqueta(g, "WENGER", 790, 300, (float) Math.min(1, (dentro - .5) / .3));
+        if (MULTIDAO != null && TIRAS[k / 4] == MULTIDAO && k % 4 == 1 && dentro > .5) etiqueta(g, "WENGER", 655, 150, (float) Math.min(1, (dentro - .5) / .3));
         if (SO_QUADROS && t > DURACAO - .8) { g.setComposite(AlphaComposite.SrcOver.derive((float) Math.min(1, (t - (DURACAO - .8)) / .8))); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); g.setComposite(AlphaComposite.SrcOver); }
         if (t < .4) { g.setComposite(AlphaComposite.SrcOver.derive((float) (1 - t / .4))); g.setColor(Color.BLACK); g.fillRect(0, 0, Config.LARGURA, Config.ALTURA); }
         g.dispose();
