@@ -16,7 +16,7 @@ public class TesteCamisaShow {
         if (um.escolhendo() || um.banda() != 6) throw new AssertionError("com um passe so, vai direto para o show dele");
         // so abrem os palcos das reliquias conquistadas; a Lula sempre
         CenaPouso r = new CenaPouso(0, 1 << 3 | 1 << 6);
-        if (!r.aberto(0) || !r.aberto(3) || r.aberto(5) || r.palcosAbertos() != 3) throw new AssertionError("palcos abertos errados");
+        if (r.aberto(0) || !r.aberto(3) || r.aberto(5) || r.palcosAbertos() != 2) throw new AssertionError("palcos abertos errados");
         r.mover(-1); r.confirmar();
         if (!r.escolhendo()) throw new AssertionError("palco fechado nao pode ser escolhido");
         r.mover(-2); r.confirmar();

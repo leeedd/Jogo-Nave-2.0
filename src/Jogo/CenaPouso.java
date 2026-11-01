@@ -39,36 +39,37 @@ final class CenaPouso {
     private double tEscolha;
     private BufferedImage flavio = FLAVIO, fasLonge, fasPerto;
 
-    /** Palcos abertos: bit por banda, ganho com a reliquia de cada uma. A Lula (0) e sempre aberta. */
+    /** Palcos abertos: bit por banda (1 a 7), ganho com o passe de cada uma. A Lula e chefe generico, nao tem show. */
     private final int abertos;
     private double avisoFechado;
     CenaPouso(int modelo) { this(modelo, 0xFF); }
     CenaPouso(int modelo, int reliquias) {
-        this.modelo = modelo; abertos = reliquias | 1;
+        this.modelo = modelo; abertos = reliquias & 0xFE;
         cursor = 0; for (int i = Fase.BANDAS.length - 1; i > 0; i--) if (aberto(i)) { cursor = i; break; }
         // sem passe: zeramento comum; com um passe so: direto para aquele show. Escolha so com dois ou mais.
-        int passes = Integer.bitCount(abertos & 0xFE);
+        int passes = Integer.bitCount(abertos);
         if (passes == 0) escolher(COMUM);
-        else if (passes == 1) escolher(Integer.numberOfTrailingZeros(abertos & 0xFE));
+        else if (passes == 1) escolher(Integer.numberOfTrailingZeros(abertos));
     }
-    /** Zeramento comum (a Lula): camiseta lisa, trilha do jogo e as bandas se revezando nos creditos. */
+    /** Zeramento comum: camiseta lisa, trilha do jogo e as bandas se revezando nos creditos. */
     static final int COMUM = 0;
     boolean comum() { return banda == COMUM; }
     /** Opcao extra para quem juntou todas as reliquias: o festival inteiro, banda por banda. */
     static final int FESTIVAL = 8;
-    boolean aberto(int b) { return b == FESTIVAL ? palcosAbertos() == 8 : (abertos >> b & 1) != 0; }
-    private int opcoes() { return palcosAbertos() == 8 ? 9 : 8; }
-    int palcosAbertos() { return Integer.bitCount(abertos & 0xFF); }
+    boolean aberto(int b) { return b == FESTIVAL ? palcosAbertos() == 7 : b >= 1 && b <= 7 && (abertos >> b & 1) != 0; }
+    /** Opcoes da tela, na ordem: as 7 bandas e, com todos os passes, o festival completo. */
+    private int[] opcoes() { return palcosAbertos() == 7 ? new int[]{1, 2, 3, 4, 5, 6, 7, FESTIVAL} : new int[]{1, 2, 3, 4, 5, 6, 7}; }
+    int palcosAbertos() { return Integer.bitCount(abertos); }
     boolean escolhendo() { return banda < 0; }
     int banda() { return banda; }
-    void mover(int d) { if (banda < 0) { int n = Fase.BANDAS.length; n = opcoes(); cursor = ((cursor + d) % n + n) % n; SomJogo.tocar(SomJogo.Efeito.INTERDICAO); } }
+    void mover(int d) { if (banda < 0) { int[] o = opcoes(); int i = 0; for (int k = 0; k < o.length; k++) if (o[k] == cursor) i = k; cursor = o[Math.floorMod(i + d, o.length)]; SomJogo.tocar(SomJogo.Efeito.INTERDICAO); } }
     void moverLinha(int d) { if (banda < 0) mover(d * 4); }
     /** Fecha a escolha: a camisa do Flavio e o telao do festival passam a ser dessa banda. */
     void escolher(int b) {
         if (banda >= 0) return;
         banda = Math.max(0, Math.min(aberto(FESTIVAL) ? FESTIVAL : Fase.BANDAS.length - 1, b));
         // no festival completo a camisa e a da Lula, onde a jornada comecou
-        if (FLAVIO != null) flavio = banda == COMUM ? FLAVIO : estampar(FLAVIO, CamisaShow.emblema(banda == FESTIVAL ? 0 : banda));
+        if (FLAVIO != null) flavio = banda == COMUM || banda == FESTIVAL ? FLAVIO : estampar(FLAVIO, CamisaShow.emblema(banda));
         if (banda != COMUM) MusicaJogo.tocarShow(banda);
         if (WENGER != null) { fasLonge = escurecer(WENGER, .45f); fasPerto = escurecer(WENGER, .7f); }
     }
@@ -118,7 +119,7 @@ final class CenaPouso {
     /** O emblema da banda escolhida acende no telao, piscando como lampada velha antes de firmar. */
     private void telao(Graphics2D g, int W, int H) {
         // festival completo: o telao passa pelos emblemas de todas as bandas
-        Image e = CamisaShow.emblema(banda == FESTIVAL ? (int) (t / 1.5) % 8 : banda);
+        Image e = CamisaShow.emblema(banda == FESTIVAL || banda == COMUM ? 1 + (int) (t / 1.5) % 7 : banda);
         if (e == null || t < 1) return;
         boolean pisca = t < 1.8 && (int) (t * 14) % 3 == 0;
         if (pisca) return;
@@ -251,9 +252,9 @@ final class CenaPouso {
         String titulo = "QUAL SHOW VOCE VAI VER?"; g.drawString(titulo, (W - g.getFontMetrics().stringWidth(titulo)) / 2, 70);
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14)); g.setColor(new Color(190, 170, 200));
         int n0 = palcosAbertos();
-        String sub = n0 == 8 ? "FESTIVAL COMPLETO! TODOS OS 8 PALCOS ABERTOS." : n0 + " DE 8 PALCOS ABERTOS. CADA RELIQUIA DE BANDA ABRIA UM PALCO."; g.drawString(sub, (W - g.getFontMetrics().stringWidth(sub)) / 2, 98);
-        for (int i = 0; i < Fase.BANDAS.length; i++) {
-            int cx = 135 + (i % 4) * 230, cy = 210 + (i / 4) * 200; boolean sel = i == cursor;
+        String sub = n0 == 7 ? "FESTIVAL COMPLETO! TODOS OS 7 PALCOS ABERTOS." : n0 + " DE 7 PALCOS ABERTOS. CADA PASSE ABRE UM PALCO."; g.drawString(sub, (W - g.getFontMetrics().stringWidth(sub)) / 2, 98);
+        for (int i = 1; i <= 7; i++) {
+            int k = i - 1, cx = k < 4 ? 135 + k * 230 : 250 + (k - 4) * 230, cy = k < 4 ? 195 : 380; boolean sel = i == cursor;
             double pulso = sel ? 1 + .05 * Math.sin(tEscolha * 6) : .82;
             if (sel) { g.setColor(new Color(200, 40, 40)); g.fillRect(cx - 100, cy - 85, 200, 175); g.setColor(new Color(20, 10, 16)); g.fillRect(cx - 96, cy - 81, 192, 167); }
             Image e = CamisaShow.emblema(i);
@@ -275,8 +276,8 @@ final class CenaPouso {
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, sel ? 15 : 13)); g.setColor(!ab ? new Color(90, 80, 90) : sel ? Color.WHITE : new Color(150, 130, 150));
             String n = ab ? Fase.BANDAS[i] : "PALCO FECHADO"; g.drawString(n, cx - g.getFontMetrics().stringWidth(n) / 2, cy + 75);
         }
-        if (opcoes() == 9) {
-            boolean sel = cursor == FESTIVAL; int bx = W / 2 - 170, by = 505;
+        if (opcoes().length == 8) {
+            boolean sel = cursor == FESTIVAL; int bx = W / 2 - 170, by = 490;
             g.setColor(sel ? new Color(255, 200, 60) : new Color(120, 90, 40)); g.fillRect(bx, by, 340, 44);
             g.setColor(new Color(20, 10, 16)); g.fillRect(bx + 4, by + 4, 332, 36);
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, sel ? 22 : 19)); g.setColor(sel ? new Color(255, 220, 120) : new Color(170, 140, 90));
