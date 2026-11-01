@@ -19,7 +19,7 @@ text, letters, words, watermark, logo, signature, frame, border, multiple charac
 
 ### 1. final_pouso.png   (aspect ratio 16:9)
 ```
-16-bit pixel art sprite, SNES arcade style like Metal Slug, crisp pixels, bold dark outline, limited palette, wide 16:9 scene, giant heavy metal festival on an alien planet at night, huge stage in the background with big screens, light towers and fireworks, a crowd of metal fans in front, a red and white starfighter landing behind the crowd with blue thrusters and dust rising, purple and red stage lights, no text
+16-bit pixel art sprite, SNES arcade style like Metal Slug, crisp pixels, bold dark outline, limited palette, wide 16:9 scene, giant heavy metal festival on an alien planet at night, huge stage in the background with big screens, light towers and fireworks, a crowd of metal fans in front, a red and white starfighter seen from the FRONT descending vertically and landing on a landing pad beside the crowd, blue thrusters pointing down and dust rising, purple and red stage lights, no text
 ```
 
 ### 2. final_flavio_lula.png   (aspect ratio 4:1)

@@ -17,6 +17,8 @@ final class CenaPouso {
     private static final Image PALCO = Assets.imagem("show_final_098.png");
     /** Arte do piloto (piloto_099.png, grade 4x2): andando (0-3), tirando o macacao (4-5), chifrinho (6), bracos para cima (7). */
     private static final Image PILOTO = Assets.imagem("piloto_099.png");
+    private static final java.awt.image.BufferedImage[] FRENTE = new java.awt.image.BufferedImage[5];
+    static { for (int i = 0; i < 5; i++) { java.net.URL u = CenaPouso.class.getResource("/ImagemIcon/nave_" + i + "_frente.png"); if (u != null) try { FRENTE[i] = javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { } } }
     private final int modelo;
     private double t;
 
@@ -49,24 +51,32 @@ final class CenaPouso {
         g.setColor(new Color(50, 40, 50)); for (int x = 0; x < W; x += 8) g.fillRect(x, CHAO + (x * 7 % 11), 4, 2);
 
         // 1) nave descendo e pousando (0 a 5 s)
+        // nave de frente, como no hangar da base: desce na vertical, freia e pousa sobre a sombra
         double p = suave(t / 5.0);
-        int nx = (int) (-240 + 360 * p), ny = (int) (-120 + (CHAO - 110 + 120) * p);
-        Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.scale(3.2, 3.2);
-        ArteNaves.desenharJogador(n, 6, modelo, 0, 0, t);
-        n.dispose();
+        int baseX = 250, fh = 230, nx = baseX - 110, ny = CHAO - fh + 14 - (int) ((1 - p) * (CHAO + 60));
+        java.awt.image.BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
+        int sombra = (int) (60 + 200 * p); g.setColor(new Color(0, 0, 0, (int) (60 + 80 * p))); g.fillOval(baseX - sombra / 2, CHAO - 10, sombra, 22);
+        if (frente != null) {
+            int fw = frente.getWidth() * fh / frente.getHeight(); Graphics2D n = (Graphics2D) g.create();
+            n.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            n.drawImage(frente, baseX - fw / 2, ny, fw, fh, null);
+            // jatos de pouso empurrando para baixo enquanto desce
+            if (p < 1) { for (int k = -1; k <= 1; k += 2) { int jx = baseX + k * fw / 4; for (int j = 0; j < 6; j++) { n.setColor(new Color(120, 200, 255, 180 - j * 28)); n.fillRect(jx - 6 + (int) (Math.sin(t * 40 + j) * 2), ny + fh - 10 + j * 10, 12, 10); } } }
+            n.dispose();
+        } else { Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny + 120); n.scale(3.2, 3.2); ArteNaves.desenharJogador(n, 6, modelo, 0, 0, t); n.dispose(); }
         if (t > 3.6 && t < 6.5) { // poeira do pouso
             double q = (t - 3.6) / 2.9; g.setColor(new Color(150, 130, 120, (int) (150 * (1 - q))));
-            for (int k = 0; k < 10; k++) { int r = (int) (10 + q * 40); g.fillOval(nx + 20 + k * 14 - r / 2, CHAO - r / 2 - 4, r, r / 2); }
+            for (int k = 0; k < 12; k++) { int r = (int) (10 + q * 40); g.fillOval(baseX - 100 + k * 18 - r / 2, CHAO - r / 2 - 4, r, r / 2); }
         }
 
         // 2) o piloto: desce (6 s), anda (7-9 s), tira o macacao (9-11 s), vai para a multidao (11-15 s)
         if (t > 6) {
             double andar = t < 7 ? 0 : t < 9 ? (t - 7) / 2 : 1;
             double sai = t < 11.5 ? 0 : (t - 11.5) / 3.5;
-            int px = nx + 230 + (int) (andar * 120) + (int) (suave(sai) * 300), py = CHAO + (int) (suave(sai) * 60);
+            int px = baseX + 30 + (int) (andar * 190) + (int) (suave(sai) * 300), py = CHAO + (int) (suave(sai) * 60);
             boolean semMacacao = t > 10.2;
             double tirando = t > 9 && t < 10.2 ? (t - 9) / 1.2 : 0;
-            if (semMacacao && PILOTO == null) macacaoNoChao(g, nx + 230 + 120 - 10, CHAO);
+            if (semMacacao && PILOTO == null) macacaoNoChao(g, baseX + 210, CHAO);
             if (PILOTO != null) {
                 int q = t < 7 ? 0 : t < 9 ? (int) (t * 8) % 4 : t < 9.6 ? 4 : t < 10.2 ? 5 : t < 11.5 ? 6 : sai < 1 ? (int) (t * 8) % 2 == 0 ? 6 : 7 : 7;
                 int cw = PILOTO.getWidth(null) / 4, ch = PILOTO.getHeight(null) / 2, h = 190, w = cw * h / ch;
