@@ -15,6 +15,8 @@ import java.awt.RenderingHints;
 final class CenaPouso {
     static final double DURACAO = 17;
     private static final Image PALCO = Assets.imagem("show_final_098.png");
+    /** Arte do piloto (piloto_099.png, grade 4x2): andando (0-3), tirando o macacao (4-5), chifrinho (6), bracos para cima (7). */
+    private static final Image PILOTO = Assets.imagem("piloto_099.png");
     private final int modelo;
     private double t;
 
@@ -64,8 +66,13 @@ final class CenaPouso {
             int px = nx + 230 + (int) (andar * 120) + (int) (suave(sai) * 300), py = CHAO + (int) (suave(sai) * 60);
             boolean semMacacao = t > 10.2;
             double tirando = t > 9 && t < 10.2 ? (t - 9) / 1.2 : 0;
-            if (semMacacao) macacaoNoChao(g, nx + 230 + 120 - 10, CHAO);
-            piloto(g, px, py, semMacacao, tirando, (andar > 0 && andar < 1) || sai > 0, t);
+            if (semMacacao && PILOTO == null) macacaoNoChao(g, nx + 230 + 120 - 10, CHAO);
+            if (PILOTO != null) {
+                int q = t < 7 ? 0 : t < 9 ? (int) (t * 8) % 4 : t < 9.6 ? 4 : t < 10.2 ? 5 : t < 11.5 ? 6 : sai < 1 ? (int) (t * 8) % 2 == 0 ? 6 : 7 : 7;
+                int cw = PILOTO.getWidth(null) / 4, ch = PILOTO.getHeight(null) / 2, h = 190, w = cw * h / ch;
+                Graphics2D pg = (Graphics2D) g.create(); pg.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                pg.drawImage(PILOTO, px - w / 2, py - h + 6, px + w / 2, py + 6, (q % 4) * cw, (q / 4) * ch, (q % 4) * cw + cw, (q / 4) * ch + ch, null); pg.dispose();
+            } else piloto(g, px, py, semMacacao, tirando, (andar > 0 && andar < 1) || sai > 0, t);
         }
 
         // 3) multidao em primeiro plano, pulando
