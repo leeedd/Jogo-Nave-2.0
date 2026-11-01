@@ -20,7 +20,8 @@ public final class TesteAtlas097 {
   double antesX=(double)get(m,"cameraX");m.pressionar(300,300);m.arrastar(370,300);m.soltar();ok((double)get(m,"cameraX")<antesX,"arraste");
   m.localizar();estabilizar(m);m.tecla(KeyEvent.VK_Z);estabilizar(m);
   // Posicao do primeiro planeta do sistema 2 no espaco do mapa.
-  double ang=.9+2*.73,px=MapaEstelar.SISTEMAS[2][0]+Math.cos(ang)*5,py=MapaEstelar.SISTEMAS[2][1]+Math.sin(ang)*5*.78;
+  // os planetas orbitam: pega a posicao de agora
+  java.lang.reflect.Method pp=MapaEstelar.class.getDeclaredMethod("posicaoPlaneta",int.class,int.class);pp.setAccessible(true);double[] pos=(double[])pp.invoke(null,2,0);double px=pos[0],py=pos[1];
   int sx=(int)Math.round(369+(px-(double)get(m,"cameraX"))*(double)get(m,"zoom"));
   int sy=(int)Math.round(302+(py-(double)get(m,"cameraY"))*(double)get(m,"zoom"));
   m.clicar(sx,sy,1); // Descarta o clique residual do arraste anterior.
