@@ -24,11 +24,17 @@ final class CenaPouso {
     private static final BufferedImage[] FRENTE = new BufferedImage[5];
     static { for (int i = 0; i < 5; i++) FRENTE[i] = ler("nave_" + i + "_frente.png"); }
     /** Onde fica a estampa no peito/costas de cada quadro do Flavio (fracoes do quadro). */
-    private static final double[][] ESTAMPA = {null, null, null, null, null,
+    /** Estampa no peito/costas do Wenger (folha final_piloto_sprites.png); no peito fica abaixo da barba. */
+    private static final double[][] ESTAMPA_PILOTO = {null, null, null, null, null,
+        {.37, .41, .70, .56}, {.30, .41, .62, .56}, {.32, .39, .64, .54},
+        {.347, .317, .727, .587}, {.379, .318, .734, .570}, {.354, .33, .685, .54}, {.321, .31, .687, .54}};
+    private static final boolean TEM_PILOTO = ler("final_piloto_sprites.png") != null;
+    private static final double[][] ESTAMPA_FLAVIO = {null, null, null, null, null,
         {.333, .316, .634, .500}, {.352, .317, .640, .493}, {.320, .300, .592, .465},
         {.430, .393, .674, .542}, {.439, .384, .703, .545}, {.350, .308, .633, .480}, {.372, .263, .616, .411}};
     /** Telao preto do palco (fracoes da arte do palco), onde acende o emblema da banda. */
     private static final double TELAO_X0 = 568 / 1586.0, TELAO_Y0 = 348 / 992.0, TELAO_X1 = 1018 / 1586.0, TELAO_Y1 = 558 / 992.0;
+    private static final double[][] ESTAMPA = TEM_PILOTO ? ESTAMPA_PILOTO : ESTAMPA_FLAVIO;
     static final double DURACAO = 21;
     private static final int CHAO = 572;
 
