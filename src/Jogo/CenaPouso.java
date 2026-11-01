@@ -268,11 +268,16 @@ final class CenaPouso {
         double u = Math.min(1, tl / 4.6), nx = (1 - u) * (1 - u) * sx + 2 * u * (1 - u) * mx + u * u * hx, ny = (1 - u) * (1 - u) * sy + 2 * u * (1 - u) * my + u * u * hy;
         double dx = 2 * (1 - u) * (mx - sx) + 2 * u * (hx - mx), dy = 2 * (1 - u) * (my - sy) + 2 * u * (hy - my), ang = Math.atan2(dy, dx) + Math.PI / 2;
         double esc = 1 - u * .25;
-        g.setColor(new Color(0, 0, 0, 90)); g.fillOval((int) (nx + 40 - 45 * esc), (int) (ny + 60 - 20 * esc), (int) (90 * esc), (int) (40 * esc));
+        BufferedImage semCima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
+        if (semCima == null) { // sombra em forma de nave (asa delta) cruzando a galera
+            Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx, ny); sb.rotate(ang); sb.scale(esc * 1.6, esc * 1.6);
+            sb.setColor(new Color(0, 0, 0, 120)); sb.fillPolygon(new int[]{0, 46, 14, 0, -14, -46}, new int[]{-50, 26, 18, 36, 18, 26}, 6); sb.dispose();
+        } else g.setColor(new Color(0, 0, 0, 90));
+        if (semCima != null) g.fillOval((int) (nx + 40 - 45 * esc), (int) (ny + 60 - 20 * esc), (int) (90 * esc), (int) (40 * esc));
         Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang); n.scale(esc, esc);
         BufferedImage cima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
         if (cima != null) { int w = 150, h = w * cima.getHeight() / cima.getWidth(); n.drawImage(cima, -w / 2, -h / 2, w, h, null); }
-        else { n.rotate(-Math.PI / 2); n.scale(2.6, 2.6); ArteNaves.desenharJogador(n, nivelNave, modelo, -24, -20, tl); }
+        // sem a arte de cima, so a sombra da nave passa sobre a galera (nada de sprite torto)
         n.dispose();
     }
 
