@@ -387,7 +387,7 @@ final class CenaPouso {
             // vem correndo e salta por cima das cabecas
             double wx = 480, wpe, ws, alt = 0; int wq;
             if (ts < 1.1) { double c = ts / 1.1; wpe = H + 90 - c * 60; ws = .55; wq = 8 + (int) (t / .12) % 2; }
-            else { double c = Math.min(1, (ts - 1.1) / 1.5); wpe = H + 30 - c * 160; ws = .55 - c * .2; wx = 480 + c * 20; alt = Math.sin(Math.min(1, c * 1.3) * Math.PI * .5) * 230; wq = 11; }
+            else { double c = Math.min(1, (ts - 1.1) / 1.5); wpe = H + 30 - c * 160; ws = .55 - c * .2; wx = 480 + c * 20; alt = Math.sin(c * Math.PI) * 110; wq = 11; }
             for (int k = 0; k < pes.length; k++) if (imgs[k] != null) fila(g, imgs[k], pes[k], escs[k], k * 17, (int) (escs[k] * 230), 10 + k, -1);
             if (flavio != null) { Graphics2D q = (Graphics2D) g.create(); if (ts > 1.1) q.rotate(-Math.min(1.2, (ts - 1.1) * 1.4), wx, wpe - alt - 60); sprite(q, flavio, 12, wq, (int) wx, (int) (wpe - alt), ws, false); q.dispose(); }
             return;

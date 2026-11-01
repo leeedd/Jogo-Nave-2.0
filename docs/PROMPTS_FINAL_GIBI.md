@@ -1,18 +1,51 @@
-# Final do zeramento: artes pra cutscene em gibi
+# Final do zeramento: artes da cutscene (para o GPT)
 
-## 1. cabine_wenger.png: cabine por cima do ombro (tomada da dobra)
+Regras:
+- Um chat novo por imagem.
+- Quando o item pedir, ANEXE a imagem da nave como referência (as artes de frente: nave_0_frente.png ... nave_4_frente.png).
+- Me mande cada resultado como ARQUIVO.
+
+As naves:
+- 0: RAPTOR MK-I, branca e vermelha
+- 1: SHADOW, preta com filetes vermelhos
+- 2: VALKYRIE, branca, dourada e azul, com asas de penas
+- 3: BERSERKER, verde militar blindada, com canhão central
+- 4: METAL GOD, preta e dourada, com espinhos
+
+---
+
+## 1. Cabine de cada nave: cabine_0.png ... cabine_4.png (5 imagens)
+Anexe a imagem de frente da nave e cole, trocando o que está entre colchetes:
 ```
-Pixel art 16-bit estilo Super Nintendo, formato paisagem 16:10, vista de DENTRO da cabine de uma nave espacial de caça, câmera atrás e um pouco acima do ombro direito do piloto.
-O piloto aparece de costas no canto inferior direito: homem careca, barba longa castanho-escura aparecendo dos lados do rosto, óculos escuros, fone de ouvido, macacão de piloto laranja com ombreiras.
-Painel de controle na parte de baixo com telas verdes e botões vermelhos acesos, manche, montantes metálicos do vidro dos dois lados.
-O VIDRO DA CABINE (a janela da frente) deve ser PRETO PURO E LISO, sem estrelas, sem reflexo, sem nada: eu coloco o espaço por trás no jogo.
+Pixel art 16-bit estilo Super Nintendo, formato paisagem 16:10, vista de DENTRO da cabine desta nave espacial (a da imagem anexada), com o interior combinando com ela: [RAPTOR: painéis brancos e vermelhos / SHADOW: interior preto com luzes vermelhas / VALKYRIE: interior branco e dourado com detalhes azuis / BERSERKER: interior verde militar blindado, rebites e alavancas / METAL GOD: interior preto e dourado com espinhos].
+Câmera atrás e um pouco acima do OMBRO DIREITO do piloto: o piloto aparece de costas no LADO ESQUERDO da imagem, pegando parte dele: careca, barba longa castanho-escura aparecendo do lado do rosto, óculos escuros, fone de ouvido, macacão de piloto laranja.
+Mostre os detalhes da nave: painel com telas e botões acesos, manche, e no lado direito o NÚCLEO DO MOTOR visível por uma janelinha/tubo de vidro, brilhando e pulsando (energia na cor da nave).
+O VIDRO DA FRENTE da cabine deve ser PRETO PURO E LISO, sem estrelas e sem reflexo: eu coloco o espaço e a dobra por trás no jogo.
 Sem texto.
 ```
 
-## 2. wenger_carregado.png: a galera carregando ele nos ombros (opcional, pro quadro final)
+## 2. Cada nave vista de costas: nave_0_costas.png ... nave_4_costas.png (5 imagens)
+Anexe a imagem de frente da nave e cole:
 ```
-Pixel art 16-bit estilo Super Nintendo, fundo BRANCO puro e liso, tira horizontal com 4 quadros lado a lado, mesma escala.
-Um homem careca de barba longa castanho-escura e óculos escuros, camiseta preta, deitado de costas sobre as mãos levantadas de vários fãs de metal (só os braços e mãos dos fãs aparecem embaixo dele, com munhequeiras de spikes), fazendo chifrinho com as duas mãos e rindo.
-Quadro 1: deitado sobre as mãos. Quadro 2: sendo jogado um pouco pra cima, mãos se esticando. Quadro 3: no alto, braços abertos. Quadro 4: caindo de volta nas mãos.
+Pixel art 16-bit estilo Super Nintendo. A MESMA nave da imagem anexada, agora vista DE COSTAS e um pouco de cima (câmera atrás e acima dela), voando para longe da câmera, com os motores traseiros acesos soltando fogo azul.
+Uma única nave, centralizada, inteira, nada cortado.
+Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem cenário, sem texto.
+```
+
+## 3. festival_de_cima.png: o festival visto de cima, por trás da galera
+```
+Pixel art 16-bit estilo Super Nintendo, formato paisagem 16:10, vista aérea de cima e por trás de um festival de metal à noite: uma multidão GIGANTE de dezenas de milhares de pessoas de costas enchendo a imagem toda, com braços levantados fazendo chifrinho; lá no fundo o palco enorme com telão, fachos de luz roxos e vermelhos e fogos de artifício no céu. No canto direito, mais perto, uma área de pouso redonda (heliponto com um H amarelo e luzes verdes). Sem nave, sem texto.
+```
+
+## 4. wenger_galera.png: o mergulho e a galera carregando ele (visto de costas)
+```
+Pixel art 16-bit estilo Super Nintendo, fundo BRANCO puro e liso, tira horizontal com 6 quadros lado a lado, mesma escala, visto POR TRÁS da multidão (câmera atrás da galera olhando para o palco).
+Personagem: homem careca, barba longa castanho-escura, óculos escuros, camiseta preta, calça cargo preta, munhequeiras de spikes.
+Quadro 1: ele de costas pulando pra frente em direção à galera, braços abertos (mergulho).
+Quadro 2: ele no ar, deitado de barriga pra baixo, caindo sobre as mãos levantadas dos fãs.
+Quadro 3: ele deitado sobre as mãos levantadas de vários fãs (só os braços e as cabeças de costas dos fãs aparecem embaixo), fazendo chifrinho.
+Quadro 4: sendo jogado um pouco pra cima, as mãos se esticando.
+Quadro 5: no alto, braços abertos, rindo.
+Quadro 6: caindo de volta nas mãos, chifrinho com as duas mãos.
 Sem texto, sem cenário.
 ```
