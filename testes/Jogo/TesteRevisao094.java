@@ -14,7 +14,7 @@ public final class TesteRevisao094 {
    ok(TesteInvasao093.get(f,"cenaChefe")!=null,"cutscene da van");tick(f,.5);key(f,KeyEvent.VK_ENTER,true);key(f,KeyEvent.VK_ENTER,false);tick(f,.6);ok(TesteInvasao093.get(f,"cenaChefe")==null,"enter pula cutscene");
    call(f,"derrotarChefao");for(int s=0;s<8&&f.getMiniChefeTeste()==null;s++)tick(f,1);
    // fortaleza: as 8 bandas reunidas antes do final
-   for(int b=0;b<8;b++){MiniChefe g=f.getMiniChefeTeste();ok(g!=null&&g.bandaReunida(),"fortaleza banda "+(b+1));while(!g.receberDano(50)){}call(f,"derrotarMiniChefe");TesteInvasao093.set(f,"base",null);for(int s=0;s<8&&f.getMiniChefeTeste()==null&&!f.getEtapaTeste().equals("CREDITOS");s++)tick(f,1);}}
+   for(int b=0;b<8;b++){MiniChefe g=f.getMiniChefeTeste();ok(g!=null&&g.bandaReunida(),"fortaleza banda "+(b+1));while(!g.receberDano(50)){}call(f,"derrotarMiniChefe");TesteInvasao093.set(f,"base",null);TesteInvasao093.set(f,"esperaViagem",-1.0);for(int s=0;s<8&&f.getMiniChefeTeste()==null&&!f.getEtapaTeste().equals("CREDITOS");s++)tick(f,1);}}
   ok(f.getEtapaTeste().equals(id==1?"CREDITOS":"DOBRA"),"transicao "+id);
   if(id!=1){int hp=f.getNave().getVida();tick(f,4.3);ok(f.getEtapaTeste().equals("COMBATE"),"proximo setor "+id);ok(f.getNave().getVida()==hp,"sem reparo na dobra "+id);}
  }

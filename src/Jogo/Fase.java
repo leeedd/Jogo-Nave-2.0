@@ -122,6 +122,9 @@ implements ActionListener {
     private int douradoPerdido;
     /** Hangar clandestino: aparece uma vez, na parada seguinte a um contrato dourado cumprido (e so para VETERANO). */
     private boolean hangarPendente, hangarAberto, hangarTela;
+    /** Viagem entre o planeta e a base do sistema: espera (pega os drops), ida e volta. -1 = parado. */
+    private double esperaViagem = -1, viagemIda = -1, viagemVolta = -1;
+    boolean viajando() { return viagemIda >= 0 || viagemVolta >= 0; }
     private int cursorHangar = HangarClandestino.PRIMEIRA;
     /** Tempo de luta contra o integrante atual (para o contrato dourado de rapidez). */
     private double tempoIntegrante;
@@ -424,6 +427,7 @@ implements ActionListener {
     }
     private void atracar() {
         naBase = true; menuBase = false; cursorBase = 0; modeloBase = modeloVisual; avisoBase = "";
+        esperaViagem = viagemIda = -1; alien.clear(); itens.clear(); capsulas.clear(); base = null;
         hangarAberto = hangarPendente && ProgressoJogo.hangarLiberado(); hangarTela = false;
         if (hangarAberto) avisoBase = "ALGUEM NOS FUNDOS DA BASE QUER FALAR COM VOCE";
         nave.soltarTeclas(); espacoPressionado = geloPressionado = fogoPressionado = false;
@@ -478,7 +482,7 @@ implements ActionListener {
         else mostrarAviso("CONTRATO " + c.titulo + " CUMPRIDO: +" + c.premioCR + " CR  +" + c.premioXP + " XP");
         if (subiu) radio.urgente("O cacador subiu de patente: " + Contrato.PATENTES[ProgressoJogo.patente()] + ". Dobrem a recompensa pela cabeca dele.");
     }
-    private void partirDaBase() { naBase = false; hangarPendente = hangarAberto = hangarTela = false; if (base != null) base.partir(); gravarRetomada(); nave.tornarIntangivel(1.5); }
+    private void partirDaBase() { naBase = false; hangarPendente = hangarAberto = hangarTela = false; if (!partidaTeste && etapa == Etapa.COMBATE) viagemVolta = 0; if (base != null) base.partir(); gravarRetomada(); nave.tornarIntangivel(1.5); }
     /** Retomada: setor, progresso do setor, pontos, nivel, casco e energia dos poderes no momento da atracagem. */
     private void gravarRetomada() {
         if (partidaTeste) return;
@@ -1057,6 +1061,7 @@ implements ActionListener {
         if (naBase && !pausado) { EstacaoAliada.desenharMenu(graphics2D, menuBase && !quadroBase, cursorBase, nave, inventario, modeloVisual, quadroBase ? "" : avisoBase, tempoTotal, hangarAberto);
             if (hangarTela) HangarClandestino.desenhar(graphics2D, cursorHangar, avisoBase, tempoTotal);
             if (quadroBase) Contrato.desenharQuadro(graphics2D, ofertasContrato, cursorQuadro, contrato, avisoBase); }
+        if (viajando()) ViagemBase.desenhar(graphics2D, setorAtual, planetaAtual, viagemIda >= 0 ? viagemIda : viagemVolta, viagemIda >= 0);
         if (contrato != null && !naBase && (etapa == Etapa.COMBATE || etapa == Etapa.BATALHA_CHEFE)) {
             graphics2D.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12)); String ct = "CONTRATO " + contrato.hud();
             graphics2D.setColor(new Color(0, 0, 0, 160)); graphics2D.fillRect(944 - graphics2D.getFontMetrics().stringWidth(ct) - 8, 530, graphics2D.getFontMetrics().stringWidth(ct) + 12, 18);
@@ -1299,6 +1304,12 @@ implements ActionListener {
         }
         if (escolhendoSetor) { mapaEstelar.atualizar(d); this.repaint(); return; }
         if (naBase && !pausado) { this.repaint(); return; }
+        if (viajando() && !pausado) {
+            if (viagemIda >= 0 && (viagemIda += d) >= ViagemBase.DURACAO) atracar();
+            if (viagemVolta >= 0 && (viagemVolta += d) >= ViagemBase.DURACAO) { viagemVolta = -1; nave.tornarIntangivel(1.5); }
+            this.repaint(); return;
+        }
+        if (esperaViagem >= 0 && !pausado && etapa == Etapa.COMBATE && (esperaViagem -= d) <= 0) { esperaViagem = -1; viagemIda = 0; nave.soltarTeclas(); }
         tempoCritico = Math.max(0, tempoCritico - d);
         if (this.pausado) {
             if (mapaAberto()) mapaEstelar.atualizar(d);
@@ -1535,6 +1546,8 @@ implements ActionListener {
         this.mostrarAviso("SETOR " + Math.min(TOTAL_SETORES, this.chefesDerrotados + 1) + " - NOVOS ESQUADROES!");
         abatesSeguidos = 0; avisouSangrando = false;
         if (!partidaTeste) radio.falar(RADIO_SETOR[Math.max(0, Math.min(7, setorAtual))]);
+        // chegou no sistema: primeira parada e a base aliada, antes do primeiro planeta
+        if (!partidaTeste) { alien.clear(); viagemIda = 0; }
     }
 
     private void iniciarRitmoSetor() {
@@ -1872,7 +1885,8 @@ implements ActionListener {
         }
         this.esperaProximoEsquadrao = 1.5;
         this.mostrarAviso(intercepcao?"COMANDANTE DESTRUIDO! ELIMINE O ENXAME RESTANTE":"SENTINELA DESTRUIDA! +1500 PONTOS");
-        if (!intercepcao && etapa == Etapa.COMBATE) { base = new EstacaoAliada(); mostrarAviso("SENTINELA DESTRUIDA! BASE ALIADA SE APROXIMANDO"); if (!partidaTeste) radio.urgente("A sentinela caiu! E tem base aliada vindo ai. Derrubem ela!"); }
+        // a base fica em orbita da estrela do sistema: depois do integrante, a nave viaja ate ela
+        if (!intercepcao && !partidaTeste && etapa == Etapa.COMBATE) { esperaViagem = 3.5; mostrarAviso("INTEGRANTE DERRUBADO! RUMO A BASE DO SISTEMA"); }
     }
 
     private void abrirCenaChefe(String nome) {
@@ -2257,7 +2271,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;douradoPerdido=0;hangarPendente=hangarAberto=false;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;douradoPerdido=0;hangarPendente=hangarAberto=false;esperaViagem=viagemIda=viagemVolta=-1;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());

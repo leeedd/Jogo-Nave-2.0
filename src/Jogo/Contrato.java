@@ -126,14 +126,26 @@ final class Contrato {
     /** Tres contratos comuns sorteados para o setor, mais o contrato de nave que estiver liberado. */
     static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r) { return ofertas(setor, chefes, reator, r, false); }
     /** campoAFrente: ainda ha planeta com anel (campo de meteoros) neste sistema. */
+    /** Missoes de cada universo: o mesmo tipo de servico, com o nome e o clima da banda dona do sistema.
+     *  Ordem: limpeza, sem dano no chefe, chefe rapido, vaporizar, garimpo. */
+    static final String[][] MISSOES = {
+        {"MAR DE TINTA", "SEM TENTACULOS", "MARE ALTA", "FUNDO DO POCO", "PEROLA NEGRA"},
+        {"BREAKING THE LAW", "METAL GODS", "PAINKILLER", "ELECTRIC EYE", "BRITISH STEEL"},
+        {"RUN TO THE HILLS", "THE TROOPER", "ACES HIGH", "POWERSLAVE", "THE NUMBER"},
+        {"OVERKILL", "KILLED BY DEATH", "ACE OF SPADES", "BOMBER", "IRON FIST"},
+        {"SEEK AND DESTROY", "UNFORGIVEN", "FUEL", "CREEPING DEATH", "MASTER"},
+        {"ANGEL OF DEATH", "SOUTH OF HEAVEN", "RAINING BLOOD", "HELL AWAITS", "SEASONS"},
+        {"OVER THE WALL", "PRACTICE", "INTO THE PIT", "THE NEW ORDER", "DISCIPLES"},
+        {"WAR PIGS", "PARANOID", "IRON MAN", "CHILDREN OF THE GRAVE", "SABBATH"}};
+    static String missao(int setor, int k) { return MISSOES[Math.max(0, Math.min(7, setor))][k]; }
     static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r, boolean campoAFrente) {
         List<Contrato> l = new ArrayList<>();
         int abates = 30 + chefes * 6 + r.nextInt(10);
-        l.add(new Contrato(Tipo.ABATES, abates, 300 + abates * 15, 60 + abates * 3, -1, "LIMPEZA"));
-        l.add(new Contrato(Tipo.SEM_DANO_CHEFE, 0, 900 + chefes * 150, 220 + chefes * 30, -1, "INTOCAVEL"));
-        if (reator && r.nextBoolean()) { int v = 15 + chefes * 3; l.add(new Contrato(Tipo.VAPORIZAR, v, 700 + v * 30, 160 + v * 6, -1, "DESINTEGRADOR")); }
-        else { int t = Math.max(35, 75 - chefes * 5); l.add(new Contrato(Tipo.CHEFE_RAPIDO, t, 700 + chefes * 120, 180 + chefes * 25, -1, "RELAMPAGO")); }
-        if (campoAFrente) { int q = 4 + chefes / 2; l.add(new Contrato(Tipo.MINERACAO, q, 600 + q * 140, 150 + q * 25, -1, "GARIMPO")); }
+        l.add(new Contrato(Tipo.ABATES, abates, 300 + abates * 15, 60 + abates * 3, -1, missao(setor, 0)));
+        l.add(new Contrato(Tipo.SEM_DANO_CHEFE, 0, 900 + chefes * 150, 220 + chefes * 30, -1, missao(setor, 1)));
+        if (reator && r.nextBoolean()) { int v = 15 + chefes * 3; l.add(new Contrato(Tipo.VAPORIZAR, v, 700 + v * 30, 160 + v * 6, -1, missao(setor, 3))); }
+        else { int t = Math.max(35, 75 - chefes * 5); l.add(new Contrato(Tipo.CHEFE_RAPIDO, t, 700 + chefes * 120, 180 + chefes * 25, -1, missao(setor, 2))); }
+        if (campoAFrente) { int q = 4 + chefes / 2; l.add(new Contrato(Tipo.MINERACAO, q, 600 + q * 140, 150 + q * 25, -1, missao(setor, 4))); }
         for (int m = 1; m <= 4; m++) if (ProgressoJogo.podeTentarNave(m) && !ProgressoJogo.temReliquia(m)) { l.add(daNave(m)); break; }
         l.addAll(0, trocas());
         return l;

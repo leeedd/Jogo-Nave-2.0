@@ -23,6 +23,8 @@ final class MapaEstelar {
  private static BufferedImage ler(String n){java.net.URL u=MapaEstelar.class.getResource("/ImagemIcon/"+n);if(u==null)return null;try{return javax.imageio.ImageIO.read(u);}catch(java.io.IOException e){return null;}}
  /** Tema de cada sistema: o primeiro planeta usa a cara do setor; os outros variam. */
  private static final int[] TEMA={3,1,5,8,2,6,9,0};
+ static BufferedImage estrela(int i){return ESTRELAS[Math.max(0,Math.min(7,i))];}
+ static BufferedImage planeta(int i,int j){return arteDoPlaneta(i,j);}
  private static BufferedImage arteDoPlaneta(int i,int j){
   if(Turne.anel(i,j))return ARTE_PLANETA[i%2==0?11:10];
   int k=j==0?TEMA[i]:(TEMA[i]+j*3+i)%10;return ARTE_PLANETA[k]!=null?ARTE_PLANETA[k]:PLANETAS[i][j];

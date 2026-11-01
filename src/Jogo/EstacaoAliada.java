@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage;
 final class EstacaoAliada {
     private static final BufferedImage ARTE = ler("base_aliada.png"), INTERIOR = ler("base_interior.png"), LUZES = ler("base_doca_luzes.png");
     private static final double PARADA = 560, ESPERA = 14;
+    static BufferedImage arte() { return ARTE; }
     private double x = 1000, y = 200, tempo, parada;
     private boolean saindo;
 
