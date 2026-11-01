@@ -227,13 +227,52 @@ final class CenaPouso {
         g.fillRect(bx - 86, by - 74, 18, 34); g.fillRect(bx + 68, by - 74, 18, 34);
     }
 
-    /** Tomada 2: a nave passa voando por cima da multidao, rumo ao heliponto; a sombra corre sobre a galera. */
+    /** Festival visto de cima (festival_de_cima.png, em pe: palco no topo, galera, heliponto no canto direito). */
+    private static final BufferedImage FESTIVAL_CIMA = ler("festival_de_cima.png");
+    /** Nave vista de cima (nave_N_cima.png); sem ela, o sprite do jogo virado com o bico pra cima. */
+    private static final BufferedImage[] NAVE_CIMA = new BufferedImage[5];
+    static { for (int i = 0; i < 5; i++) NAVE_CIMA[i] = ler("nave_" + i + "_cima.png"); }
+
+    /** Tomada 2: camera la em cima; a nave sobrevoa a galera de baixo pra cima e faz a curva ate o heliponto. */
     private void cenaSobrevoo(Graphics2D g, double tl) {
-        cenaShow(g, tl, 3);
-        double c = Math.min(1, tl / 4.4), x = -260 + c * 1400, y = 300 - Math.sin(c * Math.PI) * 70;
-        g.setColor(new Color(0, 0, 0, 110)); g.fillOval((int) x - 40, 455, 260, 40);
-        Graphics2D n = (Graphics2D) g.create(); n.translate(x, y); n.scale(3.4, 3.4);
-        ArteNaves.desenharJogador(n, nivelNave, modelo, 0, 0, tl);
+        int W = Config.LARGURA, H = Config.ALTURA;
+        if (FESTIVAL_CIMA == null) { cenaShow(g, tl, 3); return; }
+        double e = W / (double) FESTIVAL_CIMA.getWidth(); int ih = (int) (FESTIVAL_CIMA.getHeight() * e);
+        double c = suave(Math.min(1, tl / 4.4)), topo = (ih - H) * (1 - c);
+        g.drawImage(FESTIVAL_CIMA, 0, (int) -topo, W, ih, null);
+        java.util.Random r = new java.util.Random(12);
+        // a galera viva: bracos subindo e descendo (pontinhos de pele piscando sobre a multidao)
+        for (int k = 0; k < 900; k++) {
+            double ix = 125 + r.nextDouble() * 750, iy = 370 + r.nextDouble() * 1200; int y = (int) (iy * e - topo);
+            if (y < -4 || y > H + 4) continue;
+            if (Math.sin(t * 9 + k * 1.7) > .55) { g.setColor(k % 7 == 0 ? new Color(255, 120, 90) : new Color(230, 170, 125)); g.fillRect((int) (ix * e), y - 3, 2, 4); }
+        }
+        // fachos de luz varrendo
+        for (int k = 0; k < 3; k++) {
+            double a = Math.sin(t * .9 + k * 2.1); int x0 = 300 + k * 180, y0 = (int) (330 * e - topo);
+            Graphics2D f = (Graphics2D) g.create(); f.setComposite(AlphaComposite.SrcOver.derive(.16f)); f.setColor(new Color(190, 90, 255));
+            f.fillPolygon(new int[]{x0, x0 + (int) (a * 300) - 60, x0 + (int) (a * 300) + 60}, new int[]{y0, y0 + 700, y0 + 700}, 3); f.dispose();
+        }
+        // bolas de praia quicando na galera
+        for (int k = 0; k < 7; k++) {
+            double ix = 180 + r.nextDouble() * 640, iy = 450 + r.nextDouble() * 1050, px = ix * e + Math.sin(t * .7 + k) * 40;
+            int y = (int) (iy * e - topo), quica = (int) (Math.abs(Math.sin(t * 2.6 + k * 1.3)) * 16), rr = 14;
+            if (y < -20 || y > H + 20) continue;
+            g.setColor(new Color(0, 0, 0, 70)); g.fillOval((int) px - rr + 4, y - rr + 6, rr * 2, rr * 2 - 4);
+            Color[] cor = {new Color(255, 70, 70), new Color(255, 230, 80), new Color(80, 160, 255), Color.WHITE};
+            for (int q = 0; q < 4; q++) { g.setColor(cor[(q + k) % 4]); g.fillArc((int) px - rr - quica / 5, y - rr - quica, rr * 2 + quica / 3, rr * 2 + quica / 3, q * 90 + (int) (t * 90), 90); }
+        }
+        // a nave: sobe pelo meio e faz a curva ate o heliponto (915,310 na arte)
+        double hx = 915 * e, hy = 310 * e - topo;
+        double sx = W / 2.0, sy = H + 80, mx = W / 2.0 + 60, my = H * .35;
+        double u = Math.min(1, tl / 4.6), nx = (1 - u) * (1 - u) * sx + 2 * u * (1 - u) * mx + u * u * hx, ny = (1 - u) * (1 - u) * sy + 2 * u * (1 - u) * my + u * u * hy;
+        double dx = 2 * (1 - u) * (mx - sx) + 2 * u * (hx - mx), dy = 2 * (1 - u) * (my - sy) + 2 * u * (hy - my), ang = Math.atan2(dy, dx) + Math.PI / 2;
+        double esc = 1 - u * .25;
+        g.setColor(new Color(0, 0, 0, 90)); g.fillOval((int) (nx + 40 - 45 * esc), (int) (ny + 60 - 20 * esc), (int) (90 * esc), (int) (40 * esc));
+        Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang); n.scale(esc, esc);
+        BufferedImage cima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
+        if (cima != null) { int w = 150, h = w * cima.getHeight() / cima.getWidth(); n.drawImage(cima, -w / 2, -h / 2, w, h, null); }
+        else { n.rotate(-Math.PI / 2); n.scale(2.6, 2.6); ArteNaves.desenharJogador(n, nivelNave, modelo, -24, -20, tl); }
         n.dispose();
     }
 
