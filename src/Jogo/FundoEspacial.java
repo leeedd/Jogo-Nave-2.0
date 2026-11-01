@@ -33,6 +33,63 @@ public final class FundoEspacial {
     private int setor;
     private final Planeta[] planetas = new Planeta[]{new Planeta(1140.0, 182, 63, new Color(42, 111, 191), new Color(22, 48, 101), false), new Planeta(1760.0, 435, 95, new Color(180, 93, 53), new Color(69, 30, 52), true), new Planeta(2410.0, 265, 55, new Color(79, 171, 146), new Color(19, 76, 109), false)};
 
+    /** Planeta de anel em que a nave esta lutando (aparece ao fundo com os aneis), ou nenhum. */
+    private int anelSetor = -1, anelPlaneta;
+    private double anelVisivel;
+    void definirPlaneta(int setor, int planeta, boolean anel) {
+        if (anel) { anelSetor = setor; anelPlaneta = planeta; }
+        anelVisivel = Math.max(0, Math.min(1, anelVisivel + (anel ? .02 : -.02)));
+        if (anelVisivel == 0) anelSetor = -1;
+    }
+    /** Saturno de perto: o planeta grande no canto e os aneis de pedra cruzando o ceu, girando devagar. */
+    private void desenharAneis(Graphics2D base) {
+        if (anelSetor < 0 || anelVisivel <= 0) return;
+        Graphics2D g = (Graphics2D) base.create();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        float a = (float) (anelVisivel * .8);
+        int cx = 790, cy = 470; double rx = 760, ry = 150, giro = -.26;
+        Color cr = Turne.CORES_RISCO[Turne.risco(anelSetor, anelPlaneta)];
+        // metade de tras do anel
+        aneis(g, cx, cy, rx, ry, giro, cr, a, false);
+        java.awt.image.BufferedImage pl = MapaEstelar.planeta(anelSetor, anelPlaneta);
+        if (pl != null) {
+            int s = 330; Graphics2D q = (Graphics2D) g.create();
+            q.setComposite(AlphaComposite.SrcOver.derive(a));
+            q.rotate(tempo * .02, cx, cy);
+            q.drawImage(pl, cx - s / 2, cy - s / 2, s, s, null);
+            // sombra do lado escuro, para ficar longe e nao brigar com o jogo
+            q.setComposite(AlphaComposite.SrcOver.derive(a * .45f)); q.setColor(new Color(4, 4, 14)); q.fillOval(cx - s / 2 + s / 5, cy - s / 2 + s / 6, s, s);
+            q.dispose();
+        }
+        // metade da frente, por cima do planeta
+        aneis(g, cx, cy, rx, ry, giro, cr, a, true);
+        g.dispose();
+    }
+    private void aneis(Graphics2D base, int cx, int cy, double rx, double ry, double giro, Color cr, float a, boolean frente) {
+        Graphics2D g = (Graphics2D) base.create(); g.rotate(giro, cx, cy);
+        // faixas: varias elipses finas, como as divisoes dos aneis de Saturno
+        double[] raio = {.42, .5, .56, .66, .72, .84, .9};
+        int[] alfa = {50, 80, 40, 95, 60, 70, 35};
+        for (int k = 0; k < raio.length; k++) {
+            int c = 120 + k * 12;
+            g.setComposite(AlphaComposite.SrcOver.derive(a * alfa[k] / 255f * 1.6f));
+            g.setColor(k % 3 == 1 ? cr : new Color(c, c - 12, c - 30));
+            g.setStroke(new BasicStroke(k % 2 == 0 ? 7 : 4));
+            int w = (int) (rx * raio[k] * 2), h = (int) (ry * raio[k] * 2);
+            g.drawArc(cx - w / 2, cy - h / 2, w, h, frente ? 180 : 0, 180);
+        }
+        // pedras soltas no anel, girando
+        Random r = new Random(anelSetor * 13 + anelPlaneta);
+        g.setComposite(AlphaComposite.SrcOver.derive(a));
+        for (int k = 0; k < 220; k++) {
+            double f = .4 + r.nextDouble() * .52, ang = r.nextDouble() * Math.PI * 2 + tempo * (.05 / f);
+            if ((Math.sin(ang) > 0) != frente) continue;
+            int x = (int) (cx + Math.cos(ang) * rx * f), y = (int) (cy + Math.sin(ang) * ry * f), c = 100 + r.nextInt(110), t = 2 + r.nextInt(3);
+            g.setColor(r.nextInt(5) == 0 ? cr : new Color(c, c - 10, c - 28)); g.fillRect(x, y, t, t);
+        }
+        g.dispose();
+    }
     public void definirProgresso(double d, int n) {
         this.destinoProgresso = Math.max(0.0, Math.min(1.0, d));
         int novo = Math.max(0, Math.min(7, n));
@@ -125,6 +182,7 @@ public final class FundoEspacial {
             estrelaArray.dispose();
         }
         graphics2D2.setComposite(AlphaComposite.SrcOver);
+        desenharAneis(graphics2D2);
         graphics2D2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         for (n = 0; n < this.estrelas.length; ++n) {
             for (Estrela estrela : this.estrelas[n]) {

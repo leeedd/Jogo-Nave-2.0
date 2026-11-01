@@ -937,6 +937,9 @@ implements ActionListener {
             graphics2D2.translate(this.aleatorio.nextInt(n * 2 + 1) - n, this.aleatorio.nextInt(n * 2 + 1) - n);
         }
         if(PainelSom.tremorTela()&&intercepcao&&miniChefe!=null&&miniChefe.morrendo())graphics2D2.translate((int)(Math.sin(miniChefe.comandanteTeste().relogio()*70)*4),(int)(Math.cos(miniChefe.comandanteTeste().relogio()*70)*3));
+        // planeta com anel: o fundo da fase mostra o planeta e os aneis de Saturno
+        boolean naTurne = !reuniao && !emHellraiser && !intercepcao && planetaAtual < Turne.planetas(setorAtual);
+        this.fundoEspacial.definirPlaneta(setorAtual, planetaAtual, naTurne && Turne.anel(setorAtual, planetaAtual));
         this.fundoEspacial.desenhar(graphics2D2);
         if(segredo!=null)segredo.desenhar(graphics2D2,tempoTotal,nave.temScanner());
         if(segredoCasco!=null)segredoCasco.desenhar(graphics2D2,tempoTotal,nave.temScanner());
