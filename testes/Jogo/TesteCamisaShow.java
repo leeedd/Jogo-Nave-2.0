@@ -21,6 +21,23 @@ public class TesteCamisaShow {
         TesteInvasao093.set(f, "rotaRisco", true);
         if (f.riscoAtual() != Math.min(4, base + 1)) throw new AssertionError("rota de risco deveria subir o risco");
         if (f.reliquiasBanda() != 1) throw new AssertionError("comeca so com a Lula aberta");
+        // contratos dourados: um fragmento por integrante; completou todos, a reliquia se monta
+        java.util.Random rnd = new java.util.Random(3);
+        Contrato d = Contrato.dourado(3, false, false, 2, rnd);
+        if (!d.dourado() || d.banda != 3) throw new AssertionError("dourado deveria ser da banda");
+        Contrato sd = new Contrato(Contrato.Tipo.SEM_DANO_INTEGRANTE, 0, 1, 1, -1, "DOURADO"); sd.banda = 3; sd.integranteDerrotado(10);
+        if (!sd.cumprido) throw new AssertionError("sem dano no integrante deveria cumprir");
+        Contrato ab = new Contrato(Contrato.Tipo.ABATES, 99, 1, 1, -1, "DOURADO"); ab.banda = 3; ab.integranteDerrotado(10);
+        if (!ab.falhou) throw new AssertionError("dourado de abates expira quando o integrante cai");
+        java.lang.reflect.Method resolver = Fase.class.getDeclaredMethod("resolverContrato"); resolver.setAccessible(true);
+        for (int k = 0; k < Turne.integrantes(3); k++) {
+            Contrato c = new Contrato(Contrato.Tipo.SEM_DANO_INTEGRANTE, 0, 1, 1, -1, "DOURADO"); c.banda = 3; c.cumprido = true;
+            TesteInvasao093.set(f, "contrato", c); resolver.invoke(f);
+        }
+        if ((f.reliquiasBanda() >> 3 & 1) == 0 || f.fragmentosReliquia(3) != Turne.integrantes(3)) throw new AssertionError("reliquia do Motorhead deveria se montar");
+        Contrato perdido = new Contrato(Contrato.Tipo.SEM_DANO_INTEGRANTE, 0, 1, 1, -1, "DOURADO"); perdido.banda = 5; perdido.falhar("TESTE");
+        TesteInvasao093.set(f, "contrato", perdido); resolver.invoke(f);
+        if (((int) TesteInvasao093.get(f, "douradoPerdido") >> 5 & 1) == 0) throw new AssertionError("falhar o dourado perde a reliquia da jornada");
         BufferedImage tira = javax.imageio.ImageIO.read(CenaPouso.class.getResource("/ImagemIcon/final_flavio_sprites.png"));
         BufferedImage com = CenaPouso.estampar(tira, CamisaShow.emblema(1));
         int fw = tira.getWidth() / 12, mudou = 0;

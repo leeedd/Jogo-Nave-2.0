@@ -123,6 +123,12 @@ implements ActionListener {
     /** Reliquias de banda conquistadas (bit = banda). Cada uma libera o show dela no festival; a Lula e sempre aberta. */
     private int reliquiasBanda = 1;
     int reliquiasBanda() { return reliquiasBanda; }
+    /** Fragmentos da reliquia de cada banda (um por integrante) e bandas cujo dourado ja falhou nesta jornada. */
+    private final int[] fragReliquia = new int[8];
+    private int douradoPerdido;
+    /** Tempo de luta contra o integrante atual (para o contrato dourado de rapidez). */
+    private double tempoIntegrante;
+    int fragmentosReliquia(int b) { return fragReliquia[Turne.setor(b)]; }
     boolean rotaRisco() { return rotaRisco; }
     /** Pistas do radio quando uma reliquia cai: dizem que vale alguma coisa, sem dizer o que. */
     private static final String[] PISTAS_RELIQUIA = {
@@ -426,7 +432,15 @@ implements ActionListener {
         tirosInimigos.clear(); SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
         quadroBase = false; cursorQuadro = 0;
         boolean campo = false; for (int p = planetaAtual; p < Turne.planetas(setorAtual); p++) campo |= Turne.anel(setorAtual, p);
-        if (contrato == null) ofertasContrato = Contrato.ofertas(setorAtual, chefesDerrotados, inventario.reator(), aleatorio, campo);
+        if (contrato == null) {
+            ofertasContrato = Contrato.ofertas(setorAtual, chefesDerrotados, inventario.reator(), aleatorio, campo);
+            // rota de risco: a base oferece o contrato dourado da banda (um fragmento por parada)
+            int b = Turne.setor(setorAtual);
+            if (rotaRisco && b > 0 && (douradoPerdido >> b & 1) == 0 && fragReliquia[b] < Turne.integrantes(b)) {
+                boolean campoAntes = planetaAtual < Turne.integrantes(setorAtual) && Turne.anel(setorAtual, planetaAtual);
+                ofertasContrato.add(0, Contrato.dourado(b, planetaAtual >= Turne.integrantes(setorAtual), campoAntes, chefesDerrotados, aleatorio));
+            }
+        }
         gravarRetomada();
     }
     private void aceitarContrato() {
@@ -446,7 +460,21 @@ implements ActionListener {
     private void resolverContrato() {
         if (contrato == null || !contrato.terminado()) return;
         Contrato c = contrato; contrato = null; arquivar(c);
+        if (c.falhou && c.dourado()) {
+            douradoPerdido |= 1 << c.banda; SomJogo.tocar(SomJogo.Efeito.ERRO);
+            mostrarAviso("CONTRATO DOURADO PERDIDO: " + c.motivo + ". A RELIQUIA DO " + BANDAS[c.banda] + " SE FOI NESTA JORNADA"); return;
+        }
         if (c.falhou) { SomJogo.tocar(SomJogo.Efeito.ERRO); mostrarAviso("CONTRATO " + c.titulo + " EXPIROU: " + c.motivo + ". PEGUE OUTRO NA BASE"); return; }
+        if (c.dourado()) {
+            int b = c.banda, n = Turne.integrantes(b); fragReliquia[b] = Math.min(n, fragReliquia[b] + 1);
+            if (fragReliquia[b] >= n) {
+                reliquiasBanda |= 1 << b; SomJogo.tocar(SomJogo.Efeito.RELIQUIA);
+                mostrarAviso("RELIQUIA DO " + BANDAS[b] + " RESTAURADA!");
+                if (!partidaTeste) radio.urgente(PISTAS_RELIQUIA[Integer.bitCount(reliquiasBanda) % PISTAS_RELIQUIA.length]);
+            } else mostrarAviso("FRAGMENTO " + fragReliquia[b] + "/" + n + " DA RELIQUIA DO " + BANDAS[b] + "  +" + c.premioCR + " CR");
+            inventario.creditar(c.premioCR); if (!partidaTeste) ProgressoJogo.ganharXP(c.premioXP);
+            return;
+        }
         inventario.creditar(c.premioCR); SomJogo.tocar(SomJogo.Efeito.VITORIA);
         boolean subiu = !partidaTeste && ProgressoJogo.ganharXP(c.premioXP);
         if (c.tipo == Contrato.Tipo.CACADA) mostrarAviso(Contrato.RELIQUIA_NAVE[c.nave] + " RECUPERADO! ENTREGUE NA BASE PARA LIBERAR A " + Pausa099.nomeNave(c.nave));
@@ -457,12 +485,12 @@ implements ActionListener {
     /** Retomada: setor, progresso do setor, pontos, nivel, casco e energia dos poderes no momento da atracagem. */
     private void gravarRetomada() {
         if (partidaTeste) return;
-        double[] r = new double[16 + 8 + 1 + 2];
+        double[] r = new double[16 + 8 + 1 + 2 + 9];
         r[0] = setorAtual; r[1] = setoresVencidos; r[2] = chefesDerrotados; r[3] = eliminados; r[4] = pontos;
         r[5] = nave.getNivel(); r[6] = nave.getVida(); r[7] = nave.temArmaSecundaria() ? 1 : 0; r[8] = geloColetado ? 1 : 0; r[9] = fogoColetado ? 1 : 0;
         r[10] = lancadosNoSetor; r[11] = numeroEsquadrao; r[12] = modeloVisual; r[13] = creditos; r[15] = planetaAtual;
         for (int i = 0; i < 8; i++) r[16 + i] = poderes.energia[i];
-        r[25] = rotaRisco ? 1 : 0; r[26] = reliquiasBanda;
+        r[25] = rotaRisco ? 1 : 0; r[26] = reliquiasBanda; for (int i = 0; i < 8; i++) r[27 + i] = fragReliquia[i]; r[35] = douradoPerdido;
         retomada = r; comandoSalvo = comando.copia();
     }
     private void voltarParaBase() {
@@ -475,7 +503,7 @@ implements ActionListener {
         geloColetado = r[8] > 0; fogoColetado = r[9] > 0;
         lancadosNoSetor = (int) r[10]; numeroEsquadrao = (int) r[11]; planetaAtual = (int) r[15]; miniChefeEnfrentado = false;
         for (int i = 0; i < 8; i++) poderes.energia[i] = (int) r[16 + i];
-        if (r.length > 26) { rotaRisco = r[25] > 0; reliquiasBanda = (int) r[26] | 1; }
+        if (r.length > 35) { rotaRisco = r[25] > 0; reliquiasBanda = (int) r[26] | 1; for (int i = 0; i < 8; i++) fragReliquia[i] = (int) r[27 + i]; douradoPerdido = (int) r[35]; }
         nave.definirVida((int) r[6]);
         retomada = r; alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
         iniciarRitmoSetor(); fundoEspacial.definirProgresso(0, setorAtual);
@@ -813,7 +841,7 @@ implements ActionListener {
             return;
         }
         if (this.miniChefe != null) {
-            this.miniChefe.atualizar(d, this.nave.getY());
+            this.miniChefe.atualizar(d, this.nave.getY()); tempoIntegrante += d;
             atualizarGuardas();
             if(this.miniChefe.derrotado()){derrotarMiniChefe();return;}
             if(intercepcao && !miniChefe.morrendo()){esperaEnxame-=d;if(esperaEnxame<=0)lancarEnxame();}
@@ -829,7 +857,7 @@ implements ActionListener {
             this.avisoMini -= d;
             if (this.avisoMini <= 0.0) {
                 this.miniChefeEnfrentado = true;
-                this.miniChefe = new MiniChefe(this.setorAtual + 1);
+                this.miniChefe = new MiniChefe(this.setorAtual + 1); tempoIntegrante = 0;
                 miniChefe.definirIntegrante(Turne.integrante(setorAtual, planetaAtual), riscoAtual());
                 mostrarAviso("PLANETA " + (planetaAtual + 1) + "/" + planetas + ": " + Turne.integrante(setorAtual, planetaAtual) + " TE ESPERA");
                 this.avisoMini = -1.0;
@@ -1477,7 +1505,7 @@ implements ActionListener {
         SomJogo.tocar(SomJogo.Efeito.CONFIRMAR);
         escolhendoSetor = false;
         setorAtual = destino; rotaRisco = mapaEstelar.rotaRisco(); mapaEstelar.definirRotaRisco(false);
-        if (rotaRisco) { mostrarAviso("ROTA DE RISCO: DIZEM QUE O CHEFE GUARDA UMA RELIQUIA"); if (!partidaTeste) radio.falar("Ele pegou a rota da morte. Ninguem entra la a toa... o que tem naquele cofre?"); }
+        if (rotaRisco) { mostrarAviso("ROTA DE RISCO: A BASE VAI OFERECER CONTRATOS DOURADOS"); if (!partidaTeste) radio.falar("Ele pegou a rota da morte. Ninguem entra la a toa... o que tem naquele cofre?"); }
         this.etapa = Etapa.DOBRA;
         this.cenaNave = new CinematicaNave(this.nave, false, setorAtual);
         emboscadaPendente = !partidaTeste && !emboscadaUsada && chefesDerrotados >= 2
@@ -1829,6 +1857,7 @@ implements ActionListener {
         } else if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
             // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta
             String quem = Turne.integrante(setorAtual, planetaAtual); planetaAtual++; miniChefeEnfrentado = false;
+            if (contrato != null) { contrato.integranteDerrotado(tempoIntegrante); resolverContrato(); }
             mostrarAviso(quem + " CANCELADO! PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual) + (Turne.anel(setorAtual, planetaAtual) ? ": CAMPO DE METEOROS!" : ""));
             if (!partidaTeste) radio.falar(quem + " caiu. A turne ta desmoronando, segurem esse cacador!");
         }
@@ -1874,9 +1903,6 @@ implements ActionListener {
         int id=chefe.getFase();cenaDerrota=new CenaDerrotaChefe(chefe);
         if(id==HELLRAISER){premiar(30000);hellraiserVencido=true;emHellraiser=false;trofeuPendente=0;}
         else{premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;
-            // rota de risco vencida: o chefe entrega a reliquia da banda, que libera o show dela no festival
-            if(rotaRisco){reliquiasBanda|=1<<Turne.setor(setorAtual);mostrarAviso("RELIQUIA DO "+BANDAS[Turne.setor(setorAtual)]+" CONQUISTADA");
-                if(!partidaTeste)radio.urgente(PISTAS_RELIQUIA[Integer.bitCount(reliquiasBanda)%PISTAS_RELIQUIA.length]);}
             rotaRisco=false;}
         chefe=null;cenaChefe=null;
         if(contrato!=null){contrato.chefeDerrotado(tempoBatalhaChefe);resolverContrato();}
@@ -1969,7 +1995,7 @@ implements ActionListener {
         this.gerarParticulas(this.nave.getX() + 25, this.nave.getY() + 20, 24);
         this.explosoes.add(new ExplosaoCurta(this.nave.getX() + 25, this.nave.getY() + 18, 11));
         abatesSeguidos = 0;
-        if (contrato != null) { contrato.golpe(); if (etapa == Etapa.BATALHA_CHEFE) contrato.danoNoChefe(); resolverContrato(); }
+        if (contrato != null) { contrato.golpe(); if (etapa == Etapa.BATALHA_CHEFE) contrato.danoNoChefe(); if (miniChefe != null) contrato.danoNoIntegrante(); resolverContrato(); }
         if (!avisouSangrando && !partidaTeste && etapa == Etapa.COMBATE && nave.getVida() > 0 && nave.getVida() * 4 <= nave.getVidaMaxima()) { avisouSangrando = true; radio.urgente("Ele ta sangrando! Todos em cima dele, AGORA!"); }
         Item.Tipo perdido=null;
         // O amuleto segura a arma, mas se desgasta a cada golpe e acaba se despedacando.
@@ -2225,7 +2251,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;rotaRisco=false;reliquiasBanda=1;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;rotaRisco=false;reliquiasBanda=1;java.util.Arrays.fill(fragReliquia,0);douradoPerdido=0;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());

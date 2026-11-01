@@ -13,7 +13,7 @@ import java.util.Random;
  * Os contratos especiais de nave (Fantasma, Escudo de Ouro, Furia Verde, Forja Final) liberam a nave.
  */
 final class Contrato {
-    enum Tipo { ABATES, SEM_DANO_CHEFE, CHEFE_RAPIDO, VAPORIZAR, CACADA, TROCA, MINERACAO }
+    enum Tipo { ABATES, SEM_DANO_CHEFE, CHEFE_RAPIDO, VAPORIZAR, CACADA, TROCA, MINERACAO, SEM_DANO_INTEGRANTE, INTEGRANTE_RAPIDO }
 
     final Tipo tipo;
     final int alvo, premioCR, premioXP, nave;
@@ -22,6 +22,10 @@ final class Contrato {
     /** Golpes que o piloto pode levar antes de perder o contrato (abates e vaporizar). */
     static final int GOLPES_MAX = 2;
     boolean falhou, cumprido;
+    /** Contrato dourado: banda dona do fragmento (-1 = contrato comum). Vale so ate o proximo integrante cair
+     *  (ou, depois do ultimo integrante, ate o chefe). Cada um cumprido e um fragmento da reliquia da banda. */
+    int banda = -1;
+    boolean dourado() { return banda >= 0; }
     /** Por que o contrato acabou (vai para o arquivo da pausa). */
     String motivo = "";
     void falhar(String m) { if (!terminado()) { falhou = true; motivo = m; } }
@@ -35,6 +39,8 @@ final class Contrato {
             case ABATES: return "Abater " + alvo + " antes do chefe, levando no maximo " + GOLPES_MAX + " golpes";
             case SEM_DANO_CHEFE: return "Vencer o chefe sem levar dano";
             case CHEFE_RAPIDO: return "Vencer o chefe em ate " + alvo + " s";
+            case SEM_DANO_INTEGRANTE: return "Derrubar o proximo integrante sem levar dano";
+            case INTEGRANTE_RAPIDO: return "Derrubar o proximo integrante em ate " + alvo + " s";
             case CACADA: return "Cacar " + ALVO_NAVE[nave] + " e recuperar " + ARTIGO[nave] + " " + RELIQUIA_NAVE[nave];
             case MINERACAO: return "Extrair " + alvo + " minerios raros dos campos de meteoros";
             case TROCA: return "Entregar " + ARTIGO[nave] + " " + RELIQUIA_NAVE[nave] + " e liberar a nave";
@@ -47,6 +53,8 @@ final class Contrato {
             case ABATES: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " ABATES  GOLPES " + golpes + "/" + GOLPES_MAX;
             case SEM_DANO_CHEFE: return titulo + ": CHEFE SEM DANO";
             case CHEFE_RAPIDO: return titulo + ": CHEFE EM " + alvo + "s";
+            case SEM_DANO_INTEGRANTE: return titulo + ": INTEGRANTE SEM DANO";
+            case INTEGRANTE_RAPIDO: return titulo + ": INTEGRANTE EM " + alvo + "s";
             case CACADA: return "CACAR " + ALVO_NAVE[nave];
             case MINERACAO: return titulo + ": " + Math.min(progresso, alvo) + "/" + alvo + " MINERIOS";
             case TROCA: return "";
@@ -63,6 +71,14 @@ final class Contrato {
     /** Reliquia do alvo procurado foi recolhida. */
     void minerio() { if (tipo == Tipo.MINERACAO && !terminado() && ++progresso >= alvo) cumprido = true; }
     void recuperou() { if (tipo == Tipo.CACADA && !terminado()) cumprido = true; }
+    void danoNoIntegrante() { if (tipo == Tipo.SEM_DANO_INTEGRANTE) falhar("LEVOU DANO DO INTEGRANTE"); }
+    /** Um integrante caiu: resolve os contratos do integrante; o dourado que dependia de outra coisa expira. */
+    void integranteDerrotado(double segundos) {
+        if (terminado()) return;
+        if (tipo == Tipo.SEM_DANO_INTEGRANTE) cumprido = true;
+        else if (tipo == Tipo.INTEGRANTE_RAPIDO) { if (segundos <= alvo) cumprido = true; else falhar("INTEGRANTE CAIU EM " + (int) segundos + "s"); }
+        else if (dourado()) falhar("O INTEGRANTE CAIU ANTES");
+    }
     void danoNoChefe() { if (tipo == Tipo.SEM_DANO_CHEFE) falhar("LEVOU DANO NO CHEFE"); }
     /** Chefe caiu: resolve quem depende dele; quem nao chegou no alvo expira. */
     void chefeDerrotado(double segundos) {
@@ -94,6 +110,19 @@ final class Contrato {
     }
     static Contrato troca(int modelo) { return new Contrato(Tipo.TROCA, 0, 0, 0, modelo, "ENTREGA: " + RELIQUIA_NAVE[modelo]); }
 
+    /** Contrato dourado da banda: curto e duro. Depois do ultimo integrante, o alvo e o chefe. */
+    static Contrato dourado(int banda, boolean chefeAFrente, boolean campoAFrente, int chefes, Random r) {
+        Contrato c;
+        if (chefeAFrente) c = r.nextBoolean() ? new Contrato(Tipo.SEM_DANO_CHEFE, 0, 1500 + chefes * 200, 350, -1, "DOURADO")
+                : new Contrato(Tipo.CHEFE_RAPIDO, Math.max(30, 60 - chefes * 4), 1300 + chefes * 180, 320, -1, "DOURADO");
+        else switch (r.nextInt(campoAFrente ? 4 : 3)) {
+            case 0: c = new Contrato(Tipo.SEM_DANO_INTEGRANTE, 0, 1100 + chefes * 150, 280, -1, "DOURADO"); break;
+            case 1: c = new Contrato(Tipo.INTEGRANTE_RAPIDO, Math.max(25, 50 - chefes * 3), 1000 + chefes * 140, 260, -1, "DOURADO"); break;
+            case 2: { int a = 14 + chefes * 3; c = new Contrato(Tipo.ABATES, a, 900 + a * 20, 240, -1, "DOURADO"); break; }
+            default: { int q = 3 + chefes / 3; c = new Contrato(Tipo.MINERACAO, q, 900 + q * 160, 240, -1, "DOURADO"); }
+        }
+        c.banda = banda; return c;
+    }
     /** Tres contratos comuns sorteados para o setor, mais o contrato de nave que estiver liberado. */
     static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r) { return ofertas(setor, chefes, reator, r, false); }
     /** campoAFrente: ainda ha planeta com anel (campo de meteoros) neste sistema. */
@@ -135,13 +164,14 @@ final class Contrato {
         }
         for (int i = 0; i < ofertas.size(); i++) {
             int passo = Math.min(82, (478 - y0) / Math.max(1, ofertas.size())), alto = passo - 8, q = passo < 82 ? 3 : 0;
-            Contrato c = ofertas.get(i); int y = y0 + i * passo; boolean sel = i == cursor, especial = c.nave >= 0;
+            Contrato c = ofertas.get(i); int y = y0 + i * passo; boolean sel = i == cursor, especial = c.nave >= 0, ouro = c.dourado();
             g.setColor(sel ? new Color(40, 90, 60, 170) : new Color(12, 20, 32, 200)); g.fillRect(168, y, 624, alto);
-            g.setColor(sel ? new Color(255, 206, 98) : especial ? new Color(200, 120, 255) : new Color(48, 76, 101)); g.drawRect(168, y, 624, alto);
+            g.setColor(sel ? new Color(255, 206, 98) : ouro ? new Color(220, 170, 40) : especial ? new Color(200, 120, 255) : new Color(48, 76, 101)); g.drawRect(168, y, 624, alto);
+            if (ouro) { g.setColor(new Color(255, 200, 60, 40)); g.fillRect(169, y + 1, 623, alto - 1); }
             if (c.tipo == Tipo.TROCA || c.tipo == Tipo.CACADA) Item.reliquia(g, 770, y + alto / 2, System.nanoTime() / 1e9, c.nave);
-            texto(g, (sel ? "> " : "  ") + c.titulo + (especial ? "   [LIBERA " + Pausa099.nomeNave(c.nave) + "]" : ""), 180, y + 20 - q / 3, 15, especial ? new Color(220, 160, 255) : Color.WHITE);
+            texto(g, (sel ? "> " : "  ") + c.titulo + (especial ? "   [LIBERA " + Pausa099.nomeNave(c.nave) + "]" : ouro ? "   [VALE SO ATE O PROXIMO ALVO]" : ""), 180, y + 20 - q / 3, 15, especial ? new Color(220, 160, 255) : ouro ? new Color(255, 210, 80) : Color.WHITE);
             texto(g, c.descricao(), 196, y + 41 - q * 2, 13, new Color(190, 205, 220));
-            texto(g, c.tipo == Tipo.TROCA ? "ENTER: ENTREGAR" : "CR " + c.premioCR + "   XP " + c.premioXP + (c.tipo == Tipo.CACADA ? "   + RELIQUIA" : ""), 196, y + 60 - q * 3, 12, new Color(255, 206, 98));
+            texto(g, c.tipo == Tipo.TROCA ? "ENTER: ENTREGAR" : "CR " + c.premioCR + "   XP " + c.premioXP + (c.tipo == Tipo.CACADA ? "   + RELIQUIA" : c.dourado() ? "   + FRAGMENTO" : ""), 196, y + 60 - q * 3, 12, new Color(255, 206, 98));
         }
         if (aviso != null && !aviso.isEmpty()) texto(g, aviso, 480 - largura(g, aviso, 13) / 2, 470, 13, new Color(255, 206, 98));
         texto(g, ativo != null ? "ESC: VOLTAR" : "SETAS: ESCOLHER    ENTER: ACEITAR    ESC: VOLTAR", 170, 496, 12, new Color(150, 160, 175));

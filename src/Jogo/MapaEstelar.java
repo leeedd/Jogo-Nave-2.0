@@ -249,8 +249,8 @@ final class MapaEstelar {
    texto(g,"SETAS: TROCAR SETOR",748,251,11,Color.WHITE);
    texto(g,"ENTER: INICIAR DOBRA",748,269,11,Color.WHITE);
    texto(g,"R: ROTA "+(rotaRisco?"DE RISCO":"NORMAL"),748,289,12,rotaRisco?new Color(255,90,80):new Color(150,200,150));
-   texto(g,rotaRisco?"+1 de risco em tudo.":"Dizem que na rota de risco",748,305,10,new Color(154,182,205));
-   texto(g,rotaRisco?"O chefe guarda uma reliquia.":"o chefe guarda uma reliquia.",748,319,10,new Color(154,182,205));
+   texto(g,rotaRisco?"+1 de risco. A base paga em":"Na rota de risco a base",748,305,10,new Color(154,182,205));
+   texto(g,rotaRisco?"contratos dourados.":"oferece contratos dourados.",748,319,10,new Color(255,206,98));
   }else
   texto(g,selecionado<atual?"PERCORRIDO":selecionado==atual?"POSICAO DA CAMPANHA":"AINDA NAO ALCANCADO",748,181,11,new Color(165,190,214));
   if(planeta>=0){
