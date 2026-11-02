@@ -276,33 +276,38 @@ final class CenaPouso {
         int W = Config.LARGURA, H = Config.ALTURA;
         fundo(g, HELIPONTO, tl + (desce ? 4.6 : 0), 11.8, 1.0, 1.08, .6, .7);
         BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
-        int cx = 760, chao = 505, fh = 165;
-        double p = desce ? 1 : suave(tl / 3.6);
-        int ny = chao - fh - (int) ((1 - p) * 520);
-        g.setColor(new Color(0, 0, 0, (int) (40 + 100 * p))); int so = (int) (120 + 200 * p); g.fillOval(cx - so / 2, chao - 18, so, 30);
+        int cx = 770, chao = 515, fh = 245;
+        // desce balancando, paira um instante, toca o chao e quica no trem de pouso
+        double p = desce ? 1 : suave(Math.min(1, tl / 3.0)), paira = !desce && tl > 2.6 && tl < 3.4 ? Math.sin((tl - 2.6) * 8) * 6 : 0;
+        double quica = !desce && tl > 3.4 && tl < 4.2 ? Math.abs(Math.sin((tl - 3.4) * 8)) * 10 * (4.2 - tl) : 0;
+        double giro = desce ? 0 : Math.sin(tl * 2.3) * .06 * (1 - p);
+        int ny = chao - fh - (int) ((1 - p) * 560) - (int) paira - (int) quica + (desce ? (int) (Math.sin(tl * 2) * 1.5) : 0);
+        g.setColor(new Color(0, 0, 0, (int) (40 + 100 * p))); int so = (int) (160 + 260 * p); g.fillOval(cx - so / 2, chao - 22, so, 36);
         if (frente != null) {
             int fw = frente.getWidth() * fh / frente.getHeight();
-            if (p < 1) for (int k = -1; k <= 1; k += 2) for (int j = 0; j < 7; j++) { g.setColor(new Color(120, 200, 255, Math.max(0, 190 - j * 26))); g.fillRect(cx + k * fw / 4 - 7, ny + fh - 12 + j * 11, 14, 11); }
-            g.drawImage(frente, cx - fw / 2, ny, fw, fh, null);
+            Graphics2D n = (Graphics2D) g.create(); n.rotate(giro, cx, ny + fh / 2.0);
+            if (!desce && tl < 3.6) for (int k = -1; k <= 1; k += 2) for (int j = 0; j < 8; j++) { n.setColor(new Color(120, 200, 255, Math.max(0, 200 - j * 24))); n.fillRect(cx + k * fw / 4 - 9 + (int) (Math.sin(tl * 40 + j) * 2), ny + fh - 14 + j * 13, 18, 13); }
+            n.drawImage(frente, cx - fw / 2, ny, fw, fh, null); n.dispose();
         }
-        if (!desce && tl > 3.2) { double q = Math.min(1, (tl - 3.2) / 1.4); g.setColor(new Color(170, 150, 170, (int) (130 * (1 - q)))); for (int k = 0; k < 14; k++) { int r = (int) (14 + q * 50); g.fillOval(cx - 170 + k * 25 - r / 2, chao - r / 2 - 6, r, r / 2); } }
+        if (!desce && tl > 2.8) { double q = Math.min(1, (tl - 2.8) / 1.6); g.setColor(new Color(170, 150, 170, (int) (140 * (1 - q)))); for (int k = 0; k < 16; k++) { int r = (int) (16 + q * 60); g.fillOval(cx - 230 + k * 30 - r / 2, chao - r / 2 - 8, r, r / 2); } }
         if (!desce || flavio == null) return;
         // Wenger: desce do lado da nave, tira o macacao e corre ate a escadinha (545,412) e sobe ate (608,300)
-        int q; double x, pe, s = .52;
-        if (tl < 1.2) { q = 1; x = 560; pe = chao + 10 - 60 * (1 - tl / 1.2); }
-        else if (tl < 1.9) { q = 4; x = 560; pe = chao + 10; }
-        else if (tl < 2.6) { q = 5; x = 560; pe = chao + 10; }
-        else if (tl < 3.3) { q = 6; x = 560; pe = chao + 10; }
-        else if (tl < 4.2) { q = 7; x = 560; pe = chao + 10; }
-        else if (tl < 5.6) { double c = suave((tl - 4.2) / 1.4); q = 8 + (int) (tl / .13) % 2; x = 560 - c * 10; pe = chao + 10 - c * 92; s = .52 - c * .18; }
-        else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 8 + (int) (tl / .16) % 2; x = 550 + c * 58; pe = 418 - c * 112; s = .34 - c * .05; }
-        if (tl >= 2.6) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(590, chao + 2, 64, 12, 6, 6); g.setColor(new Color(160, 70, 20)); g.fillRect(598, chao + 6, 48, 3); }
+        int q; double x, pe, s = .36;
+        if (tl < 1.6) { q = 1; x = 560; pe = chao + 6 - 70 * (1 - suave(tl / 1.6)); }
+        else if (tl < 2.3) { q = 0; x = 560; pe = chao + 6; }
+        else if (tl < 2.9) { q = 4; x = 560; pe = chao + 6; } else if (tl < 2.95) { q = 5; x = 560; pe = chao + 6; }
+        else if (tl < 3.5) { q = 6; x = 560; pe = chao + 6; }
+        else if (tl < 4.3) { q = 7; x = 560; pe = chao + 6; }
+        else if (tl < 5.6) { double c = suave((tl - 4.3) / 1.3); q = 8 + (int) (tl / .13) % 2; x = 560 - c * 10; pe = chao + 6 - c * 94; s = .36 - c * .06; }
+        else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 8 + (int) (tl / .16) % 2; x = 550 + c * 58; pe = 418 - c * 112; s = .3 - c * .04; }
+        if (tl >= 2.95) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(585, chao, 44, 9, 5, 5); g.setColor(new Color(160, 70, 20)); g.fillRect(591, chao + 3, 32, 2); }
         sprite(g, flavio, 12, q, (int) x, (int) pe, s, false);
     }
 
     /** Vista do palco: o Wenger entra pela escada da direita, corre de costas pela beira e mergulha na galera. */
     private void cenaMergulho(Graphics2D g, double tl) {
         fundo(g, VISAO_PALCO, tl, 2.8, 1.0, 1.06, .5, .9);
+        bandeiras(g, new int[][]{{100, 320, 30}, {230, 270, 24}, {640, 250, 24}, {760, 300, 30}, {420, 230, 18}, {330, 330, 34}, {560, 340, 34}, {170, 230, 18}, {720, 220, 16}});
         if (flavio == null) return;
         double x, pe, s, alt = 0; int q; float a = 1;
         if (tl < 1.2) { double c = suave(tl / 1.2); q = 8 + (int) (tl / .12) % 2; x = 820 - c * 330; pe = 470 + c * 30; s = .52 + c * .06; }
@@ -312,9 +317,37 @@ final class CenaPouso {
         if (tl > 2.3) { g.setColor(new Color(225, 165, 125)); for (int k = 0; k < 9; k++) { int hx = 430 + k * 13, hy = 322 - (int) (Math.abs(Math.sin((tl - 2.3) * 6 + k)) * 10); g.fillRect(hx, hy, 4, 12); } }
     }
 
+    /** Bandeira de pais em pixel, tremulando num mastro (pe do mastro em x,y). */
+    private void bandeira(Graphics2D g, int pais, int x, int y, int w, double fase) {
+        int h = w * 2 / 3, mast = (int) (w * 1.3);
+        g.setColor(new Color(70, 60, 50)); g.fillRect(x, y - mast - h, Math.max(2, w / 18), mast + h);
+        int faixas = Math.max(6, w / 3);
+        for (int k = 0; k < faixas; k++) {
+            int fx = x + 2 + k * w / faixas, fw = w / faixas + 1, dy = (int) (Math.sin(t * 6 + fase - k * .5) * h * .12 * k / faixas);
+            Graphics2D f = (Graphics2D) g.create(); f.clipRect(fx, y - mast - h + dy - 2, fw, h + 4); f.translate(x + 2, y - mast - h + dy);
+            pintarPais(f, pais, w, h); f.dispose();
+        }
+    }
+    private static void pintarPais(Graphics2D f, int p, int w, int h) {
+        switch (p) {
+            case 0: f.setColor(new Color(0, 150, 60)); f.fillRect(0, 0, w, h); f.setColor(new Color(250, 210, 0)); f.fillPolygon(new int[]{w / 2, w - w / 10, w / 2, w / 10}, new int[]{h / 10, h / 2, h - h / 10, h / 2}, 4); f.setColor(new Color(20, 40, 140)); f.fillOval(w / 2 - h / 4, h / 4, h / 2, h / 2); break; // Brasil
+            case 1: for (int k = 0; k < 7; k++) { f.setColor(k % 2 == 0 ? new Color(200, 30, 40) : Color.WHITE); f.fillRect(0, k * h / 7, w, h / 7 + 1); } f.setColor(new Color(30, 40, 110)); f.fillRect(0, 0, w * 2 / 5, h * 4 / 7); break; // EUA
+            case 2: f.setColor(new Color(20, 40, 120)); f.fillRect(0, 0, w, h); f.setColor(Color.WHITE); f.fillRect(0, h * 2 / 5, w, h / 5); f.fillRect(w * 2 / 5, 0, w / 5, h); f.setColor(new Color(200, 20, 40)); f.fillRect(0, h * 9 / 20, w, h / 10); f.fillRect(w * 9 / 20, 0, w / 10, h); break; // Reino Unido
+            case 3: f.setColor(Color.BLACK); f.fillRect(0, 0, w, h / 3 + 1); f.setColor(new Color(220, 0, 0)); f.fillRect(0, h / 3, w, h / 3 + 1); f.setColor(new Color(255, 205, 0)); f.fillRect(0, h * 2 / 3, w, h / 3 + 1); break; // Alemanha
+            case 4: f.setColor(Color.WHITE); f.fillRect(0, 0, w, h); f.setColor(new Color(200, 20, 40)); f.fillOval(w / 2 - h / 4, h / 4, h / 2, h / 2); break; // Japao
+            case 5: f.setColor(new Color(110, 180, 230)); f.fillRect(0, 0, w, h); f.setColor(Color.WHITE); f.fillRect(0, h / 3, w, h / 3 + 1); f.setColor(new Color(250, 190, 40)); f.fillOval(w / 2 - h / 10, h / 2 - h / 10, h / 5, h / 5); break; // Argentina
+            case 6: f.setColor(new Color(0, 90, 170)); f.fillRect(0, 0, w, h); f.setColor(new Color(255, 205, 0)); f.fillRect(0, h * 2 / 5, w, h / 5); f.fillRect(w * 3 / 10, 0, w / 7, h); break; // Suecia
+            case 7: f.setColor(new Color(0, 110, 70)); f.fillRect(0, 0, w / 3 + 1, h); f.setColor(Color.WHITE); f.fillRect(w / 3, 0, w / 3 + 1, h); f.setColor(new Color(200, 20, 40)); f.fillRect(w * 2 / 3, 0, w / 3 + 1, h); f.setColor(new Color(130, 90, 40)); f.fillOval(w / 2 - h / 8, h / 2 - h / 8, h / 4, h / 4); break; // Mexico
+            default: f.setColor(new Color(0, 140, 70)); f.fillRect(0, 0, w / 3 + 1, h); f.setColor(Color.WHITE); f.fillRect(w / 3, 0, w / 3 + 1, h); f.setColor(new Color(200, 30, 40)); f.fillRect(w * 2 / 3, 0, w / 3 + 1, h); // Italia
+        }
+    }
+    /** Bandeiras de varios paises espalhadas pela galera (x, pe do mastro, largura). */
+    private void bandeiras(Graphics2D g, int[][] pos) { for (int k = 0; k < pos.length; k++) bandeira(g, k % 9, pos[k][0], pos[k][1], (int) (pos[k][2] * 1.5), k * 1.7); }
+
     /** Vista central do palco: a galera de frente jogando o Wenger pra cima, la no meio. */
     private void cenaCarregado(Graphics2D g, double tl) {
         fundo(g, VISAO_CENTRO, tl, 8.2, 1.0, 1.1, .5, .55);
+        bandeiras(g, new int[][]{{120, 300, 34}, {250, 250, 26}, {700, 260, 28}, {820, 320, 36}, {380, 230, 22}, {600, 225, 22}, {60, 380, 40}, {900, 400, 40}, {480, 210, 18}});
         if (GALERA == null) return;
         int q = (int) (tl * 2.1 / 1.1) % 4; double x = 480 + Math.sin(tl * .45) * 150;
         sprite(g, GALERA, 4, q, (int) x, 400, .42, false);
