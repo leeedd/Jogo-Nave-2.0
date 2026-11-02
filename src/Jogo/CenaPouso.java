@@ -78,7 +78,8 @@ final class CenaPouso {
         banda = Math.max(0, Math.min(aberto(FESTIVAL) ? FESTIVAL : Fase.BANDAS.length - 1, b));
         // no festival completo a camisa e a da Lula, onde a jornada comecou
         if (FLAVIO != null) flavio = banda == COMUM || banda == FESTIVAL ? FLAVIO : estampar(FLAVIO, CamisaShow.emblema(banda));
-        if (banda != COMUM) MusicaJogo.tocarShow(banda);
+        // escolheu o show: toca 10 s da musica dele, so pra dar o gostinho
+        if (banda != COMUM) { previaTocando = banda; MusicaJogo.previaShow(banda); }
         if (WENGER != null) { fasFundo = escurecer(WENGER, .3f); fasLonge = escurecer(WENGER, .45f); fasMeio = escurecer(WENGER, .6f); fasPerto = escurecer(WENGER, .7f); }
     }
     private int previaTocando = -1, ultimoCursor = -1;
@@ -94,13 +95,11 @@ final class CenaPouso {
     void atualizar(double dt) {
         if (banda < 0) {
             tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt));
-            // parou em cima de um show aberto: toca a intro da musica dele (um gostinho do que vem)
-            if (cursor != ultimoCursor) { previaTocando = -1; paradoNoCursor = 0; ultimoCursor = cursor; }
-            paradoNoCursor += Math.max(0, dt);
-            if (previaTocando < 0 && paradoNoCursor > .45 && aberto(cursor)) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
             return;
         }
         double antes = t; t = Math.min(DURACAO, t + Math.max(0, dt));
+        // depois do gostinho de 10 s da musica do show, volta a trilha do jogo
+        if (previaTocando >= 0 && antes < 10 && t >= 10) { previaTocando = -1; SomJogo.trocarMusica("trilha_metal"); }
         for (Object[] s : SONS) { double m = ((Number) s[0]).doubleValue(); if (antes < m && t >= m) SomJogo.tocar((SomJogo.Efeito) s[1], 480); }
     }
     boolean terminou() { return t >= DURACAO; }
