@@ -82,7 +82,18 @@ final class CenaPouso {
         if (WENGER != null) { fasFundo = escurecer(WENGER, .3f); fasLonge = escurecer(WENGER, .45f); fasMeio = escurecer(WENGER, .6f); fasPerto = escurecer(WENGER, .7f); }
     }
     void confirmar() { if (!aberto(cursor)) { avisoFechado = 1.6; SomJogo.tocar(SomJogo.Efeito.ERRO); return; } escolher(cursor); }
-    void atualizar(double dt) { if (banda < 0) { tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt)); return; } t = Math.min(DURACAO, t + Math.max(0, dt)); }
+    /** Sons da cutscene: (instante, efeito). A trilha de metal toca por baixo o tempo todo. */
+    private static final Object[][] SONS = {
+        {.05, SomJogo.Efeito.DOBRA}, {.8, SomJogo.Efeito.DOBRA}, {1.5, SomJogo.Efeito.DOBRA}, {2.0, SomJogo.Efeito.SAIDA_DOBRA}, {2.15, SomJogo.Efeito.TROVAO},
+        {5.7, SomJogo.Efeito.FUSAO}, {6.6, SomJogo.Efeito.NUCLEAR}, {8.0, SomJogo.Efeito.FUSAO}, {9.3, SomJogo.Efeito.LASER},
+        {10.3, SomJogo.Efeito.FUSAO}, {11.8, SomJogo.Efeito.ENERGIA}, {13.1, SomJogo.Efeito.IMPACTO}, {13.15, SomJogo.Efeito.EXPLOSAO},
+        {15.6, SomJogo.Efeito.ESCUDO}, {16.1, SomJogo.Efeito.TIRO}, {16.9, SomJogo.Efeito.IMPACTO}, {17.6, SomJogo.Efeito.TROCA}, {18.4, SomJogo.Efeito.EVOLUCAO},
+        {23.0, SomJogo.Efeito.CHEFE_ENTRADA}, {24.4, SomJogo.Efeito.EXPLOSAO_GRANDE}, {24.9, SomJogo.Efeito.VITORIA}, {27.5, SomJogo.Efeito.TROVAO}, {30.5, SomJogo.Efeito.VITORIA}};
+    void atualizar(double dt) {
+        if (banda < 0) { tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt)); return; }
+        double antes = t; t = Math.min(DURACAO, t + Math.max(0, dt));
+        for (Object[] s : SONS) { double m = (Double) s[0]; if (antes < m && t >= m) SomJogo.tocar((SomJogo.Efeito) s[1], 480); }
+    }
     boolean terminou() { return t >= DURACAO; }
     void pular() { if (banda < 0) confirmar(); else t = DURACAO; }
 
@@ -284,7 +295,7 @@ final class CenaPouso {
         // desce balancando, paira um instante, toca o chao e quica no trem de pouso
         double p = desce ? 1 : suave(Math.min(1, tl / 3.0)), paira = !desce && tl > 2.6 && tl < 3.4 ? Math.sin((tl - 2.6) * 8) * 6 : 0;
         double quica = !desce && tl > 3.4 && tl < 4.2 ? Math.abs(Math.sin((tl - 3.4) * 8)) * 10 * (4.2 - tl) : 0;
-        double giro = .07 * p + (desce ? 0 : Math.sin(tl * 2.3) * .06 * (1 - p)); // pousada, fica inclinada pra direita
+        double giro = -.07 * p + (desce ? 0 : Math.sin(tl * 2.3) * .06 * (1 - p)); // pousada, fica inclinada pra direita
         int ny = chao - fh - (int) ((1 - p) * 560) - (int) paira - (int) quica + (desce ? (int) (Math.sin(tl * 2) * 1.5) : 0);
         g.setColor(new Color(0, 0, 0, (int) (40 + 100 * p))); int so = (int) (160 + 260 * p); g.fillOval(cx - so / 2, chao - 22, so, 36);
         if (frente != null) {
@@ -405,7 +416,8 @@ final class CenaPouso {
     private static final BufferedImage FESTIVAL_CIMA = ler("festival_de_cima.png");
     /** Nave vista de cima (nave_N_cima.png); sem ela, o sprite do jogo virado com o bico pra cima. */
     private static final BufferedImage[] NAVE_CIMA = new BufferedImage[5];
-    static { for (int i = 0; i < 5; i++) NAVE_CIMA[i] = ler("nave_" + i + "_cima.png"); }
+    private static final BufferedImage[] SOMBRA_CIMA = new BufferedImage[5];
+    static { for (int i = 0; i < 5; i++) { NAVE_CIMA[i] = ler("nave_" + i + "_cima.png"); if (NAVE_CIMA[i] != null) SOMBRA_CIMA[i] = new java.awt.image.RescaleOp(new float[]{0, 0, 0, .7f}, new float[]{0, 0, 0, 0}, null).filter(NAVE_CIMA[i], null); } }
 
     /** Tomada 2: camera la em cima; a nave sobrevoa a galera de baixo pra cima e faz a curva ate o heliponto. */
     private void cenaSobrevoo(Graphics2D g, double tl) {
@@ -447,7 +459,13 @@ final class CenaPouso {
             Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx, ny); sb.rotate(ang); sb.scale(esc * 1.6, esc * 1.6);
             sb.setColor(new Color(0, 0, 0, 120)); sb.fillPolygon(new int[]{0, 46, 14, 0, -14, -46}, new int[]{-50, 26, 18, 36, 18, 26}, 6); sb.dispose();
         } else g.setColor(new Color(0, 0, 0, 90));
-        if (semCima != null) g.fillOval((int) (nx + 40 - 45 * esc), (int) (ny + 60 - 20 * esc), (int) (90 * esc), (int) (40 * esc));
+        BufferedImage sombra = SOMBRA_CIMA[Math.max(0, Math.min(4, modelo))];
+        if (semCima != null && sombra != null) {
+            // silhueta da nave correndo sobre a galera, deslocada pela luz do palco
+            boolean folha = sombra.getWidth() >= sombra.getHeight() * 1.5; int fw = folha ? sombra.getWidth() / 3 : sombra.getWidth(), qs = folha ? Math.max(0, Math.min(2, ArteNaves.estagio(nivelNave))) : 0;
+            Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx + 120 * esc, ny + 150 * esc); sb.rotate(ang); sb.scale(esc * 1.15, esc * 1.15);
+            int w = 190, h = w * sombra.getHeight() / fw; sb.drawImage(sombra, -w / 2, -h / 2, w / 2, h / 2, qs * fw, 0, qs * fw + fw, sombra.getHeight(), null); sb.dispose();
+        }
         Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang); n.scale(esc, esc);
         BufferedImage cima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
         if (cima != null) {
