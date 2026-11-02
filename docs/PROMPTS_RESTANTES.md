@@ -1,0 +1,92 @@
+# Metal Space: TODAS as artes que faltam (para o GPT)
+
+Regras:
+- Um chat novo por imagem.
+- Quando o item pedir, anexe a imagem de referência indicada.
+- Me mande cada resultado como ARQUIVO (anexo), com o nome indicado.
+- Fundo MAGENTA (#FF00FF) ou BRANCO puro, conforme o prompt. Nunca fundo preto em personagem.
+
+Ordem: do mais importante (aparece o jogo todo) para o menos importante.
+
+---
+
+## A. Efeitos dos poderes do jogador (aparecem o jogo inteiro)
+Hoje esses efeitos são desenhados em código. Os ícones dos poderes já existem (poderes_099.png).
+
+### A1. poder_corte.png: meia-lua da Espada do Eddie
+```
+Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), tira horizontal com 4 quadros, mesma escala.
+Uma meia-lua de energia cortante verde-esmeralda com núcleo branco, voando para a DIREITA, como o golpe de uma espada mágica, com rastro de faíscas verdes.
+1: a meia-lua se formando, fina. 2: meia-lua cheia e brilhante. 3: maior, com rastro comprido. 4: se desfazendo em faíscas verdes.
+Sem texto.
+```
+
+### A2. poder_raio.png: Ride the Lightning (raio que pula entre inimigos)
+```
+Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), tira horizontal com 4 quadros, mesma escala.
+Um raio elétrico HORIZONTAL em zigue-zague, azul e branco, atravessando o quadro de ponta a ponta, com pequenas faíscas nas pontas e um brilho azul em volta. Cada quadro com um zigue-zague diferente.
+Sem texto.
+```
+
+### A3. poder_raio_impacto.png: o choque no inimigo atingido
+```
+Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), tira horizontal com 4 quadros, mesma escala.
+Uma pequena explosão elétrica redonda, azul e branca, com arcos de eletricidade saindo para os lados. 1: pequena. 2: maior e mais brilhante. 3: arcos abertos. 4: sumindo em faíscas.
+Sem texto.
+```
+
+### A4. poder_orbe.png: Hell Awaits (bolas de fogo orbitando a nave)
+```
+Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), tira horizontal com 4 quadros, mesma escala.
+Uma bola de fogo do inferno, vermelha e laranja, com uma caveirinha de fogo dentro e chamas tremulando para trás. Cada quadro com as chamas em posições diferentes.
+Sem texto.
+```
+
+### A5. poder_morcego.png: Prince of Darkness (revoada de morcegos)
+```
+Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), tira horizontal com 4 quadros, mesma escala.
+Um morcego pequeno roxo e preto com olhos vermelhos brilhando, visto de frente, batendo as asas: 1: asas para cima. 2: asas abertas. 3: asas para baixo. 4: asas abertas.
+Sem texto.
+```
+
+### A6. poder_tentaculo.png: Tentáculos Abissais
+```
+Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), tira horizontal com 4 quadros, mesma escala.
+A PONTA de um tentáculo de lula abissal, azul-petróleo com ventosas claras e brilho ciano, apontando para a DIREITA: 1: enrolado. 2: se esticando. 3: esticado com as ventosas abertas. 4: agarrando (curvado como um gancho).
+Sem texto.
+```
+
+---
+
+## B. Cabine de cada nave (final do jogo): cabine_1.png ... cabine_4.png
+A da Raptor (cabine_0.png) já está pronta. Anexe a imagem de frente da nave (nave_N_frente.png) E a cabine da Raptor como referência de estilo:
+```
+Pixel art 16-bit estilo Super Nintendo, formato paisagem 16:10, no MESMO estilo e enquadramento da segunda imagem anexada (a cabine), mas com o interior da nave da primeira imagem.
+CÂMERA: atrás do piloto, por cima do ombro DIREITO dele, inclinada uns 10 graus.
+PILOTO: de COSTAS, olhando para a FRENTE, NUNCA de perfil. Careca, barba longa castanho-escura, fone de ouvido, macacão laranja, mão no manche; só a nuca e o ombro aparecendo no lado ESQUERDO da imagem.
+INTERIOR: [SHADOW: preto com luzes vermelhas / VALKYRIE: branco e dourado com detalhes azuis / BERSERKER: verde militar blindado, rebites e alavancas / METAL GOD: preto e dourado com espinhos].
+Painel com telas verdes e botões acesos, radar redondo no meio, e no lado direito o NÚCLEO DO MOTOR num tubo de vidro brilhando na cor da nave.
+O VIDRO DA FRENTE deve ser PRETO PURO E LISO, sem estrelas e sem reflexo. Sem texto.
+```
+Nomes: cabine_1.png (Shadow), cabine_2.png (Valkyrie), cabine_3.png (Berserker), cabine_4.png (Metal God).
+
+---
+
+## C. Pouso: nave de frente com os 3 estágios (opcional)
+Hoje o pouso mostra só o estágio 1. Anexe a referência ref_nave_N_xxx.png (que te mandei, com os 3 estágios):
+```
+A imagem anexada mostra a MESMA nave em 3 estágios de evolução, vista de lado. Desenhe esses MESMOS 3 estágios agora vistos DE FRENTE (como se a nave viesse na direção da câmera), em pixel art 16-bit estilo Super Nintendo, respeitando cada canhão, míssil, motor e asa de cada estágio.
+Tira horizontal com 3 quadros, mesma escala, estágio 1 à esquerda. Trem de pouso baixado.
+Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem texto.
+```
+Nomes: nave_0_frente_estagios.png ... nave_4_frente_estagios.png
+
+---
+
+## D. Cockpit abrindo (opcional): nave_0_aberta.png ... nave_4_aberta.png
+Anexe a imagem de frente da nave:
+```
+Pixel art 16-bit estilo Super Nintendo. A MESMA nave da imagem anexada, mesma vista de frente, mesmo tamanho e cores, em uma tira horizontal com 3 quadros:
+1: cabine fechada. 2: a tampa de vidro abrindo pra cima, com fumacinha de pressão. 3: tampa toda aberta, assento vazio, luzes internas acesas.
+Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem texto.
+```
