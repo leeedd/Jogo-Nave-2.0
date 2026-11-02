@@ -81,6 +81,8 @@ final class CenaPouso {
         if (banda != COMUM) MusicaJogo.tocarShow(banda);
         if (WENGER != null) { fasFundo = escurecer(WENGER, .3f); fasLonge = escurecer(WENGER, .45f); fasMeio = escurecer(WENGER, .6f); fasPerto = escurecer(WENGER, .7f); }
     }
+    private int previaTocando = -1, ultimoCursor = -1;
+    private double paradoNoCursor;
     void confirmar() { if (!aberto(cursor)) { avisoFechado = 1.6; SomJogo.tocar(SomJogo.Efeito.ERRO); return; } escolher(cursor); }
     /** Sons da cutscene: (instante, efeito). A trilha de metal toca por baixo o tempo todo. */
     private static final Object[][] SONS = {
@@ -90,7 +92,14 @@ final class CenaPouso {
         {16.8, SomJogo.Efeito.ESCUDO}, {17.3, SomJogo.Efeito.TIRO}, {18.1, SomJogo.Efeito.IMPACTO}, {18.8, SomJogo.Efeito.TROCA}, {19.6, SomJogo.Efeito.EVOLUCAO},
         {24.2, SomJogo.Efeito.CHEFE_ENTRADA}, {25.6, SomJogo.Efeito.EXPLOSAO_GRANDE}, {26.1, SomJogo.Efeito.VITORIA}, {28.7, SomJogo.Efeito.TROVAO}, {31.7, SomJogo.Efeito.VITORIA}};
     void atualizar(double dt) {
-        if (banda < 0) { tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt)); return; }
+        if (banda < 0) {
+            tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt));
+            // parou em cima de um show aberto: toca a intro da musica dele (um gostinho do que vem)
+            if (cursor != ultimoCursor) { previaTocando = -1; paradoNoCursor = 0; ultimoCursor = cursor; }
+            paradoNoCursor += Math.max(0, dt);
+            if (previaTocando < 0 && paradoNoCursor > .45 && aberto(cursor)) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
+            return;
+        }
         double antes = t; t = Math.min(DURACAO, t + Math.max(0, dt));
         for (Object[] s : SONS) { double m = ((Number) s[0]).doubleValue(); if (antes < m && t >= m) SomJogo.tocar((SomJogo.Efeito) s[1], 480); }
     }

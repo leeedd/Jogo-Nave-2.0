@@ -47,6 +47,22 @@ public final class SomJogo {
  public static void limpar(){FILA.clear();MOTOR.limpar();}
  static long emitidosTeste(Efeito e){return CONTAGEM[e.ordinal()];}
  static void resetEventosTeste(){Arrays.fill(ULTIMO,0);Arrays.fill(CONTAGEM,0);pausar(false);limpar();}
+ /** Previa na tela de escolha do show: so os primeiros segundos da musica (intro), em loop, sem travar o jogo.
+  *  Sem o arquivo local, nao troca nada (segue a trilha). */
+ public static void previaMusica(String arquivo,int segundos){
+  if(OFFLINE||arquivo==null)return;java.io.File f=new java.io.File("musicas",arquivo+".wav");if(!f.isFile())return;
+  if(("previa:"+arquivo).equals(musicaPedida))return;musicaPedida="previa:"+arquivo;iniciar();
+  Thread t=new Thread(()->{try{float[] a=carregarTrecho(f.toURI().toURL(),segundos*44100*2);
+   // fade de entrada e de saida para o loop da intro nao estalar
+   int fd=Math.min(a.length/4,44100/3);for(int i=0;i<fd;i++){float k=i/(float)fd;a[i]*=k;a[a.length-1-i]*=k;}
+   if(("previa:"+arquivo).equals(musicaPedida))MOTOR.musica(a);}catch(Exception e){diagnostico="PREVIA "+arquivo+": "+e.getMessage();}},"MetalSpace-Previa");
+  t.setDaemon(true);t.start();}
+ /** Le so o comeco do audio (ate 'limite' bytes), em vez de recusar arquivos longos. */
+ static float[] carregarTrecho(URL url,int limite)throws Exception{
+  AudioFormat fmt=new AudioFormat(44100,16,1,true,false);
+  try(AudioInputStream origem=AudioSystem.getAudioInputStream(url);AudioInputStream in=AudioSystem.getAudioInputStream(fmt,origem);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
+   byte[] b=new byte[8192];int n;while(bytes.size()<limite&&(n=in.read(b))!=-1)bytes.write(b,0,Math.min(n,limite-bytes.size()));b=bytes.toByteArray();float[] a=new float[b.length/2];for(int i=0;i<a.length;i++)a[i]=(short)((b[i*2]&255)|(b[i*2+1]<<8))/32768f;return a;}
+ }
  static float[] carregar(URL url,int limite)throws Exception{
   if(url==null)throw new IOException("Recurso de audio ausente");AudioFormat fmt=new AudioFormat(44100,16,1,true,false);
   try(AudioInputStream origem=AudioSystem.getAudioInputStream(url);AudioInputStream in=AudioSystem.getAudioInputStream(fmt,origem);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){

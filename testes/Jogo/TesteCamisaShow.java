@@ -12,6 +12,10 @@ public class TesteCamisaShow {
         // sem passe nenhum: zeramento comum, sem tela de escolha
         CenaPouso comum = new CenaPouso(0, 0);
         if (comum.escolhendo() || !comum.comum()) throw new AssertionError("sem passe o final e o zeramento comum, direto");
+        // escolha com dois passes: parar no show dispara a previa da musica uma vez so
+        CenaPouso dois = new CenaPouso(0, 1 << 2 | 1 << 5);
+        for (int i = 0; i < 20; i++) dois.atualizar(.05);
+        if ((int) TesteInvasao093.get(dois, "previaTocando") != (int) TesteInvasao093.get(dois, "cursor")) throw new AssertionError("previa deveria tocar no show selecionado");
         CenaPouso um = new CenaPouso(0, 1 << 6);
         if (um.escolhendo() || um.banda() != 6) throw new AssertionError("com um passe so, vai direto para o show dele");
         // so abrem os palcos das reliquias conquistadas; a Lula sempre
