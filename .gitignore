@@ -12,3 +12,4 @@ native_blood.png
 
 # musicas das bandas: arquivos locais do jogador, nunca no repositorio
 musicas/
+*.zip

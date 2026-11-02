@@ -10,8 +10,8 @@ public final class MusicaJogo {
  /** Musica de cada show do festival (arquivo musicas/NOME.wav, colocado pelo jogador). Indice 8 = festival completo. */
  static final String[] SHOWS={"crias_do_abismo","painkiller","the_trooper","ace_of_spades","master_of_puppets","raining_blood","parabellum","crazy_train","festival_completo"};
  /** Toca a musica do show escolhido no final; sem o arquivo, segue a trilha do jogo. */
- /** Gostinho do show escolhido: os primeiros 10 s da musica. */
- static void previaShow(int banda){if(banda>=0&&banda<SHOWS.length)SomJogo.previaMusica(SHOWS[banda],10);}
+ /** Gostinho do show escolhido: os primeiros 8 s da musica. */
+ static void previaShow(int banda){if(banda>=0&&banda<SHOWS.length)SomJogo.previaMusica(SHOWS[banda],8);}
  static void tocarShow(int banda){if(banda<0||banda>=SHOWS.length)return;atual=SHOWS[banda];SomJogo.iniciar();SomJogo.trocarMusica(SHOWS[banda]);}
  static String getMusicaAtualTeste(){return atual;}
 }

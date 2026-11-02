@@ -96,11 +96,11 @@ final class CenaPouso {
     void atualizar(double dt) {
         if (banda < 0) {
             tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt));
-            // o cursor parou numa banda: toca 10 s da musica dela (um gostinho), depois volta a trilha
+            // o cursor parou numa banda: toca 8 s da musica dela (um gostinho), depois volta a trilha
             if (cursor != ultimoCursor) { ultimoCursor = cursor; paradoNoCursor = 0; if (previaTocando >= 0) { previaTocando = -1; SomJogo.trocarMusica("trilha_metal"); } }
             paradoNoCursor += Math.max(0, dt);
-            if (previaTocando < 0 && paradoNoCursor > .12 && paradoNoCursor < 10 && aberto(cursor) && cursor != FESTIVAL) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
-            if (previaTocando >= 0 && paradoNoCursor >= 10.4) { previaTocando = -2; SomJogo.trocarMusica("trilha_metal"); }
+            if (previaTocando < 0 && paradoNoCursor > .12 && paradoNoCursor < 8 && aberto(cursor) && cursor != FESTIVAL) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
+            if (previaTocando >= 0 && paradoNoCursor >= 8.3) { previaTocando = -2; SomJogo.trocarMusica("trilha_metal"); }
             return;
         }
         double antes = t; t = Math.min(DURACAO, t + Math.max(0, dt));
