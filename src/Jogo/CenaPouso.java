@@ -403,8 +403,8 @@ final class CenaPouso {
         BufferedImage cima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
         if (cima != null) {
             // folha com os 3 estagios de evolucao lado a lado: usa o estagio em que o jogador terminou
-            boolean folha = cima.getWidth() >= cima.getHeight() * 2.4; int fw = folha ? cima.getWidth() / 3 : cima.getWidth(), q = folha ? Math.max(0, Math.min(2, ArteNaves.estagio(nivelNave))) : 0;
-            int w = 150, h = w * cima.getHeight() / fw; n.drawImage(cima, -w / 2, -h / 2, w / 2, h / 2, q * fw, 0, q * fw + fw, cima.getHeight(), null); }
+            boolean folha = cima.getWidth() >= cima.getHeight() * 1.5; int fw = folha ? cima.getWidth() / 3 : cima.getWidth(), q = folha ? Math.max(0, Math.min(2, ArteNaves.estagio(nivelNave))) : 0;
+            int w = 190, h = w * cima.getHeight() / fw; n.drawImage(cima, -w / 2, -h / 2, w / 2, h / 2, q * fw, 0, q * fw + fw, cima.getHeight(), null); }
         // sem a arte de cima, so a sombra da nave passa sobre a galera (nada de sprite torto)
         n.dispose();
     }
