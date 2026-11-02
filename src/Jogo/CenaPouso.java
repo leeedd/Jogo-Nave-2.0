@@ -289,9 +289,9 @@ final class CenaPouso {
     /** Heliponto: a nave desce no H (parte 1); o Wenger desce, tira o macacao e sobe a escadinha do palco (parte 2). */
     private void cenaHeliponto(Graphics2D g, double tl, boolean desce) {
         int W = Config.LARGURA, H = Config.ALTURA;
-        fundo(g, HELIPONTO, tl + (desce ? 4.6 : 0), 11.8, 1.0, 1.04, .6, .7);
+        fundo(g, HELIPONTO, tl + (desce ? 4.6 : 0), 11.8, 1.2, 1.22, 0, .7);
         BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
-        int cx = 805, chao = 505, fh = 205; // do lado direito do H: a escada do palco fica a vista
+        int cx = 700, chao = 515, fh = 245;
         // desce balancando, paira um instante, toca o chao e quica no trem de pouso
         double p = desce ? 1 : suave(Math.min(1, tl / 3.0)), paira = !desce && tl > 2.6 && tl < 3.4 ? Math.sin((tl - 2.6) * 8) * 6 : 0;
         double quica = !desce && tl > 3.4 && tl < 4.2 ? Math.abs(Math.sin((tl - 3.4) * 8)) * 10 * (4.2 - tl) : 0;
@@ -299,7 +299,7 @@ final class CenaPouso {
         int ny = chao - fh - (int) ((1 - p) * 560) - (int) paira - (int) quica + (desce ? (int) (Math.sin(tl * 2) * 1.5) : 0);
         g.setColor(new Color(0, 0, 0, (int) (40 + 100 * p))); int so = (int) (160 + 260 * p); g.fillOval(cx - so / 2, chao - 22, so, 36);
         // correndo pra escada ele passa por tras da nave
-        boolean atras = false;
+        boolean atras = desce && SALTO != null && tl >= 4.4;
         if (atras) saltoWenger(g, tl, cx, ny, fh, chao);
         if (frente != null) {
             int fw = frente.getWidth() * fh / frente.getHeight();
@@ -353,17 +353,17 @@ final class CenaPouso {
     /** Fas de frente, colados na grade (galera_frente.png: 6 fas x 4 quadros). */
     private static final BufferedImage FAS_FRENTE = ler("galera_frente.png");
     private void saltoWenger(Graphics2D g, double tl, int cx, int ny, int fh, int chao) {
-        int q; double x, pe, s = .34;
-        double cabX = cx, cabPe = ny + fh * .5, chaoX = 470, chaoPe = chao + 6;
+        int q; double x, pe, s = .36;
+        double cabX = cx, cabPe = ny + fh * .5, chaoX = 400, chaoPe = chao + 6;
         if (tl < .9) { q = 0; x = cabX; pe = cabPe; }                                              // de pe na cabine
         else if (tl < 1.3) { q = 1; x = cabX; pe = cabPe; }                                       // impulso
         else if (tl < 2.1) { double c = (tl - 1.3) / .8; q = 2; x = cabX + (chaoX - cabX) * c; pe = cabPe + (chaoPe - cabPe) * c - Math.sin(c * Math.PI) * 90; } // salto
         else if (tl < 2.7) { q = 3; x = chaoX; pe = chaoPe; }                                     // aterrissa estilo heroi
         else if (tl < 3.5) { q = 4; x = chaoX; pe = chaoPe; }                                     // arranca o macacao
         else if (tl < 4.4) { q = 5; x = chaoX; pe = chaoPe; }                                     // chifrinho
-        else if (tl < 5.6) { double c = suave((tl - 4.4) / 1.2); q = 6 + (int) (tl / .13) % 2; x = chaoX + c * 80; pe = chaoPe - c * 93; s = .34 - c * .05; } // corre pra escada
-        else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 6 + (int) (tl / .16) % 2; x = 550 + c * 57; pe = 418 - c * 108; s = .29 - c * .04; } // sobe a escada
-        if (tl >= 3.5) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(440, chao, 44, 9, 5, 5); g.setColor(new Color(160, 70, 20)); g.fillRect(446, chao + 3, 32, 2); }
+        else if (tl < 5.6) { double c = suave((tl - 4.4) / 1.2); q = 6 + (int) (tl / .13) % 2; x = chaoX + c * 261; pe = chaoPe - c * 103; s = .36 - c * .06; } // desce da plataforma e corre pra escada
+        else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 6 + (int) (tl / .16) % 2; x = 661 + c * 66; pe = 418 - c * 126; s = .3 - c * .05; } // sobe a escada
+        if (tl >= 3.5) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(425, chao, 44, 9, 5, 5); g.setColor(new Color(160, 70, 20)); g.fillRect(431, chao + 3, 32, 2); }
         if (tl > 1.5 && tl < 2.6) { // o capacete voando longe
             double c = (tl - 1.5) / 1.1; g.setColor(Color.WHITE); int hx = (int) (cabX - 40 - c * 260), hy = (int) (cabPe - 100 + c * c * 220); g.fillOval(hx, hy, 18, 16); g.setColor(new Color(200, 30, 40)); g.fillRect(hx + 4, hy + 3, 3, 10); }
         // o quadro 2 da arte ja traz o capacete; nos demais o sprite vai sozinho
