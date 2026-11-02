@@ -83,6 +83,7 @@ public final class CenaFinal {
     void moverShowLinha(int d){pouso.moverLinha(d);}
     void escolherShow(int b){pouso.escolher(b);}
     int bandaShow(){return pouso.banda();}
+    int cursorShow(){return pouso.cursor();}
     public void atualizar(double dt) {
         if (!pouso.terminou()) { pouso.atualizar(dt); return; }
         double antes = tempo;

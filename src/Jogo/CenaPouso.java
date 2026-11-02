@@ -70,6 +70,7 @@ final class CenaPouso {
     int palcosAbertos() { return Integer.bitCount(abertos); }
     boolean escolhendo() { return banda < 0; }
     int banda() { return banda; }
+    int cursor() { return cursor; }
     void mover(int d) { if (banda < 0) { int[] o = opcoes(); int i = 0; for (int k = 0; k < o.length; k++) if (o[k] == cursor) i = k; cursor = o[Math.floorMod(i + d, o.length)]; SomJogo.tocar(SomJogo.Efeito.INTERDICAO); } }
     void moverLinha(int d) { if (banda < 0) mover(d * 4); }
     /** Fecha a escolha: a camisa do Flavio e o telao do festival passam a ser dessa banda. */

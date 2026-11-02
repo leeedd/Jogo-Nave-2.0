@@ -12,6 +12,13 @@ public class TesteCamisaShow {
         // sem passe nenhum: zeramento comum, sem tela de escolha
         CenaPouso comum = new CenaPouso(0, 0);
         if (comum.escolhendo() || !comum.comum()) throw new AssertionError("sem passe o final e o zeramento comum, direto");
+        // o palco destacado e o que abre: andar ate o Motorhead e confirmar abre o Motorhead
+        for (int alvo = 1; alvo <= 7; alvo++) {
+            CenaPouso e = new CenaPouso(0, 0xFE); int voltas = 0;
+            while (e.cursor() != alvo && voltas++ < 20) e.mover(1);
+            e.confirmar();
+            if (e.banda() != alvo) throw new AssertionError("selecionou " + alvo + " e abriu " + e.banda());
+        }
         // escolheu o show: 10 s da musica dele e depois volta a trilha
         CenaPouso dois = new CenaPouso(0, 1 << 2 | 1 << 5); dois.confirmar();
         if ((int) TesteInvasao093.get(dois, "previaTocando") != dois.banda()) throw new AssertionError("previa deveria tocar ao escolher");
