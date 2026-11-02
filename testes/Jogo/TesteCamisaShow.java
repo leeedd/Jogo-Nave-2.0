@@ -23,8 +23,8 @@ public class TesteCamisaShow {
         CenaPouso dois = new CenaPouso(0, 1 << 2 | 1 << 5);
         for (int i = 0; i < 10; i++) dois.atualizar(.1);
         if ((int) TesteInvasao093.get(dois, "previaTocando") != dois.cursor()) throw new AssertionError("previa deveria tocar na banda selecionada");
-        for (int i = 0; i < 90; i++) dois.atualizar(.1);
-        if ((int) TesteInvasao093.get(dois, "previaTocando") >= 0) throw new AssertionError("depois de 8 s a previa para");
+        for (int i = 0; i < 110; i++) dois.atualizar(.1);
+        if ((int) TesteInvasao093.get(dois, "previaTocando") >= 0) throw new AssertionError("depois de 10 s a previa para");
         while (dois.cursor() != 2) dois.mover(1); for (int i = 0; i < 6; i++) dois.atualizar(.1);
         if ((int) TesteInvasao093.get(dois, "previaTocando") != dois.cursor()) throw new AssertionError("trocou de banda: toca a previa da nova");
         CenaPouso um = new CenaPouso(0, 1 << 6);

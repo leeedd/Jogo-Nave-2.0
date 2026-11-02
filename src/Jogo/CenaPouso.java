@@ -35,7 +35,7 @@ final class CenaPouso {
     /** Telao preto do palco (fracoes da arte do palco), onde acende o emblema da banda. */
     private static final double TELAO_X0 = 568 / 1586.0, TELAO_Y0 = 348 / 992.0, TELAO_X1 = 1018 / 1586.0, TELAO_Y1 = 558 / 992.0;
     private static final double[][] ESTAMPA = TEM_PILOTO ? ESTAMPA_PILOTO : ESTAMPA_FLAVIO;
-    static final double DURACAO = 47.0;
+    static final double DURACAO = 40.0;
     private static final int CHAO = 572;
 
     private final int modelo;
@@ -88,19 +88,19 @@ final class CenaPouso {
     void confirmar() { if (!aberto(cursor)) { avisoFechado = 1.6; SomJogo.tocar(SomJogo.Efeito.ERRO); return; } escolher(cursor); }
     /** Sons da cutscene: (instante, efeito). A trilha de metal toca por baixo o tempo todo. */
     private static final Object[][] SONS = {
-        {.05, SomJogo.Efeito.DOBRA}, {2.0, SomJogo.Efeito.DOBRA}, {4.0, SomJogo.Efeito.DOBRA}, {6.0, SomJogo.Efeito.DOBRA}, {8.0, SomJogo.Efeito.DOBRA}, {10.0, SomJogo.Efeito.DOBRA}, {12.0, SomJogo.Efeito.DOBRA}, {13.5, SomJogo.Efeito.DOBRA}, {14.8, SomJogo.Efeito.SAIDA_DOBRA}, {14.95, SomJogo.Efeito.TROVAO},
-        {18.5, SomJogo.Efeito.FUSAO}, {19.4, SomJogo.Efeito.NUCLEAR}, {20.8, SomJogo.Efeito.FUSAO}, {22.1, SomJogo.Efeito.LASER},
-        {24.3, SomJogo.Efeito.FUSAO}, {25.8, SomJogo.Efeito.ENERGIA}, {26.6, SomJogo.Efeito.IMPACTO}, {26.65, SomJogo.Efeito.EXPLOSAO},
-        {29.6, SomJogo.Efeito.ESCUDO}, {30.1, SomJogo.Efeito.TIRO}, {30.9, SomJogo.Efeito.IMPACTO}, {31.6, SomJogo.Efeito.TROCA}, {32.4, SomJogo.Efeito.EVOLUCAO},
-        {37, SomJogo.Efeito.CHEFE_ENTRADA}, {38.4, SomJogo.Efeito.EXPLOSAO_GRANDE}, {38.9, SomJogo.Efeito.VITORIA}, {41.5, SomJogo.Efeito.TROVAO}, {44.5, SomJogo.Efeito.VITORIA}};
+        {0.05, SomJogo.Efeito.DOBRA}, {2.0, SomJogo.Efeito.DOBRA}, {4.0, SomJogo.Efeito.DOBRA}, {6.0, SomJogo.Efeito.DOBRA}, {7.0, SomJogo.Efeito.DOBRA}, {7.8, SomJogo.Efeito.SAIDA_DOBRA},
+        {7.95, SomJogo.Efeito.TROVAO}, {11.5, SomJogo.Efeito.FUSAO}, {12.4, SomJogo.Efeito.NUCLEAR}, {13.8, SomJogo.Efeito.FUSAO}, {15.1, SomJogo.Efeito.LASER}, {17.3, SomJogo.Efeito.FUSAO},
+        {18.8, SomJogo.Efeito.ENERGIA}, {19.6, SomJogo.Efeito.IMPACTO}, {19.65, SomJogo.Efeito.EXPLOSAO}, {22.6, SomJogo.Efeito.ESCUDO}, {23.1, SomJogo.Efeito.TIRO}, {23.9, SomJogo.Efeito.IMPACTO},
+        {24.6, SomJogo.Efeito.TROCA}, {25.4, SomJogo.Efeito.EVOLUCAO}, {30.0, SomJogo.Efeito.CHEFE_ENTRADA}, {31.4, SomJogo.Efeito.EXPLOSAO_GRANDE}, {31.9, SomJogo.Efeito.VITORIA}, {34.5, SomJogo.Efeito.TROVAO},
+        {37.5, SomJogo.Efeito.VITORIA}};
     void atualizar(double dt) {
         if (banda < 0) {
             tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt));
-            // o cursor parou numa banda: toca 8 s da musica dela (um gostinho), depois volta a trilha
+            // o cursor parou numa banda: toca 10 s da musica dela (um gostinho), depois volta a trilha
             if (cursor != ultimoCursor) { ultimoCursor = cursor; paradoNoCursor = 0; if (previaTocando >= 0) { previaTocando = -1; SomJogo.trocarMusica("trilha_metal"); } }
             paradoNoCursor += Math.max(0, dt);
-            if (previaTocando < 0 && paradoNoCursor > .12 && paradoNoCursor < 8 && aberto(cursor) && cursor != FESTIVAL) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
-            if (previaTocando >= 0 && paradoNoCursor >= 8.3) { previaTocando = -2; SomJogo.trocarMusica("trilha_metal"); }
+            if (previaTocando < 0 && paradoNoCursor > .12 && paradoNoCursor < 10 && aberto(cursor) && cursor != FESTIVAL) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
+            if (previaTocando >= 0 && paradoNoCursor >= 10.4) { previaTocando = -2; SomJogo.trocarMusica("trilha_metal"); }
             return;
         }
         double antes = t; t = Math.min(DURACAO, t + Math.max(0, dt));
@@ -120,8 +120,8 @@ final class CenaPouso {
     }
     /** Tomadas da cutscene (inicio de cada uma); cada corte entra como um quadro novo deslizando sobre o gibi. */
     /** Quanto dura a viagem em dobra (dentro da cabine) antes de sair no sistema do festival. */
-    private static final double SAIDA = 15;
-    private static final double[] TOMADA = {0, 18.4, 24.2, 28.8, 36.0, 38.8};
+    private static final double SAIDA = 8;
+    private static final double[] TOMADA = {0, 11.4, 17.2, 21.8, 29.0, 31.8};
     private int nivelNave = 6;
     void nivelNave(int n) { nivelNave = Math.max(0, n); }
 
