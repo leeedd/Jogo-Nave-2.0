@@ -126,10 +126,10 @@ final class CenaPouso {
         switch (i) {
             case 0: cenaCabine(c, tl); break;
             case 1: cenaSobrevoo(c, tl); break;
-            case 2: t = Math.min(4.6, tl); quadroPouso(c); break;
-            case 3: t = Math.min(11.6, 4.4 + tl); quadroPouso(c); break;
-            case 4: cenaShow(c, tl, 0); break;
-            default: cenaShow(c, tl, 1);
+            case 2: if (HELIPONTO != null) cenaHeliponto(c, tl, false); else { t = Math.min(4.6, tl); quadroPouso(c); } break;
+            case 3: if (HELIPONTO != null) cenaHeliponto(c, tl, true); else { t = Math.min(11.6, 4.4 + tl); quadroPouso(c); } break;
+            case 4: if (VISAO_PALCO != null) cenaMergulho(c, tl); else cenaShow(c, tl, 0); break;
+            default: if (VISAO_CENTRO != null) cenaCarregado(c, tl); else cenaShow(c, tl, 1);
         }
         c.dispose();
         Graphics2D q = (Graphics2D) g.create(); q.translate(dx, 0);
@@ -148,7 +148,7 @@ final class CenaPouso {
                 if (tl > 2.6 && tl < 4.4) sfx(q, "FSSSHHH!", 250, 470, 50, new Color(255, 200, 90), .1, tl - 2.6);
                 break;
             case 3:
-                if (tl > 1.8 && tl < 4.8) legenda(q, 34, 30, "HORA DE TIRAR O MACACAO.");
+                if (tl > 1.0 && tl < 3.6) legenda(q, 34, 30, "HORA DE TIRAR O MACACAO.");
                 break;
             case 4:
                 if (tl > 1.0) sfx(q, "STAGE DIVE!!", 540, 150, 64, new Color(255, 90, 70), -.14, tl - 1.0);
@@ -259,6 +259,65 @@ final class CenaPouso {
         g.setColor(new Color(180, 120, 85)); g.fillOval(bx - 80, by - 70, 24, 40); g.fillOval(bx + 56, by - 70, 24, 40); // orelhas
         g.setColor(new Color(30, 30, 30)); g.setStroke(new java.awt.BasicStroke(8)); g.drawArc(bx - 74, by - 140, 148, 120, 10, 160);  // fone
         g.fillRect(bx - 86, by - 74, 18, 34); g.fillRect(bx + 68, by - 74, 18, 34);
+    }
+
+    /** Pouso ao lado do palco, vista do palco olhando a galera (lado da escada) e vista central do palco. */
+    private static final BufferedImage HELIPONTO = ler("pouso_heliponto.png"), VISAO_PALCO = ler("palco_visao_galera.png"), VISAO_CENTRO = ler("palco_visao_centro.png");
+
+    /** Fundo com um zoom lento (camera viva), de 'de' ate 'ate' ao longo de 'dur' segundos, centrado em (fx, fy). */
+    private static void fundo(Graphics2D g, BufferedImage img, double tl, double dur, double de, double ate, double fx, double fy) {
+        int W = Config.LARGURA, H = Config.ALTURA; double z = de + (ate - de) * Math.min(1, tl / dur);
+        int w = (int) (W * z), h = (int) (H * z), x = (int) (fx * W - fx * w), y = (int) (fy * H - fy * h);
+        g.drawImage(img, x, y, w, h, null);
+    }
+
+    /** Heliponto: a nave desce no H (parte 1); o Wenger desce, tira o macacao e sobe a escadinha do palco (parte 2). */
+    private void cenaHeliponto(Graphics2D g, double tl, boolean desce) {
+        int W = Config.LARGURA, H = Config.ALTURA;
+        fundo(g, HELIPONTO, tl + (desce ? 4.6 : 0), 11.8, 1.0, 1.08, .6, .7);
+        BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
+        int cx = 760, chao = 505, fh = 165;
+        double p = desce ? 1 : suave(tl / 3.6);
+        int ny = chao - fh - (int) ((1 - p) * 520);
+        g.setColor(new Color(0, 0, 0, (int) (40 + 100 * p))); int so = (int) (120 + 200 * p); g.fillOval(cx - so / 2, chao - 18, so, 30);
+        if (frente != null) {
+            int fw = frente.getWidth() * fh / frente.getHeight();
+            if (p < 1) for (int k = -1; k <= 1; k += 2) for (int j = 0; j < 7; j++) { g.setColor(new Color(120, 200, 255, Math.max(0, 190 - j * 26))); g.fillRect(cx + k * fw / 4 - 7, ny + fh - 12 + j * 11, 14, 11); }
+            g.drawImage(frente, cx - fw / 2, ny, fw, fh, null);
+        }
+        if (!desce && tl > 3.2) { double q = Math.min(1, (tl - 3.2) / 1.4); g.setColor(new Color(170, 150, 170, (int) (130 * (1 - q)))); for (int k = 0; k < 14; k++) { int r = (int) (14 + q * 50); g.fillOval(cx - 170 + k * 25 - r / 2, chao - r / 2 - 6, r, r / 2); } }
+        if (!desce || flavio == null) return;
+        // Wenger: desce do lado da nave, tira o macacao e corre ate a escadinha (545,412) e sobe ate (608,300)
+        int q; double x, pe, s = .52;
+        if (tl < 1.2) { q = 1; x = 560; pe = chao + 10 - 60 * (1 - tl / 1.2); }
+        else if (tl < 1.9) { q = 4; x = 560; pe = chao + 10; }
+        else if (tl < 2.6) { q = 5; x = 560; pe = chao + 10; }
+        else if (tl < 3.3) { q = 6; x = 560; pe = chao + 10; }
+        else if (tl < 4.2) { q = 7; x = 560; pe = chao + 10; }
+        else if (tl < 5.6) { double c = suave((tl - 4.2) / 1.4); q = 8 + (int) (tl / .13) % 2; x = 560 - c * 10; pe = chao + 10 - c * 92; s = .52 - c * .18; }
+        else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 8 + (int) (tl / .16) % 2; x = 550 + c * 58; pe = 418 - c * 112; s = .34 - c * .05; }
+        if (tl >= 2.6) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(590, chao + 2, 64, 12, 6, 6); g.setColor(new Color(160, 70, 20)); g.fillRect(598, chao + 6, 48, 3); }
+        sprite(g, flavio, 12, q, (int) x, (int) pe, s, false);
+    }
+
+    /** Vista do palco: o Wenger entra pela escada da direita, corre de costas pela beira e mergulha na galera. */
+    private void cenaMergulho(Graphics2D g, double tl) {
+        fundo(g, VISAO_PALCO, tl, 2.8, 1.0, 1.06, .5, .9);
+        if (flavio == null) return;
+        double x, pe, s, alt = 0; int q; float a = 1;
+        if (tl < 1.2) { double c = suave(tl / 1.2); q = 8 + (int) (tl / .12) % 2; x = 820 - c * 330; pe = 470 + c * 30; s = .52 + c * .06; }
+        else { double c = Math.min(1, (tl - 1.2) / 1.3); q = 11; x = 490 - c * 20; pe = 500 - c * 160; s = .58 - c * .36; alt = Math.sin(c * Math.PI) * 120; a = (float) Math.max(0, 1 - Math.max(0, c - .75) * 4); }
+        Graphics2D w = (Graphics2D) g.create(); w.setComposite(AlphaComposite.SrcOver.derive(a));
+        sprite(w, flavio, 12, q, (int) x, (int) (pe - alt), s, false); w.dispose();
+        if (tl > 2.3) { g.setColor(new Color(225, 165, 125)); for (int k = 0; k < 9; k++) { int hx = 430 + k * 13, hy = 322 - (int) (Math.abs(Math.sin((tl - 2.3) * 6 + k)) * 10); g.fillRect(hx, hy, 4, 12); } }
+    }
+
+    /** Vista central do palco: a galera de frente jogando o Wenger pra cima, la no meio. */
+    private void cenaCarregado(Graphics2D g, double tl) {
+        fundo(g, VISAO_CENTRO, tl, 8.2, 1.0, 1.1, .5, .55);
+        if (GALERA == null) return;
+        int q = (int) (tl * 2.1 / 1.1) % 4; double x = 480 + Math.sin(tl * .45) * 150;
+        sprite(g, GALERA, 4, q, (int) x, 400, .42, false);
     }
 
     /** Festival visto de cima (festival_de_cima.png, em pe: palco no topo, galera, heliponto no canto direito). */
