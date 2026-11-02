@@ -89,6 +89,7 @@ final class Poderes099 {
    pts.add(new double[]{tx,ty});
    for(int k=0;k<pts.size();k++){double[] p=pts.get(k),ant=pts.get(Math.max(0,k-1));double w=6+20*Math.sqrt(1-k/(double)Math.max(1,pts.size()-1));elo(g,p[0],p[1],Math.atan2(p[1]-ant[1],p[0]-ant[0]),w);}
    if(!(e>.9&&preso[i])&&pts.size()>1){double[] f1=pts.get(pts.size()-1),f0=pts.get(pts.size()-2);ponta(g,f1[0],f1[1],Math.atan2(f1[1]-f0[1],f1[0]-f0[0]),9);}
+   if(e>.9&&preso[i]&&pts.size()>1&&PONTA_NOVA!=null){double[] f1=pts.get(pts.size()-1),f0=pts.get(pts.size()-2);ponta(g,f1[0],f1[1],Math.atan2(f1[1]-f0[1],f1[0]-f0[0]),14);}
    if(e>.9&&preso[i]){
     // Enrolado no alvo: aneis apertando e gotas de energia sendo drenadas de volta para a nave.
     espiral(g,tx,ty,true);
@@ -107,7 +108,10 @@ final class Poderes099 {
   a.drawImage(ELO_ROXO,-(int)(largura*.6),-(int)(largura*.55),(int)(largura*1.2),(int)(largura*1.1),null);a.dispose();
  }
  /** Ponta curva no fim do tentaculo, apontando para onde ele avanca. */
+ private static final java.awt.image.BufferedImage PONTA_NOVA=lerArte("poder_tentaculo.png");
  private static void ponta(Graphics2D g,double x,double y,double angulo,double largura){
+  if(PONTA_NOVA!=null){int fw=PONTA_NOVA.getWidth()/4,fh=PONTA_NOVA.getHeight(),q=largura>12?3:2,w=(int)(largura*7),h=w*fh/fw;
+   Graphics2D a=(Graphics2D)g.create();a.translate(x,y);a.rotate(angulo);a.drawImage(PONTA_NOVA,-w/6,-h/2,w-w/6,h/2,q*fw,0,q*fw+fw,fh,null);a.dispose();return;}
   if(PONTA_ROXA==null)return;
   Graphics2D a=(Graphics2D)g.create();a.translate(x,y);a.rotate(angulo);int h=(int)(largura*2.2),w=PONTA_ROXA.getWidth()*h/PONTA_ROXA.getHeight();
   a.drawImage(PONTA_ROXA,-2,-(int)(h*.62),w,h,null);a.dispose();

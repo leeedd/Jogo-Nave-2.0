@@ -123,6 +123,9 @@ public class Alien {
     /** Preso pelos tentaculos: fica imovel como congelado, mas sem o gelo (o tentaculo e desenhado por cima). */
     private boolean enrolado;
     void agarrarPor(double s){if(congelado<=0)enrolado=true;congelado=Math.max(congelado,s);}
+    /** Paralisado pelo raio: preso como no tentaculo, mas com a gaiola de choque por cima. */
+    private double eletrocutado;
+    void eletrocutarPor(double s){agarrarPor(s);eletrocutado=Math.max(eletrocutado,s);}
     void incendiarPor(double s){queimando=Math.max(queimando,adaptado(ComandoInimigo.CASCO_FOGO)?s*.3:s);}
 
     public Alien(int n, int n2) {
@@ -286,6 +289,7 @@ public class Alien {
             }
             return;
         }
+        eletrocutado = Math.max(0, eletrocutado - d);
         if (this.congelado > 0.0) {
             this.congelado = Math.max(0.0, this.congelado - d);
             if (this.congelado == 0) enrolado = false;
@@ -472,9 +476,14 @@ public class Alien {
         }
         // casco adaptado: brilho fraco na cor da arma que ele resiste
         if((adaptado(ComandoInimigo.CASCO_FOGO)||adaptado(ComandoInimigo.CASCO_GELO))&&!SpritesExtras.casco(graphics2D,adaptado(ComandoInimigo.CASCO_FOGO),x+largura/2.0,y+30,tempoAnimacao)){int a=(int)(60+40*Math.sin(tempoAnimacao*5));graphics2D.setColor(adaptado(ComandoInimigo.CASCO_FOGO)?new Color(255,150,60,a):new Color(120,220,255,a));graphics2D.drawRoundRect((int)x-3,(int)y-3,66,62,18,18);}
-        if(queimando>0){for(int f=0;f<5;f++){graphics2D.setColor(f%2==0?Color.ORANGE:Color.RED);int yy=(int)y+45-(int)((tempoAnimacao*35+f*9)%40);graphics2D.fillRect((int)x+8+f*9,yy,4,8);}}
+        // status em pixel art por cima do inimigo: fogo, choque (preso pelo raio/tentaculo) e gelo
+        double cxs=x+largura/2.0,cys=y+28;
+        if(queimando>0&&SpritesExtras.status(graphics2D,SpritesExtras.FOGO,cxs,cys,tempoAnimacao,1));
+        else if(queimando>0){for(int f=0;f<5;f++){graphics2D.setColor(f%2==0?Color.ORANGE:Color.RED);int yy=(int)y+45-(int)((tempoAnimacao*35+f*9)%40);graphics2D.fillRect((int)x+8+f*9,yy,4,8);}}
         if(escudoCapturado>0){graphics2D.setColor(new Color(110,225,255,170));graphics2D.drawPolygon(new int[]{(int)x-5,(int)x+10,(int)x+55,(int)x+70,(int)x+55,(int)x+10},new int[]{(int)y+28,(int)y-5,(int)y-5,(int)y+28,(int)y+62,(int)y+62},6);}
-        if (this.congelado > 0.0 && !enrolado) {
+        if (eletrocutado > 0 && this.congelado > 0.0 && enrolado) SpritesExtras.status(graphics2D, SpritesExtras.CHOQUE, cxs, cys, tempoAnimacao, 1);
+        if (this.congelado > 0.0 && !enrolado && SpritesExtras.status(graphics2D, SpritesExtras.GELO, cxs, cys, tempoAnimacao, congelado)) { }
+        else if (this.congelado > 0.0 && !enrolado) {
             graphics2D.setColor(new Color(92, 224, 255, 130));
             graphics2D.fillRoundRect((int)this.x, (int)this.y, 64, 57, 10, 10);
             graphics2D.setColor(new Color(205, 248, 255));

@@ -22,6 +22,23 @@ final class SpritesExtras {
 
     private SpritesExtras() { }
 
+    /** Status sobre o inimigo (4 quadros cada): fogo, choque e gelo. */
+    static final int FOGO = 0, CHOQUE = 1, GELO = 2;
+    private static final BufferedImage[] STATUS = {ler("status_fogo.png"), ler("status_choque.png"), ler("status_gelo.png")};
+    /** Desenha o status centrado em (cx, cy). No gelo, o quadro acompanha o tempo restante (rachado quando vai soltar). */
+    static boolean status(Graphics2D g, int tipo, double cx, double cy, double tempo, double restante) {
+        BufferedImage t = STATUS[tipo]; if (t == null) return false;
+        int fw = t.getWidth() / 4, fh = t.getHeight();
+        int q = tipo == GELO ? (restante < .5 ? 3 : (int) (tempo * 3) % 2 + 1) : (int) (tempo * (tipo == FOGO ? 10 : 14)) % 4;
+        int w = tipo == CHOQUE ? 92 : 96, h = w * fh / fw;
+        int y0 = (int) cy - h / 2 + (tipo == FOGO ? -18 : tipo == GELO ? -8 : 0);
+        Graphics2D a = (Graphics2D) g.create();
+        a.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        if (tipo == GELO) a.setComposite(AlphaComposite.SrcOver.derive(.85f));
+        a.drawImage(t, (int) cx - w / 2, y0, (int) cx + w / 2, y0 + h, q * fw, 0, q * fw + fw, fh, null);
+        a.dispose(); return true;
+    }
+
     static boolean temTiros() { return TIROS != null; }
 
     /** Tiro de um chefe centrado em (cx, cy), girado para a direcao do voo. */
