@@ -367,6 +367,15 @@ implements ActionListener {
         if (miniChefe != null && r.intersects(miniChefe.getBounds()) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (miniChefe.receberDano(6)) derrotarMiniChefe(); }
         if (chefe != null && chefe.colide(r) && !investidaAcertouChefe) { investidaAcertouChefe = true; if (chefe.receberDano(8)) derrotarChefao(); }
     }
+    /** Inimigo arremessado bate nos outros: os dois tomam dano e ele explode no impacto. */
+    private void atualizarArremessados(){
+        for(Alien t:new java.util.ArrayList<>(alien)){if(!t.isVisible()||!t.arremessado())continue;Rectangle rt=t.getBounds();boolean bateu=false;
+            for(Alien o:new java.util.ArrayList<>(alien))if(o!=t&&o.isVisible()&&!o.arremessado()&&rt.intersects(o.getBounds())){bateu=true;if(o.receberImpacto(0,10))eliminarAlien(o,true);}
+            if(miniChefe!=null&&rt.intersects(miniChefe.getBounds())){bateu=true;if(miniChefe.receberDano(8))derrotarMiniChefe();}
+            if(chefe!=null&&chefe.colide(rt)){bateu=true;boolean crit=chefe.getFase()<FRAQUEZA.length&&FRAQUEZA[chefe.getFase()]==0;if(crit)tempoCritico=.6;if(chefe.receberDano(crit?16:8))derrotarChefao();}
+            if(bateu){t.pararArremesso();explosoes.add(new ExplosaoCurta((int)rt.getCenterX(),(int)rt.getCenterY(),30));SomJogo.tocar(SomJogo.Efeito.EXPLOSAO,rt.getCenterX());if(t.receberImpacto(0,12))eliminarAlien(t,true);}
+        }
+    }
     private void atualizarPoderes(double d){
         atualizarCapsulas(d); atualizarInvestida();
         if(poderes.ativo>=0||poderes.pendente>=0){java.util.List<double[]> alvos=new java.util.ArrayList<>();
@@ -375,6 +384,12 @@ implements ActionListener {
             if(chefe!=null)alvos.add(new double[]{chefe.getBounds().getCenterX(),chefe.getBounds().getCenterY()});
             poderes.mirar(alvos,nave);}
         poderes.atualizar(d,nave);
+        // aguias que explodiram e inimigos arremessados pelos tentaculos
+        for(double[] e:poderes.consumirExplosoes())explosoes.add(new ExplosaoCurta((int)e[0],(int)e[1],38));
+        for(double[] r:poderes.consumirArremessos()){Alien alvo=null;double melhor=60;
+            for(Alien a:alien)if(a.isVisible()){double dd=Math.hypot(a.getBounds().getCenterX()-r[0],a.getBounds().getCenterY()-r[1]);if(dd<melhor){melhor=dd;alvo=a;}}
+            if(alvo!=null)alvo.arremessar(r[2],r[3]);}
+        atualizarArremessados();
         if(poderes.ativo<0)return;
         for(ProjetilInimigo t:tirosInimigos)if(t.isVisible()&&poderes.interceptar(t.getBounds()))t.setVisible(false);
         for(TiroChefe t:tirosChefes)if(t.isVisible()&&poderes.interceptar(t.getBounds()))t.setVisible(false);

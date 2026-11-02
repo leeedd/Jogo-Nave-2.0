@@ -238,7 +238,13 @@ public class Alien {
         return this.classe == Classe.ESQUADRAO ? 2 : 0;
     }
 
+    /** Arremessado pelos tentaculos: voa reto girando e vira projetil contra os outros inimigos. */
+    private double arremesso, arremessoVx, arremessoVy, giroArremesso;
+    void arremessar(double vx, double vy) { arremesso = 1.1; arremessoVx = vx; arremessoVy = vy; congelado = 0; enrolado = false; }
+    boolean arremessado() { return arremesso > 0; }
+    void pararArremesso() { arremesso = 0; }
     public void mexer(double d, List<Missel> list, Random random) {
+        if (arremesso > 0) { double p = Math.min(.1, d); arremesso -= p; x += arremessoVx * p; y += arremessoVy * p; giroArremesso += p * 14; tempoAnimacao += p; return; }
         double restante = Math.max(0, Math.min(.1, d));
         while (restante > 0.000001) {
             double passo = Math.min(1.0 / 120.0, restante);
@@ -441,10 +447,16 @@ public class Alien {
         return this.emFormacao && this.posicionado;
     }
 
-    public void desenhar(Graphics2D graphics2D) {
+    public void desenhar(Graphics2D original) {
         if (this.emFormacao && this.esperaEntrada > 0.0) {
             return;
         }
+        // arremessado: gira em torno do proprio centro enquanto voa
+        Graphics2D graphics2D = (Graphics2D) original.create();
+        if (arremesso > 0) graphics2D.rotate(giroArremesso, x + largura / 2.0, y + 28);
+        try { desenharCorpo(graphics2D); } finally { graphics2D.dispose(); }
+    }
+    private void desenharCorpo(Graphics2D graphics2D) {
         if(especieEnxame>=0){ArteEnxame.ataque(graphics2D,especieEnxame,(int)x,(int)y,tempoAnimacao,tempoAtaqueEnxame);}
         else if (universo > 0 && classe != Classe.INTERCEPTADOR && classe != Classe.ESQUADRAO) {
             InimigosUniversos.desenhar(graphics2D, universo, classe, (int)x, (int)y, tempoAnimacao, congelado > 0);

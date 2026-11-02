@@ -4,9 +4,9 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 final class Poderes099 {
  static final String[] NOMES={"TENTACULOS ABISSAIS","PAINKILLER","ESPADA DO EDDIE","AS DE ESPADAS","RIDE THE LIGHTNING","HELL AWAITS","ESPIRITOS ANCESTRAIS","PRINCE OF DARKNESS"};
- static final String[] DICAS={"Agarram, prendem e drenam a vida","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta; pegue de volta p/ recuperar energia","Raio salta entre inimigos e paralisa","Fogo orbita a nave e queima","3 aguias-isca; C troca de lugar","Vira morcegos: intocavel e fere"};
+ static final String[] DICAS={"Agarram e arremessam o inimigo contra os outros","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta; pegue de volta p/ recuperar energia","Raio salta entre inimigos e paralisa","Caveiras de fogo giram e explodem para fora","3 aguias-isca que explodem; C troca de lugar","Vira morcegos: intocavel e fere"};
  static final int[] CUSTO={25,40,30,25,40,35,30,30};
- static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={3.2,10,2.0,4.0,1.2,8,6,2.5};
+ static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={2.2,10,2.0,4.0,1.2,3.4,6,2.5};
  private static final BufferedImage[][] ARTE=new BufferedImage[8][4];
  private static final BufferedImage AGUIA=lerImg("aguia_espirito.png");
  /** Efeitos em pixel art (4 quadros cada): meia-lua da espada, raio, choque do raio, bola de fogo e morcego. */
@@ -32,6 +32,7 @@ final class Poderes099 {
     naveX=n.getX()+22;naveY=n.getY()+20;
     if(pendente>=0){preparo-=dt;if(preparo<=0){int i=pendente;pendente=-1;disparar(i,n);}return;}
     pegouCarta=Math.max(0,pegouCarta-dt);
+    for(double[] e:explosoesAguia)e[2]+=dt;explosoesAguia.removeIf(e->e[2]>.5);
     if(ativo<0)return;tempo+=dt;restante-=dt;pulso-=dt;if(restante<=0){ativo=-1;return;}if(ativo==0)atualizarTentaculos(dt,n);else atualizarPoder(dt,n);}
  // ---- Tentaculos da Lula: saem da nave, buscam ate 3 alvos a frente, agarram e voltam ----
  private final double[][] alvosTentaculo=new double[3][2];private final double[][] pontasTentaculo=new double[3][2];private int alvosDefinidos;private final boolean[] preso=new boolean[3];
@@ -61,7 +62,17 @@ final class Poderes099 {
  private final java.util.Random acaso=new java.util.Random(7);private Nave nave;
  private double extensao(){double t=DURACAO[0]-restante;return t<.3?t/.3:restante<.45?Math.max(0,restante/.45):1;}
  private double[] raizTentaculo(int i,Nave n){return new double[]{n.getX()+6,n.getY()+20+(i-1)*12};}
+ /** Arremessos pedidos pelos tentaculos: {x, y, vx, vy} do inimigo agarrado (a fase aplica). */
+ private final java.util.List<double[]> arremessos=new java.util.ArrayList<>();
+ java.util.List<double[]> consumirArremessos(){java.util.List<double[]> l=new java.util.ArrayList<>(arremessos);arremessos.clear();return l;}
+ private void arremessar(){
+  for(int i=0;i<3;i++){if(!preso[i])continue;double ax=alvosTentaculo[i][0],ay=alvosTentaculo[i][1];double[] mira=null;double d=900;
+   for(double[] c:alvos){double dd=Math.hypot(c[0]-ax,c[1]-ay);if(dd>50&&dd<d){d=dd;mira=c;}}
+   double vx,vy;if(mira!=null){vx=(mira[0]-ax)/d*760;vy=(mira[1]-ay)/d*760;}else{vx=760;vy=(i-1)*120;}
+   arremessos.add(new double[]{ax,ay,vx,vy});}
+  SomJogo.tocar(SomJogo.Efeito.IMPACTO);}
  private void atualizarTentaculos(double dt,Nave n){
+  if(restante<.45&&restante+dt>=.45)arremessar();
   double e=extensao();e=1-Math.pow(1-e,3);
   for(int i=0;i<3;i++){double[] r=raizTentaculo(i,n);double bal=preso[i]&&e>.95?Math.sin(tempo*30+i)*2:Math.sin(tempo*9+i*2)*14*e;
    pontasTentaculo[i][0]=r[0]+(alvosTentaculo[i][0]-r[0])*e;pontasTentaculo[i][1]=r[1]+(alvosTentaculo[i][1]-r[1])*e+bal;}
@@ -115,9 +126,16 @@ final class Poderes099 {
   if(ativo!=0||extensao()<.9)return;
   for(int i=0;i<3;i++)if(preso[i])espiral(g,pontasTentaculo[i][0],pontasTentaculo[i][1],false);
  }
+ /** Aguias-isca: cada tiro que acerta uma delas vira uma explosao de penas que fere quem estiver perto. */
+ static final double RAIO_AGUIA=95;
+ private final java.util.List<double[]> explosoesAguia=new java.util.ArrayList<>();
+ private final java.util.List<double[]> novasExplosoes=new java.util.ArrayList<>();
+ private void explodirAguia(int c){double ex=clones[c][0]+23,ey=clones[c][1]+20;explosoesAguia.add(new double[]{ex,ey,0});novasExplosoes.add(new double[]{ex,ey});pulso=0;SomJogo.tocar(SomJogo.Efeito.EXPLOSAO,ex);}
+ /** Explosoes que a fase deve desenhar (e esvazia a lista). */
+ java.util.List<double[]> consumirExplosoes(){java.util.List<double[]> l=new java.util.ArrayList<>(novasExplosoes);novasExplosoes.clear();return l;}
  boolean pulso(){if(ativo<0||pulso>0)return false;pulso=ativo==1?.3:ativo==2?.1:ativo==3?.18:.25;return true;}
  boolean paralisa(){return ativo==4;}
- int dano(){return ativo==0?3:ativo==1?5:ativo==2?6:ativo==3?6:ativo==4?4:ativo==5?3:ativo==6?8:4;}
+ int dano(){return ativo==0?1:ativo==1?5:ativo==2?6:ativo==3?6:ativo==4?4:ativo==5?3:ativo==6?8:4;}
  Rectangle alcance(){int r=70;return new Rectangle((int)x-r,(int)y-r,r*2,r*2);}
  boolean cloneAtivo(){return ativo==6;}
   /** Clone que os inimigos estao mirando agora: alterna entre os vivos para dividir o fogo. */
@@ -141,7 +159,8 @@ final class Poderes099 {
     else if(x<-60)ativo=-1;
     break;}
    case 4:{x=nx+30;y=ny;proximaCorrente-=dt;if(proximaCorrente<=0){proximaCorrente=.35;montarCorrente(x,y);}break;}
-   case 5:case 7:x=nx;y=ny;if(ativo==7)n.tornarIntangivel(.1);break;
+   case 5:if(tempo<GIRO_FOGO){x=nx;y=ny;fogoX=x;fogoY=y;}else if(tempo-dt<GIRO_FOGO)SomJogo.tocar(SomJogo.Efeito.FOGO);break;
+   case 7:x=nx;y=ny;n.tornarIntangivel(.1);break;
    case 6:for(int c=0;c<3;c++)clones[c][1]+=Math.sin(tempo*2+c*2.1)*12*dt;x=nx;y=ny;break;
    default:break;
   }
@@ -198,7 +217,12 @@ final class Poderes099 {
    g.setComposite(AlphaComposite.SrcOver);
   }
  }
- private double[][] orbes(){double[][] o=new double[6][];for(int k=0;k<6;k++){double a=tempo*3.2+k*Math.PI/3;o[k]=new double[]{x+Math.cos(a)*74,y+Math.sin(a)*62};}return o;}
+ /** Hell Awaits: as caveiras giram em volta da nave por GIRO_FOGO s e entao disparam para fora, em leque, a partir de onde estavam. */
+ static final double GIRO_FOGO=1.4;private double fogoX,fogoY;
+ boolean fogoDisparado(){return ativo==5&&tempo>=GIRO_FOGO;}
+ private double anguloOrbe(int k){return Math.min(tempo,GIRO_FOGO)*3.2+k*Math.PI/3;}
+ private double[][] orbes(){double[][] o=new double[6][];double voo=Math.max(0,tempo-GIRO_FOGO)*560;
+  for(int k=0;k<6;k++){double a=anguloOrbe(k);double cx=voo>0?fogoX:x,cy=voo>0?fogoY:y;o[k]=new double[]{cx+Math.cos(a)*(74+voo),cy+Math.sin(a)*(62+voo)};}return o;}
 
  /** Onde o poder acerta neste quadro. */
  boolean atinge(Rectangle b){
@@ -209,7 +233,7 @@ final class Poderes099 {
    case 3:return new Rectangle((int)x-34,(int)y-34,68,68).intersects(b);
    case 4:for(int i=1;i<corrente.size();i++){double[] c=corrente.get(i);if(b.contains(c[0],c[1])||b.intersectsLine(corrente.get(i-1)[0],corrente.get(i-1)[1],c[0],c[1])&&i<corrente.size())return true;}return false;
    case 5:for(double[] o:orbes())if(new Rectangle((int)o[0]-20,(int)o[1]-20,40,40).intersects(b))return true;return false;
-   case 6:return false;
+   case 6:for(double[] e:explosoesAguia)if(e[2]<.35&&new java.awt.geom.Ellipse2D.Double(e[0]-RAIO_AGUIA,e[1]-RAIO_AGUIA,RAIO_AGUIA*2,RAIO_AGUIA*2).intersects(b))return true;return false;
    case 7:return b.intersects(new Rectangle((int)x-75,(int)y-65,150,130));
    default:return false;
   }
@@ -220,7 +244,7 @@ final class Poderes099 {
    case 1:{boolean bate=new Rectangle((int)x-45,(int)y-26,90,52).intersects(b);if(bate&&--vidaMoto<=0){ativo=-1;SomJogo.tocar(SomJogo.Efeito.EXPLOSAO);}return bate;}
    case 2:return cortaRetangulo(b);
    case 5:for(double[] o:orbes())if(Math.hypot(b.getCenterX()-o[0],b.getCenterY()-o[1])<24)return true;return false;
-   case 6:{for(int c=0;c<3;c++)if(vidaClones[c]>0&&new Rectangle((int)clones[c][0],(int)clones[c][1],46,40).intersects(b)){if(--vidaClones[c]<=0){SomJogo.tocar(SomJogo.Efeito.ESCUDO_QUEBRA);if(vidaClones[0]+vidaClones[1]+vidaClones[2]==0)ativo=-1;}return true;}return false;}
+   case 6:{for(int c=0;c<3;c++)if(vidaClones[c]>0&&new Rectangle((int)clones[c][0],(int)clones[c][1],46,40).intersects(b)){explodirAguia(c);if(--vidaClones[c]<=0){SomJogo.tocar(SomJogo.Efeito.ESCUDO_QUEBRA);if(vidaClones[0]+vidaClones[1]+vidaClones[2]==0)ativo=-1;}return true;}return false;}
    case 7:return b.intersects(new Rectangle((int)x-75,(int)y-65,150,130));
    default:return false;
   }
@@ -255,8 +279,8 @@ final class Poderes099 {
     break;}
    case 5:{ // pentagrama sob a nave e bolas de fogo orbitando
     BufferedImage[] q=quadrosSimbolo(5);
-    if(q!=null){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(.35f));c.translate(px,py);c.rotate(tempo*.8);c.drawImage(q[2],-80,-80,160,160,null);c.dispose();}
-    if(FX_ORBE!=null){int k0=0;for(double[] o:orbes()){double an=tempo*3.2+k0*Math.PI/3;Graphics2D c=(Graphics2D)a.create();c.translate(o[0],o[1]);c.rotate(an+Math.PI/2);fx(c,FX_ORBE,(int)(tempo*10+k0)%4,64);c.dispose();k0++;}break;}
+    if(q!=null&&!fogoDisparado()){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(.35f));c.translate(px,py);c.rotate(tempo*.8);c.drawImage(q[2],-80,-80,160,160,null);c.dispose();}
+    if(FX_ORBE!=null){int k0=0;for(double[] o:orbes()){double an=anguloOrbe(k0);Graphics2D c=(Graphics2D)a.create();c.translate(o[0],o[1]);c.rotate(fogoDisparado()?an:an+Math.PI/2);fx(c,FX_ORBE,(int)(tempo*10+k0)%4,64);c.dispose();k0++;}break;}
     for(double[] o:orbes()){int ox=(int)o[0],oy=(int)o[1];for(int k=0;k<4;k++){a.setColor(new Color(255,90+k*30,30,200-k*40));int r2=14-k*3;a.fillOval(ox-r2-k*4,oy-r2+(int)(Math.sin(tempo*20+k)*2),r2*2,r2*2);}a.setColor(new Color(255,240,160));a.fillOval(ox-5,oy-5,10,10);}
     break;}
    case 6:{ // tres aguias de espirito (isca); arte em aguia_espirito.png, senao versao provisoria
