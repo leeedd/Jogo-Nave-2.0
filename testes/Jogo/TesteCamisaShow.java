@@ -61,7 +61,7 @@ public class TesteCamisaShow {
             java.lang.reflect.Method partir = Fase.class.getDeclaredMethod("partirDaBase"); partir.setAccessible(true); partir.invoke(f);
             if ((boolean) TesteInvasao093.get(f, "hangarPendente")) throw new AssertionError("partiu sem entrar: o hangar some");
         } finally { ProgressoJogo.zerarFestivalTeste(); }
-        for (int i = 0; i < 400; i++) p.atualizar(.1);
+        for (int i = 0; i < 700; i++) p.atualizar(.1);
         if (!p.terminou()) throw new AssertionError("a cutscene deveria terminar");
         System.out.println("TesteCamisaShow OK");
     }

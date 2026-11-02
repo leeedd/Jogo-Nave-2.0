@@ -35,7 +35,7 @@ final class CenaPouso {
     /** Telao preto do palco (fracoes da arte do palco), onde acende o emblema da banda. */
     private static final double TELAO_X0 = 568 / 1586.0, TELAO_Y0 = 348 / 992.0, TELAO_X1 = 1018 / 1586.0, TELAO_Y1 = 558 / 992.0;
     private static final double[][] ESTAMPA = TEM_PILOTO ? ESTAMPA_PILOTO : ESTAMPA_FLAVIO;
-    static final double DURACAO = 34.2;
+    static final double DURACAO = 47.0;
     private static final int CHAO = 572;
 
     private final int modelo;
@@ -88,18 +88,18 @@ final class CenaPouso {
     void confirmar() { if (!aberto(cursor)) { avisoFechado = 1.6; SomJogo.tocar(SomJogo.Efeito.ERRO); return; } escolher(cursor); }
     /** Sons da cutscene: (instante, efeito). A trilha de metal toca por baixo o tempo todo. */
     private static final Object[][] SONS = {
-        {.05, SomJogo.Efeito.DOBRA}, {.8, SomJogo.Efeito.DOBRA}, {1.5, SomJogo.Efeito.DOBRA}, {2.0, SomJogo.Efeito.SAIDA_DOBRA}, {2.15, SomJogo.Efeito.TROVAO},
-        {5.7, SomJogo.Efeito.FUSAO}, {6.6, SomJogo.Efeito.NUCLEAR}, {8.0, SomJogo.Efeito.FUSAO}, {9.3, SomJogo.Efeito.LASER},
-        {11.5, SomJogo.Efeito.FUSAO}, {13.0, SomJogo.Efeito.ENERGIA}, {13.8, SomJogo.Efeito.IMPACTO}, {13.85, SomJogo.Efeito.EXPLOSAO},
-        {16.8, SomJogo.Efeito.ESCUDO}, {17.3, SomJogo.Efeito.TIRO}, {18.1, SomJogo.Efeito.IMPACTO}, {18.8, SomJogo.Efeito.TROCA}, {19.6, SomJogo.Efeito.EVOLUCAO},
-        {24.2, SomJogo.Efeito.CHEFE_ENTRADA}, {25.6, SomJogo.Efeito.EXPLOSAO_GRANDE}, {26.1, SomJogo.Efeito.VITORIA}, {28.7, SomJogo.Efeito.TROVAO}, {31.7, SomJogo.Efeito.VITORIA}};
+        {.05, SomJogo.Efeito.DOBRA}, {2.0, SomJogo.Efeito.DOBRA}, {4.0, SomJogo.Efeito.DOBRA}, {6.0, SomJogo.Efeito.DOBRA}, {8.0, SomJogo.Efeito.DOBRA}, {10.0, SomJogo.Efeito.DOBRA}, {12.0, SomJogo.Efeito.DOBRA}, {13.5, SomJogo.Efeito.DOBRA}, {14.8, SomJogo.Efeito.SAIDA_DOBRA}, {14.95, SomJogo.Efeito.TROVAO},
+        {18.5, SomJogo.Efeito.FUSAO}, {19.4, SomJogo.Efeito.NUCLEAR}, {20.8, SomJogo.Efeito.FUSAO}, {22.1, SomJogo.Efeito.LASER},
+        {24.3, SomJogo.Efeito.FUSAO}, {25.8, SomJogo.Efeito.ENERGIA}, {26.6, SomJogo.Efeito.IMPACTO}, {26.65, SomJogo.Efeito.EXPLOSAO},
+        {29.6, SomJogo.Efeito.ESCUDO}, {30.1, SomJogo.Efeito.TIRO}, {30.9, SomJogo.Efeito.IMPACTO}, {31.6, SomJogo.Efeito.TROCA}, {32.4, SomJogo.Efeito.EVOLUCAO},
+        {37, SomJogo.Efeito.CHEFE_ENTRADA}, {38.4, SomJogo.Efeito.EXPLOSAO_GRANDE}, {38.9, SomJogo.Efeito.VITORIA}, {41.5, SomJogo.Efeito.TROVAO}, {44.5, SomJogo.Efeito.VITORIA}};
     void atualizar(double dt) {
         if (banda < 0) {
             tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt));
             // o cursor parou numa banda: toca 10 s da musica dela (um gostinho), depois volta a trilha
             if (cursor != ultimoCursor) { ultimoCursor = cursor; paradoNoCursor = 0; if (previaTocando >= 0) { previaTocando = -1; SomJogo.trocarMusica("trilha_metal"); } }
             paradoNoCursor += Math.max(0, dt);
-            if (previaTocando < 0 && paradoNoCursor > .4 && paradoNoCursor < 10 && aberto(cursor) && cursor != FESTIVAL) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
+            if (previaTocando < 0 && paradoNoCursor > .12 && paradoNoCursor < 10 && aberto(cursor) && cursor != FESTIVAL) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
             if (previaTocando >= 0 && paradoNoCursor >= 10.4) { previaTocando = -2; SomJogo.trocarMusica("trilha_metal"); }
             return;
         }
@@ -119,7 +119,9 @@ final class CenaPouso {
         c.setColor(Color.BLACK); c.fillRect(0, 0, Config.LARGURA, Config.ALTURA); return c;
     }
     /** Tomadas da cutscene (inicio de cada uma); cada corte entra como um quadro novo deslizando sobre o gibi. */
-    private static final double[] TOMADA = {0, 5.6, 11.4, 16.0, 23.2, 26.0};
+    /** Quanto dura a viagem em dobra (dentro da cabine) antes de sair no sistema do festival. */
+    private static final double SAIDA = 15;
+    private static final double[] TOMADA = {0, 18.4, 24.2, 28.8, 36.0, 38.8};
     private int nivelNave = 6;
     void nivelNave(int n) { nivelNave = Math.max(0, n); }
 
@@ -159,8 +161,8 @@ final class CenaPouso {
         painel(q, 16, 14, Config.LARGURA - 32, Config.ALTURA - 28, 0, 0, Config.LARGURA, Config.ALTURA, 99, 0, giro);
         switch (i) {
             case 0:
-                legenda(q, 34, 30, "SAINDO DA DOBRA. O FESTIVAL ESTA LOGO ALI.");
-                if (tl > 2.0 && tl < 3.6) sfx(q, "VWOOOOM!", 330, 200, 70, new Color(120, 220, 255), -.12, tl - 2.0);
+                legenda(q, 34, 30, tl < SAIDA ? "EM DOBRA. RUMO AO SISTEMA DO FESTIVAL..." : "SAINDO DA DOBRA. O FESTIVAL ESTA LOGO ALI.");
+                if (tl > SAIDA - .2 && tl < SAIDA + 1.4) sfx(q, "VWOOOOM!", 330, 200, 70, new Color(120, 220, 255), -.12, tl - SAIDA + .2);
                 break;
             case 1:
                 legenda(q, 34, 30, "100 MIL HEADBANGERS. E UM CACADOR CHEGANDO.");
@@ -223,9 +225,9 @@ final class CenaPouso {
     /** Tomada 1: dentro da cabine, por cima do ombro do Wenger, saindo da dobra espacial. */
     private void cenaCabine(Graphics2D g, double tl) {
         int W = Config.LARGURA, H = Config.ALTURA, cx = W / 2, cy = 220;
-        double treme = tl < 2.2 ? Math.sin(tl * 60) * 4 : tl < 2.9 ? Math.sin(tl * 45) * 6 * (2.9 - tl) / .7 : 0;
+        double treme = tl < SAIDA ? Math.sin(tl * 60) * 4 : tl < SAIDA + .7 ? Math.sin(tl * 45) * 6 * (SAIDA + .7 - tl) / .7 : 0;
         // turbulencia: na dobra a nave joga de um lado pro outro; ao sair, vai estabilizando
-        double turb = tl < 2.2 ? 1 : Math.exp(-(tl - 2.2) * 1.8), roll = (Math.sin(tl * 6.5) * .055 + Math.sin(tl * 17) * .018) * turb, lado = (Math.sin(tl * 5.2) * 18 + Math.sin(tl * 13) * 6) * turb;
+        double turb = tl < SAIDA ? 1 : Math.exp(-(tl - SAIDA) * 1.8), roll = (Math.sin(tl * 6.5) * .055 + Math.sin(tl * 17) * .018) * turb, lado = (Math.sin(tl * 5.2) * 18 + Math.sin(tl * 13) * 6) * turb;
         // camera inclinada (dutch angle) e um pouco mais perto: a cabine e o espaco giram juntos
         Graphics2D v = (Graphics2D) g.create(); v.translate(treme, treme * .6);
         boolean artePropria = CABINES[Math.max(0, Math.min(4, modelo))] != null;
@@ -235,14 +237,14 @@ final class CenaPouso {
         // o espaco la fora: tunel de dobra, clarao e depois as estrelas com o sol do festival ao longe
         v.setColor(Color.BLACK); v.fillRect(-10, -10, W + 20, H + 20);
         java.util.Random r = new java.util.Random(5);
-        double vel = tl < 2.2 ? 1 : Math.max(0, 1 - (tl - 2.2) * 2);
+        double vel = tl < SAIDA ? 1 : Math.max(0, 1 - (tl - SAIDA) * 2);
         for (int k = 0; k < 320; k++) {
             double an = r.nextDouble() * Math.PI * 2, d0 = (r.nextDouble() * 700 + tl * 1100 * (.15 + vel)) % 720, len = 2 + vel * 110;
             int c = 140 + r.nextInt(110); v.setColor(vel > .2 ? new Color(c / 2, c * 3 / 4, c) : new Color(c, c, c));
             v.setStroke(new java.awt.BasicStroke(1 + (float) vel * 2));
             v.drawLine(cx + (int) (Math.cos(an) * d0), cy + (int) (Math.sin(an) * d0 * .7), cx + (int) (Math.cos(an) * (d0 + len)), cy + (int) (Math.sin(an) * (d0 + len) * .7));
         }
-        if (tl > 1.9 && tl < 2.6) { v.setColor(new Color(225, 240, 255, (int) (255 * Math.max(0, 1 - Math.abs(tl - 2.2) / .35)))); v.fillRect(-10, -10, W + 20, H + 20); }
+        if (tl > SAIDA - .3 && tl < SAIDA + .4) { v.setColor(new Color(225, 240, 255, (int) (255 * Math.max(0, 1 - Math.abs(tl - SAIDA) / .35)))); v.fillRect(-10, -10, W + 20, H + 20); }
         BufferedImage cab = cabine();
         if (cab != null) v.drawImage(cab, 0, 0, W, H, null);
         BufferedImage[] luz = LUZES[Math.max(0, Math.min(4, modelo))];
@@ -275,7 +277,7 @@ final class CenaPouso {
         g.setColor(new Color(60, 60, 76)); g.drawLine(0, 410, W, 380);
         for (int k = 0; k < 6; k++) { boolean on = (int) (tl * 3 + k) % 4 != 0; g.setColor(on ? (k % 3 == 0 ? new Color(255, 80, 80) : new Color(80, 255, 140)) : new Color(40, 60, 50)); g.fillRect(80 + k * 70, 440 + (k % 2) * 30, 46, 20); }
         g.setColor(new Color(20, 60, 50)); g.fillRect(300, 430, 160, 90); g.setColor(new Color(100, 255, 170)); g.drawRect(300, 430, 160, 90);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13)); g.drawString(tl < 2.2 ? "DOBRA ATIVA" : "DESTINO: FESTIVAL", 310, 455); g.drawString(tl < 2.2 ? (int) (99 - tl * 40) + "% ..." : "DIST: 0.3 UA", 310, 480);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13)); g.drawString(tl < SAIDA ? "DOBRA ATIVA" : "DESTINO: FESTIVAL", 310, 455); g.drawString(tl < SAIDA ? (int) (99 - tl / SAIDA * 99) + "% ..." : "DIST: 0.3 UA", 310, 480);
         // o Wenger de costas: ombros do macacao laranja, nuca careca, fones e a barba aparecendo dos lados
         int bx = 700, by = 470;
         g.setColor(new Color(170, 80, 20)); g.fillRoundRect(bx - 170, by + 30, 340, 200, 80, 80);
