@@ -9,6 +9,10 @@ final class Poderes099 {
  static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={3.2,10,2.0,4.0,1.2,8,6,2.5};
  private static final BufferedImage[][] ARTE=new BufferedImage[8][4];
  private static final BufferedImage AGUIA=lerImg("aguia_espirito.png");
+ /** Efeitos em pixel art (4 quadros cada): meia-lua da espada, raio, choque do raio, bola de fogo e morcego. */
+ private static final BufferedImage FX_CORTE=lerImg("poder_corte.png"),FX_RAIO=lerImg("poder_raio.png"),FX_CHOQUE=lerImg("poder_raio_impacto.png"),FX_ORBE=lerImg("poder_orbe.png"),FX_MORCEGO=lerImg("poder_morcego.png");
+ /** Quadro q de uma tira de 4, centrado em (0,0) com largura w (a altura segue a proporcao). */
+ private static void fx(Graphics2D g,BufferedImage t,int q,double w){int fw=t.getWidth()/4,fh=t.getHeight();int h=(int)(w*fh/fw);g.drawImage(t,(int)(-w/2),-h/2,(int)(w/2),h-h/2,q*fw,0,q*fw+fw,fh,null);}
  private static BufferedImage lerImg(String n){java.net.URL u=Poderes099.class.getResource("/ImagemIcon/"+n);if(u==null)return null;try{return ImageIO.read(u);}catch(java.io.IOException e){return null;}}
  static{try{BufferedImage a=ImageIO.read(Poderes099.class.getResource("/ImagemIcon/poderes_099.png"));for(int r=0;r<8;r++)for(int c=0;c<4;c++){int x=c*a.getWidth()/4,y=r*a.getHeight()/8;ARTE[r][c]=a.getSubimage(x,y,a.getWidth()/4,a.getHeight()/8);}}catch(java.io.IOException e){throw new ExceptionInInitializerError(e);}}
  final int[] energia={100,100,100,100,100,100,100,100};final double[] cooldown=new double[8];int selecionado,ativo=-1,vidaMoto,pendente=-1;double tempo,restante,pulso,x,y,recargaPassiva,preparo,naveX,naveY;
@@ -186,6 +190,7 @@ final class Poderes099 {
   // 2) As laminas que voam: inclinadas, afiadas, com copias de rastro e linhas de velocidade.
   for(int j=0;j<3;j++){double[] o=onda(j);if(o==null||o[2]<1)continue;
    double cx=o[0],cy=o[1],R=72*o[4],rot=(j==1?-1:1)*.42;float alfa=(float)(1-o[3]);
+   if(FX_CORTE!=null){int q=o[3]>.75?3:o[3]>.15?2:o[4]<.9?0:1;Graphics2D c=(Graphics2D)g.create();c.setComposite(AlphaComposite.SrcOver.derive(Math.max(0,Math.min(1,alfa*1.3f))));c.translate(cx,cy);c.rotate(rot*.6);fx(c,FX_CORTE,q,R*3.2);c.dispose();g.setComposite(AlphaComposite.SrcOver);continue;}
    for(int r=4;r>=1;r--)lamina(g,cx-r*22,cy,R,1.15,rot,alfa*(.12f*(5-r)/4f),.22);
    lamina(g,cx,cy,R,1.15,rot,alfa,.26);
    g.setComposite(AlphaComposite.SrcOver.derive(alfa*.7f));g.setColor(new Color(170,255,190));
@@ -237,6 +242,12 @@ final class Poderes099 {
     for(int k=3;k>=0;k--){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(k==0?1f:.18f));c.translate(px-k*14*(tempo<1.0?1:-1),py);c.rotate(giroCarta-k*.3);if(q!=null)c.drawImage(q[2],-38,-38,76,76,null);c.dispose();}
     break;}
    case 4:{ // raios em zigue-zague entre os alvos
+    if(FX_RAIO!=null){int q=(int)(tempo*16)%4;
+     for(int i=1;i<corrente.size();i++){double[] p0=corrente.get(i-1),p1=corrente.get(i);double dx=p1[0]-p0[0],dy=p1[1]-p0[1],d=Math.hypot(dx,dy);if(d<4)continue;
+      Graphics2D c=(Graphics2D)a.create();c.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);c.translate((p0[0]+p1[0])/2,(p0[1]+p1[1])/2);c.rotate(Math.atan2(dy,dx));
+      int fw=FX_RAIO.getWidth()/4,fh=FX_RAIO.getHeight(),h=(int)Math.max(26,Math.min(70,d*fh/fw));c.drawImage(FX_RAIO,(int)(-d/2),-h/2,(int)(d/2),h-h/2,((q+i)%4)*fw,0,((q+i)%4)*fw+fw,fh,null);c.dispose();
+      if(FX_CHOQUE!=null){Graphics2D c2=(Graphics2D)a.create();c2.translate(p1[0],p1[1]);fx(c2,FX_CHOQUE,(int)(tempo*12+i)%4,70);c2.dispose();}}
+     break;}
     for(int i=1;i<corrente.size();i++){double[] p0=corrente.get(i-1),p1=corrente.get(i);int seg=9;int[] xs=new int[seg+1],ys=new int[seg+1];
      for(int k=0;k<=seg;k++){double f=k/(double)seg;double j=(k==0||k==seg)?0:(acaso.nextDouble()-.5)*26;xs[k]=(int)(p0[0]+(p1[0]-p0[0])*f-(p1[1]-p0[1])/Math.max(1,Math.hypot(p1[0]-p0[0],p1[1]-p0[1]))*j);ys[k]=(int)(p0[1]+(p1[1]-p0[1])*f+(p1[0]-p0[0])/Math.max(1,Math.hypot(p1[0]-p0[0],p1[1]-p0[1]))*j);}
      a.setStroke(new BasicStroke(7));a.setColor(new Color(60,120,255,110));a.drawPolyline(xs,ys,seg+1);a.setStroke(new BasicStroke(2.5f));a.setColor(new Color(225,240,255));a.drawPolyline(xs,ys,seg+1);
@@ -245,6 +256,7 @@ final class Poderes099 {
    case 5:{ // pentagrama sob a nave e bolas de fogo orbitando
     BufferedImage[] q=quadrosSimbolo(5);
     if(q!=null){Graphics2D c=(Graphics2D)a.create();c.setComposite(AlphaComposite.SrcOver.derive(.35f));c.translate(px,py);c.rotate(tempo*.8);c.drawImage(q[2],-80,-80,160,160,null);c.dispose();}
+    if(FX_ORBE!=null){int k0=0;for(double[] o:orbes()){double an=tempo*3.2+k0*Math.PI/3;Graphics2D c=(Graphics2D)a.create();c.translate(o[0],o[1]);c.rotate(an+Math.PI/2);fx(c,FX_ORBE,(int)(tempo*10+k0)%4,64);c.dispose();k0++;}break;}
     for(double[] o:orbes()){int ox=(int)o[0],oy=(int)o[1];for(int k=0;k<4;k++){a.setColor(new Color(255,90+k*30,30,200-k*40));int r2=14-k*3;a.fillOval(ox-r2-k*4,oy-r2+(int)(Math.sin(tempo*20+k)*2),r2*2,r2*2);}a.setColor(new Color(255,240,160));a.fillOval(ox-5,oy-5,10,10);}
     break;}
    case 6:{ // tres aguias de espirito (isca); arte em aguia_espirito.png, senao versao provisoria
@@ -257,7 +269,7 @@ final class Poderes099 {
      a.setColor(new Color(255,210,90));for(int k=0;k<vidaClones[ic];k++)a.fillRect(cx-20+k*8,cy-30,6,4);}
     break;}
    case 7:{ // revoada: morcegos rodando em volta da nave
-    for(int k=0;k<22;k++){double an=tempo*(3+k%3)+k*.9;double rr=26+(k*13)%48;int bx=px+(int)(Math.cos(an)*rr*1.25),by=py+(int)(Math.sin(an)*rr*.9);TiroChefe.morcego(a,bx,by,2,tempo+k*.11,Math.cos(an+Math.PI/2)>0,k%4==0);}
+    for(int k=0;k<22;k++){double an=tempo*(3+k%3)+k*.9;double rr=26+(k*13)%48;int bx=px+(int)(Math.cos(an)*rr*1.25),by=py+(int)(Math.sin(an)*rr*.9);if(FX_MORCEGO!=null){Graphics2D c=(Graphics2D)a.create();c.translate(bx,by);fx(c,FX_MORCEGO,(int)(tempo*12+k)%4,k%4==0?62:48);c.dispose();}else TiroChefe.morcego(a,bx,by,2,tempo+k*.11,Math.cos(an+Math.PI/2)>0,k%4==0);}
     break;}
    default:break;
   }
