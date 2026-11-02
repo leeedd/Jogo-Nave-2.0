@@ -198,19 +198,9 @@ final class CenaPouso {
             v.setStroke(new java.awt.BasicStroke(1 + (float) vel * 2));
             v.drawLine(cx + (int) (Math.cos(an) * d0), cy + (int) (Math.sin(an) * d0 * .7), cx + (int) (Math.cos(an) * (d0 + len)), cy + (int) (Math.sin(an) * (d0 + len) * .7));
         }
-        if (tl > 2.0) { double sol = Math.min(1, (tl - 2.0) / 1.5); v.setColor(new Color(255, 120, 200, (int) (90 * sol))); v.fillOval(cx - 60, cy - 40, 120, 80); v.setColor(new Color(255, 230, 240, (int) (230 * sol))); v.fillOval(cx - 10, cy - 8, 20, 16); }
         if (tl > 1.9 && tl < 2.6) { v.setColor(new Color(225, 240, 255, (int) (255 * Math.max(0, 1 - Math.abs(tl - 2.2) / .35)))); v.fillRect(-10, -10, W + 20, H + 20); }
         BufferedImage cab = cabine();
         if (cab != null) v.drawImage(cab, 0, 0, W, H, null);
-        // nucleo do motor pulsando (posicao do tubo de energia em cada cabine, fracao da arte)
-        double[] nucleo = NUCLEO[Math.max(0, Math.min(4, modelo))];
-        if (artePropria && nucleo != null) {
-            float pulso = (float) (.18 + .22 * (.5 + .5 * Math.sin(tl * 5)));
-            Graphics2D n = (Graphics2D) v.create(); n.setComposite(AlphaComposite.SrcOver.derive(pulso));
-            int nx = (int) (nucleo[0] * W), ny = (int) (nucleo[1] * H), nw = (int) (nucleo[2] * W), nh = (int) (nucleo[3] * H);
-            n.setColor(new Color(nucleo.length > 4 ? (int) nucleo[4] : 120, nucleo.length > 5 ? (int) nucleo[5] : 200, nucleo.length > 6 ? (int) nucleo[6] : 255));
-            n.fillRoundRect(nx - nw / 2, ny - nh / 2, nw, nh, nw / 2, nw / 2); n.dispose();
-        }
         else cabineCodigo(v, tl);
         v.dispose();
     }
