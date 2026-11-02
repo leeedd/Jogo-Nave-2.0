@@ -166,6 +166,8 @@ final class CenaPouso {
     private static final BufferedImage[] CABINES = new BufferedImage[5];
     private static final BufferedImage CABINE_PADRAO = janela(ler("cabine_wenger.png"));
     static { for (int i = 0; i < 5; i++) CABINES[i] = janela(ler("cabine_" + i + ".png")); }
+    /** Tubo do nucleo em cada cabine: centro x, centro y, largura, altura (fracoes da tela) e cor do brilho. */
+    private static final double[][] NUCLEO = {{.94, .48, .07, .25, 110, 180, 255}, null, null, null, null};
     private BufferedImage cabine() { BufferedImage c = CABINES[Math.max(0, Math.min(4, modelo))]; return c != null ? c : CABINE_PADRAO; }
     /** A galera jogando o Wenger pra cima (wenger_galera.png, 4 quadros com as maos embaixo). */
     private static final BufferedImage GALERA = ler("wenger_galera.png");
@@ -184,7 +186,8 @@ final class CenaPouso {
         double treme = tl < 2.2 ? (Math.sin(tl * 60) * 3) : 0;
         // camera inclinada (dutch angle) e um pouco mais perto: a cabine e o espaco giram juntos
         Graphics2D v = (Graphics2D) g.create(); v.translate(treme, treme * .6);
-        v.rotate(-.11, W / 2.0, H / 2.0); v.translate(W / 2.0, H / 2.0); v.scale(1.16, 1.16); v.translate(-W / 2.0, -H / 2.0);
+        boolean artePropria = CABINES[Math.max(0, Math.min(4, modelo))] != null;
+        if (!artePropria) { v.rotate(-.11, W / 2.0, H / 2.0); v.translate(W / 2.0, H / 2.0); v.scale(1.16, 1.16); v.translate(-W / 2.0, -H / 2.0); }
         // o espaco la fora: tunel de dobra, clarao e depois as estrelas com o sol do festival ao longe
         v.setColor(Color.BLACK); v.fillRect(-10, -10, W + 20, H + 20);
         java.util.Random r = new java.util.Random(5);
@@ -199,6 +202,15 @@ final class CenaPouso {
         if (tl > 1.9 && tl < 2.6) { v.setColor(new Color(225, 240, 255, (int) (255 * Math.max(0, 1 - Math.abs(tl - 2.2) / .35)))); v.fillRect(-10, -10, W + 20, H + 20); }
         BufferedImage cab = cabine();
         if (cab != null) v.drawImage(cab, 0, 0, W, H, null);
+        // nucleo do motor pulsando (posicao do tubo de energia em cada cabine, fracao da arte)
+        double[] nucleo = NUCLEO[Math.max(0, Math.min(4, modelo))];
+        if (artePropria && nucleo != null) {
+            float pulso = (float) (.18 + .22 * (.5 + .5 * Math.sin(tl * 5)));
+            Graphics2D n = (Graphics2D) v.create(); n.setComposite(AlphaComposite.SrcOver.derive(pulso));
+            int nx = (int) (nucleo[0] * W), ny = (int) (nucleo[1] * H), nw = (int) (nucleo[2] * W), nh = (int) (nucleo[3] * H);
+            n.setColor(new Color(nucleo.length > 4 ? (int) nucleo[4] : 120, nucleo.length > 5 ? (int) nucleo[5] : 200, nucleo.length > 6 ? (int) nucleo[6] : 255));
+            n.fillRoundRect(nx - nw / 2, ny - nh / 2, nw, nh, nw / 2, nw / 2); n.dispose();
+        }
         else cabineCodigo(v, tl);
         v.dispose();
     }
