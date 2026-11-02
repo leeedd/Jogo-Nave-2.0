@@ -186,6 +186,8 @@ final class CenaPouso {
     private BufferedImage cabine() { BufferedImage c = CABINES[Math.max(0, Math.min(4, modelo))]; return c != null ? c : CABINE_PADRAO; }
     /** A galera jogando o Wenger pra cima (wenger_galera.png, 4 quadros com as maos embaixo). */
     private static final BufferedImage GALERA = ler("wenger_galera.png");
+    /** O Wenger surfando na galera, sem as maos recortadas (wenger_surf.png: 3 quadros). */
+    private static final BufferedImage SURF = ler("wenger_surf.png");
     private static BufferedImage janela(BufferedImage a) {
         if (a == null) return null;
         int w = a.getWidth(), h = a.getHeight(); boolean[] v = new boolean[w * h]; java.util.ArrayDeque<int[]> f = new java.util.ArrayDeque<>();
@@ -199,11 +201,13 @@ final class CenaPouso {
     private void cenaCabine(Graphics2D g, double tl) {
         int W = Config.LARGURA, H = Config.ALTURA, cx = W / 2, cy = 220;
         double treme = tl < 2.2 ? Math.sin(tl * 60) * 4 : tl < 2.9 ? Math.sin(tl * 45) * 6 * (2.9 - tl) / .7 : 0;
+        // turbulencia: na dobra a nave joga de um lado pro outro; ao sair, vai estabilizando
+        double turb = tl < 2.2 ? 1 : Math.exp(-(tl - 2.2) * 1.8), roll = (Math.sin(tl * 6.5) * .055 + Math.sin(tl * 17) * .018) * turb, lado = (Math.sin(tl * 5.2) * 18 + Math.sin(tl * 13) * 6) * turb;
         // camera inclinada (dutch angle) e um pouco mais perto: a cabine e o espaco giram juntos
         Graphics2D v = (Graphics2D) g.create(); v.translate(treme, treme * .6);
         boolean artePropria = CABINES[Math.max(0, Math.min(4, modelo))] != null;
         // voo: a cabine balanca devagar (respiro da nave)
-        if (artePropria) { v.rotate(Math.sin(tl * 1.3) * .012, W / 2.0, H * .7); v.translate(Math.sin(tl * .9) * 4, Math.sin(tl * 1.7) * 3); v.translate(W / 2.0, H / 2.0); v.scale(1.03, 1.03); v.translate(-W / 2.0, -H / 2.0); }
+        if (artePropria) { v.rotate(roll + Math.sin(tl * 1.3) * .012, W / 2.0, H * .7); v.translate(lado + Math.sin(tl * .9) * 4, Math.sin(tl * 1.7) * 3 + Math.abs(lado) * .3); v.translate(W / 2.0, H / 2.0); v.scale(1.08, 1.08); v.translate(-W / 2.0, -H / 2.0); }
         if (!artePropria) { v.rotate(-.11, W / 2.0, H / 2.0); v.translate(W / 2.0, H / 2.0); v.scale(1.16, 1.16); v.translate(-W / 2.0, -H / 2.0); }
         // o espaco la fora: tunel de dobra, clarao e depois as estrelas com o sol do festival ao longe
         v.setColor(Color.BLACK); v.fillRect(-10, -10, W + 20, H + 20);
@@ -389,8 +393,12 @@ final class CenaPouso {
         bandeiras(g, new int[][]{{120, 300, 34}, {250, 250, 26}, {700, 260, 28}, {820, 320, 36}, {380, 230, 22}, {600, 225, 22}, {60, 380, 40}, {900, 400, 40}, {480, 210, 18}});
         filaFrente(g, VISAO_CENTRO, tl, 8.2, 1.0, 1.1, .5, .55, .735, 450, .4);
         if (GALERA == null) return;
-        int q = (int) (tl * 2.1 / 1.1) % 4; double x = 480 + Math.sin(tl * .45) * 150;
-        sprite(g, GALERA, 4, q, (int) x, 400, .42, false);
+        double x = 480 + Math.sin(tl * .45) * 150;
+        if (SURF != null) {
+            // deitado em cima das maos da propria galera do fundo, sendo jogado pra cima
+            int q = new int[]{0, 1, 2, 1}[(int) (tl * 1.9) % 4];
+            sprite(g, SURF, 3, q, (int) x, 470, .4, true);
+        } else sprite(g, GALERA, 4, (int) (tl * 2.1 / 1.1) % 4, (int) x, 400, .42, false);
     }
 
     /** Festival visto de cima (festival_de_cima.png, em pe: palco no topo, galera, heliponto no canto direito). */
