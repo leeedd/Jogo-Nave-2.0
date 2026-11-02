@@ -35,7 +35,7 @@ final class CenaPouso {
     /** Telao preto do palco (fracoes da arte do palco), onde acende o emblema da banda. */
     private static final double TELAO_X0 = 568 / 1586.0, TELAO_Y0 = 348 / 992.0, TELAO_X1 = 1018 / 1586.0, TELAO_Y1 = 558 / 992.0;
     private static final double[][] ESTAMPA = TEM_PILOTO ? ESTAMPA_PILOTO : ESTAMPA_FLAVIO;
-    static final double DURACAO = 33;
+    static final double DURACAO = 34.2;
     private static final int CHAO = 572;
 
     private final int modelo;
@@ -86,13 +86,13 @@ final class CenaPouso {
     private static final Object[][] SONS = {
         {.05, SomJogo.Efeito.DOBRA}, {.8, SomJogo.Efeito.DOBRA}, {1.5, SomJogo.Efeito.DOBRA}, {2.0, SomJogo.Efeito.SAIDA_DOBRA}, {2.15, SomJogo.Efeito.TROVAO},
         {5.7, SomJogo.Efeito.FUSAO}, {6.6, SomJogo.Efeito.NUCLEAR}, {8.0, SomJogo.Efeito.FUSAO}, {9.3, SomJogo.Efeito.LASER},
-        {10.3, SomJogo.Efeito.FUSAO}, {11.8, SomJogo.Efeito.ENERGIA}, {13.1, SomJogo.Efeito.IMPACTO}, {13.15, SomJogo.Efeito.EXPLOSAO},
-        {15.6, SomJogo.Efeito.ESCUDO}, {16.1, SomJogo.Efeito.TIRO}, {16.9, SomJogo.Efeito.IMPACTO}, {17.6, SomJogo.Efeito.TROCA}, {18.4, SomJogo.Efeito.EVOLUCAO},
-        {23.0, SomJogo.Efeito.CHEFE_ENTRADA}, {24.4, SomJogo.Efeito.EXPLOSAO_GRANDE}, {24.9, SomJogo.Efeito.VITORIA}, {27.5, SomJogo.Efeito.TROVAO}, {30.5, SomJogo.Efeito.VITORIA}};
+        {11.5, SomJogo.Efeito.FUSAO}, {13.0, SomJogo.Efeito.ENERGIA}, {14.3, SomJogo.Efeito.IMPACTO}, {14.35, SomJogo.Efeito.EXPLOSAO},
+        {16.8, SomJogo.Efeito.ESCUDO}, {17.3, SomJogo.Efeito.TIRO}, {18.1, SomJogo.Efeito.IMPACTO}, {18.8, SomJogo.Efeito.TROCA}, {19.6, SomJogo.Efeito.EVOLUCAO},
+        {24.2, SomJogo.Efeito.CHEFE_ENTRADA}, {25.6, SomJogo.Efeito.EXPLOSAO_GRANDE}, {26.1, SomJogo.Efeito.VITORIA}, {28.7, SomJogo.Efeito.TROVAO}, {31.7, SomJogo.Efeito.VITORIA}};
     void atualizar(double dt) {
         if (banda < 0) { tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt)); return; }
         double antes = t; t = Math.min(DURACAO, t + Math.max(0, dt));
-        for (Object[] s : SONS) { double m = (Double) s[0]; if (antes < m && t >= m) SomJogo.tocar((SomJogo.Efeito) s[1], 480); }
+        for (Object[] s : SONS) { double m = ((Number) s[0]).doubleValue(); if (antes < m && t >= m) SomJogo.tocar((SomJogo.Efeito) s[1], 480); }
     }
     boolean terminou() { return t >= DURACAO; }
     void pular() { if (banda < 0) confirmar(); else t = DURACAO; }
@@ -107,7 +107,7 @@ final class CenaPouso {
         c.setColor(Color.BLACK); c.fillRect(0, 0, Config.LARGURA, Config.ALTURA); return c;
     }
     /** Tomadas da cutscene (inicio de cada uma); cada corte entra como um quadro novo deslizando sobre o gibi. */
-    private static final double[] TOMADA = {0, 5.6, 10.2, 14.8, 22.0, 24.8};
+    private static final double[] TOMADA = {0, 5.6, 11.4, 16.0, 23.2, 26.0};
     private int nivelNave = 6;
     void nivelNave(int n) { nivelNave = Math.max(0, n); }
 
@@ -301,7 +301,9 @@ final class CenaPouso {
         if (frente != null) {
             int fw = frente.getWidth() * fh / frente.getHeight();
             Graphics2D n = (Graphics2D) g.create(); n.rotate(giro, cx, ny + fh / 2.0);
-            if (!desce && tl < 3.6) for (int k = -1; k <= 1; k += 2) for (int j = 0; j < 8; j++) { n.setColor(new Color(120, 200, 255, Math.max(0, 200 - j * 24))); n.fillRect(cx + k * fw / 4 - 9 + (int) (Math.sin(tl * 40 + j) * 2), ny + fh - 14 + j * 13, 18, 13); }
+            // jatos de pouso saindo da boca de cada motor (posicao do bocal na arte de frente de cada nave)
+            double[] bocal = BOCAIS[Math.max(0, Math.min(4, modelo))];
+            if (!desce && tl < 3.6) { double forca = tl < 2.6 ? 1 : (3.6 - tl); for (int k = -1; k <= 1; k += 2) chama(n, cx + (int) (k * bocal[0] * fw), ny + (int) (bocal[1] * fh), (int) (bocal[2] * fw * 1.5), (int) ((120 + (1 - p) * 90) * forca), tl + k); }
             n.drawImage(frente, cx - fw / 2, ny, fw, fh, null); n.dispose();
         }
         if (!desce && tl > 2.8) { double q = Math.min(1, (tl - 2.8) / 1.6); g.setColor(new Color(170, 150, 170, (int) (140 * (1 - q)))); for (int k = 0; k < 16; k++) { int r = (int) (16 + q * 60); g.fillOval(cx - 230 + k * 30 - r / 2, chao - r / 2 - 8, r, r / 2); } }
@@ -319,6 +321,27 @@ final class CenaPouso {
         else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 8 + (int) (tl / .16) % 2; x = 550 + c * 58; pe = 418 - c * 112; s = .3 - c * .04; }
         if (tl >= 2.95) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(585, chao, 44, 9, 5, 5); g.setColor(new Color(160, 70, 20)); g.fillRect(591, chao + 3, 32, 2); }
         sprite(g, flavio, 12, q, (int) x, (int) pe, s, false);
+    }
+
+    /** Bocal dos motores na arte de frente de cada nave: distancia do centro, altura e largura (fracoes da arte). */
+    private static final double[][] BOCAIS = {{.26, .47, .1}, {.2, .5, .07}, {.2, .52, .07}, {.36, .62, .12}, {.2, .52, .07}};
+    /** Chama de motor apontando pra baixo: halo azul, corpo ciano e miolo branco, tremulando. */
+    private static void chama(Graphics2D g, int x, int y, int w, int len, double tt) {
+        if (len <= 2) return;
+        Graphics2D c = (Graphics2D) g.create();
+        double fl = 1 + Math.sin(tt * 47) * .12 + Math.sin(tt * 23) * .08; int L = (int) (len * fl);
+        int[][] camadas = {{60, 140, 255, 70}, {80, 190, 255, 150}, {170, 235, 255, 210}, {255, 255, 255, 255}};
+        double[] larg = {1.5, 1.0, .62, .3}, comp = {1.1, 1.0, .72, .42};
+        for (int k = 0; k < 4; k++) {
+            int ww = (int) (w * larg[k]), ll = (int) (L * comp[k]);
+            c.setColor(new Color(camadas[k][0], camadas[k][1], camadas[k][2], camadas[k][3]));
+            c.fillPolygon(new int[]{x - ww / 2, x + ww / 2, x + ww / 4, x, x - ww / 4}, new int[]{y, y, y + ll * 2 / 3, y + ll, y + ll * 2 / 3}, 5);
+            c.fillOval(x - ww / 2, y - ww / 4, ww, ww / 2);
+        }
+        // faiscas soltas caindo da chama
+        java.util.Random r = new java.util.Random((long) (tt * 20));
+        for (int k = 0; k < 5; k++) { c.setColor(new Color(150, 220, 255, 200)); c.fillRect(x - w / 2 + r.nextInt(w + 1), y + L / 2 + r.nextInt(L / 2 + 1), 3, 3); }
+        c.dispose();
     }
 
     /** Wenger saindo do cockpit e pulando da nave (wenger_salto.png, 8 quadros: na cabine, impulso, salto com o capacete,
@@ -341,7 +364,7 @@ final class CenaPouso {
         if (tl > 1.5 && tl < 2.6) { // o capacete voando longe
             double c = (tl - 1.5) / 1.1; g.setColor(Color.WHITE); int hx = (int) (cabX - 40 - c * 260), hy = (int) (cabPe - 100 + c * c * 220); g.fillOval(hx, hy, 18, 16); g.setColor(new Color(200, 30, 40)); g.fillRect(hx + 4, hy + 3, 3, 10); }
         // o quadro 2 da arte ja traz o capacete; nos demais o sprite vai sozinho
-        sprite(g, SALTO, 8, q, (int) x, (int) pe, s, false);
+        sprite(g, SALTO, 8, q, (int) x, (int) pe, s, q < 6); // virado pra esquerda: pula pro lado da escada
     }
 
     /** Fila da frente da galera colada na grade: cada fa no seu ritmo; a grade e redesenhada por cima. */
@@ -424,7 +447,7 @@ final class CenaPouso {
         int W = Config.LARGURA, H = Config.ALTURA;
         if (FESTIVAL_CIMA == null) { cenaShow(g, tl, 3); return; }
         double e = W / (double) FESTIVAL_CIMA.getWidth(); int ih = (int) (FESTIVAL_CIMA.getHeight() * e);
-        double c = suave(Math.min(1, tl / 4.4)), topo = (ih - H) * (1 - c);
+        double c = suave(Math.min(1, tl / 3.4)), topo = (ih - H) * (1 - c);
         g.drawImage(FESTIVAL_CIMA, 0, (int) -topo, W, ih, null);
         java.util.Random r = new java.util.Random(12);
         // a galera viva: bracos subindo e descendo (pontinhos de pele piscando sobre a multidao)
@@ -451,9 +474,12 @@ final class CenaPouso {
         // a nave: sobe pelo meio e faz a curva ate o heliponto (915,310 na arte)
         double hx = 915 * e, hy = 310 * e - topo;
         double sx = W / 2.0, sy = H + 80, mx = W / 2.0 + 60, my = H * .35;
-        double u = Math.min(1, tl / 4.6), nx = (1 - u) * (1 - u) * sx + 2 * u * (1 - u) * mx + u * u * hx, ny = (1 - u) * (1 - u) * sy + 2 * u * (1 - u) * my + u * u * hy;
+        double u = Math.min(1, tl / 3.4), nx = (1 - u) * (1 - u) * sx + 2 * u * (1 - u) * mx + u * u * hx, ny = (1 - u) * (1 - u) * sy + 2 * u * (1 - u) * my + u * u * hy;
         double dx = 2 * (1 - u) * (mx - sx) + 2 * u * (hx - mx), dy = 2 * (1 - u) * (my - sy) + 2 * u * (hy - my), ang = Math.atan2(dy, dx) + Math.PI / 2;
-        double esc = 1 - u * .25;
+        // chegou no H: termina a curva (gira de nariz pra cima) e desce ate pousar em cima da propria sombra
+        double pousa = suave(Math.max(0, Math.min(1, (tl - 3.4) / 1.8)));
+        ang = ang * (1 - pousa);
+        double esc = (1 - u * .25) * (1 - .3 * pousa), desloc = 1 - pousa;
         BufferedImage semCima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
         if (semCima == null) { // sombra em forma de nave (asa delta) cruzando a galera
             Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx, ny); sb.rotate(ang); sb.scale(esc * 1.6, esc * 1.6);
@@ -463,7 +489,7 @@ final class CenaPouso {
         if (semCima != null && sombra != null) {
             // silhueta da nave correndo sobre a galera, deslocada pela luz do palco
             boolean folha = sombra.getWidth() >= sombra.getHeight() * 1.5; int fw = folha ? sombra.getWidth() / 3 : sombra.getWidth(), qs = folha ? Math.max(0, Math.min(2, ArteNaves.estagio(nivelNave))) : 0;
-            Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx + 120 * esc, ny + 150 * esc); sb.rotate(ang); sb.scale(esc * 1.15, esc * 1.15);
+            Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx + 120 * esc * desloc + 6, ny + 150 * esc * desloc + 6); sb.rotate(ang); sb.scale(esc * 1.15, esc * 1.15);
             int w = 190, h = w * sombra.getHeight() / fw; sb.drawImage(sombra, -w / 2, -h / 2, w / 2, h / 2, qs * fw, 0, qs * fw + fw, sombra.getHeight(), null); sb.dispose();
         }
         Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang); n.scale(esc, esc);
