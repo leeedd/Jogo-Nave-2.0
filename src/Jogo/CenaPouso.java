@@ -290,7 +290,9 @@ final class CenaPouso {
             n.drawImage(frente, cx - fw / 2, ny, fw, fh, null); n.dispose();
         }
         if (!desce && tl > 2.8) { double q = Math.min(1, (tl - 2.8) / 1.6); g.setColor(new Color(170, 150, 170, (int) (140 * (1 - q)))); for (int k = 0; k < 16; k++) { int r = (int) (16 + q * 60); g.fillOval(cx - 230 + k * 30 - r / 2, chao - r / 2 - 8, r, r / 2); } }
-        if (!desce || flavio == null) return;
+        if (!desce) return;
+        if (SALTO != null) { saltoWenger(g, tl, cx, ny, fh, chao); return; }
+        if (flavio == null) return;
         // Wenger: desce do lado da nave, tira o macacao e corre ate a escadinha (545,412) e sobe ate (608,300)
         int q; double x, pe, s = .36;
         if (tl < 1.6) { q = 1; x = 560; pe = chao + 6 - 70 * (1 - suave(tl / 1.6)); }
@@ -304,13 +306,51 @@ final class CenaPouso {
         sprite(g, flavio, 12, q, (int) x, (int) pe, s, false);
     }
 
+    /** Wenger saindo do cockpit e pulando da nave (wenger_salto.png, 8 quadros: na cabine, impulso, salto com o capacete,
+     *  aterrissagem, arrancando o macacao, chifrinho, correndo de costas x2). */
+    private static final BufferedImage SALTO = ler("wenger_salto.png");
+    /** Fas de frente, colados na grade (galera_frente.png: 6 fas x 4 quadros). */
+    private static final BufferedImage FAS_FRENTE = ler("galera_frente.png");
+    private void saltoWenger(Graphics2D g, double tl, int cx, int ny, int fh, int chao) {
+        int q; double x, pe, s = .36;
+        double cabX = cx, cabPe = ny + fh * .5, chaoX = 600, chaoPe = chao + 6;
+        if (tl < .9) { q = 0; x = cabX; pe = cabPe; }                                              // de pe na cabine
+        else if (tl < 1.3) { q = 1; x = cabX; pe = cabPe; }                                       // impulso
+        else if (tl < 2.1) { double c = (tl - 1.3) / .8; q = 2; x = cabX + (chaoX - cabX) * c; pe = cabPe + (chaoPe - cabPe) * c - Math.sin(c * Math.PI) * 90; } // salto
+        else if (tl < 2.7) { q = 3; x = chaoX; pe = chaoPe; }                                     // aterrissa estilo heroi
+        else if (tl < 3.5) { q = 4; x = chaoX; pe = chaoPe; }                                     // arranca o macacao
+        else if (tl < 4.4) { q = 5; x = chaoX; pe = chaoPe; }                                     // chifrinho
+        else if (tl < 5.6) { double c = suave((tl - 4.4) / 1.2); q = 6 + (int) (tl / .13) % 2; x = chaoX - c * 50; pe = chaoPe - c * 94; s = .36 - c * .08; } // corre pra escada
+        else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 6 + (int) (tl / .16) % 2; x = 550 + c * 58; pe = 418 - c * 112; s = .28 - c * .04; } // sobe a escada
+        if (tl >= 3.5) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(630, chao, 44, 9, 5, 5); g.setColor(new Color(160, 70, 20)); g.fillRect(636, chao + 3, 32, 2); }
+        if (tl > 1.5 && tl < 2.6) { // o capacete voando longe
+            double c = (tl - 1.5) / 1.1; g.setColor(Color.WHITE); int hx = (int) (cabX - 40 - c * 260), hy = (int) (cabPe - 100 + c * c * 220); g.fillOval(hx, hy, 18, 16); g.setColor(new Color(200, 30, 40)); g.fillRect(hx + 4, hy + 3, 3, 10); }
+        // o quadro 2 da arte ja traz o capacete; nos demais o sprite vai sozinho
+        sprite(g, SALTO, 8, q, (int) x, (int) pe, s, false);
+    }
+
+    /** Fila da frente da galera colada na grade: cada fa no seu ritmo; a grade e redesenhada por cima. */
+    private void filaFrente(Graphics2D g, BufferedImage fundoImg, double tl, double dur, double de, double ate, double fx, double fy, double grade, int pe, double esc) {
+        if (FAS_FRENTE == null) return;
+        int n = 9;
+        for (int k = 0; k < n; k++) {
+            int tipo = (k * 5) % 6, q = (int) (tl * (3 + (k % 3)) + k * 1.3) % 4, x = 55 + k * 106 + (k % 2) * 14;
+            sprite(g, FAS_FRENTE, 24, tipo * 4 + q, x, pe + (k % 2) * 6, esc, k % 3 == 1);
+        }
+        // a grade (e o palco) passam na frente dos fas
+        int W = Config.LARGURA, H = Config.ALTURA; double z = de + (ate - de) * Math.min(1, tl / dur);
+        int gy = (int) (fy * H - fy * H * z + grade * H * z);
+        Graphics2D c = (Graphics2D) g.create(); c.clipRect(0, gy, W, H - gy); fundo(c, fundoImg, tl, dur, de, ate, fx, fy); c.dispose();
+    }
+
     /** Vista do palco: o Wenger entra pela escada da direita, corre de costas pela beira e mergulha na galera. */
     private void cenaMergulho(Graphics2D g, double tl) {
         fundo(g, VISAO_PALCO, tl, 2.8, 1.0, 1.06, .5, .9);
         bandeiras(g, new int[][]{{100, 320, 30}, {230, 270, 24}, {640, 250, 24}, {760, 300, 30}, {420, 230, 18}, {330, 330, 34}, {560, 340, 34}, {170, 230, 18}, {720, 220, 16}});
+        filaFrente(g, VISAO_PALCO, tl, 2.8, 1.0, 1.06, .5, .9, .742, 458, .38);
         if (flavio == null) return;
         double x, pe, s, alt = 0; int q; float a = 1;
-        if (tl < 1.2) { double c = suave(tl / 1.2); q = 8 + (int) (tl / .12) % 2; x = 820 - c * 330; pe = 470 + c * 30; s = .52 + c * .06; }
+        if (tl < 1.2) { double c = suave(tl / 1.2); q = 8 + (int) (tl / .12) % 2; x = 820 - c * 330; pe = 520 + c * 30; s = .52 + c * .06; }
         else { double c = Math.min(1, (tl - 1.2) / 1.3); q = 11; x = 490 - c * 20; pe = 500 - c * 160; s = .58 - c * .36; alt = Math.sin(c * Math.PI) * 120; a = (float) Math.max(0, 1 - Math.max(0, c - .75) * 4); }
         Graphics2D w = (Graphics2D) g.create(); w.setComposite(AlphaComposite.SrcOver.derive(a));
         sprite(w, flavio, 12, q, (int) x, (int) (pe - alt), s, false); w.dispose();
@@ -347,6 +387,7 @@ final class CenaPouso {
     private void cenaCarregado(Graphics2D g, double tl) {
         fundo(g, VISAO_CENTRO, tl, 8.2, 1.0, 1.1, .5, .55);
         bandeiras(g, new int[][]{{120, 300, 34}, {250, 250, 26}, {700, 260, 28}, {820, 320, 36}, {380, 230, 22}, {600, 225, 22}, {60, 380, 40}, {900, 400, 40}, {480, 210, 18}});
+        filaFrente(g, VISAO_CENTRO, tl, 8.2, 1.0, 1.1, .5, .55, .735, 450, .4);
         if (GALERA == null) return;
         int q = (int) (tl * 2.1 / 1.1) % 4; double x = 480 + Math.sin(tl * .45) * 150;
         sprite(g, GALERA, 4, q, (int) x, 400, .42, false);
