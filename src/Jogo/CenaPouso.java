@@ -88,7 +88,7 @@ final class CenaPouso {
     private static final Object[][] SONS = {
         {.05, SomJogo.Efeito.DOBRA}, {.8, SomJogo.Efeito.DOBRA}, {1.5, SomJogo.Efeito.DOBRA}, {2.0, SomJogo.Efeito.SAIDA_DOBRA}, {2.15, SomJogo.Efeito.TROVAO},
         {5.7, SomJogo.Efeito.FUSAO}, {6.6, SomJogo.Efeito.NUCLEAR}, {8.0, SomJogo.Efeito.FUSAO}, {9.3, SomJogo.Efeito.LASER},
-        {11.5, SomJogo.Efeito.FUSAO}, {13.0, SomJogo.Efeito.ENERGIA}, {14.3, SomJogo.Efeito.IMPACTO}, {14.35, SomJogo.Efeito.EXPLOSAO},
+        {11.5, SomJogo.Efeito.FUSAO}, {13.0, SomJogo.Efeito.ENERGIA}, {13.8, SomJogo.Efeito.IMPACTO}, {13.85, SomJogo.Efeito.EXPLOSAO},
         {16.8, SomJogo.Efeito.ESCUDO}, {17.3, SomJogo.Efeito.TIRO}, {18.1, SomJogo.Efeito.IMPACTO}, {18.8, SomJogo.Efeito.TROCA}, {19.6, SomJogo.Efeito.EVOLUCAO},
         {24.2, SomJogo.Efeito.CHEFE_ENTRADA}, {25.6, SomJogo.Efeito.EXPLOSAO_GRANDE}, {26.1, SomJogo.Efeito.VITORIA}, {28.7, SomJogo.Efeito.TROVAO}, {31.7, SomJogo.Efeito.VITORIA}};
     void atualizar(double dt) {
@@ -302,8 +302,8 @@ final class CenaPouso {
         BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
         int cx = 700, chao = 515, fh = 245;
         // desce balancando, paira um instante, toca o chao e quica no trem de pouso
-        double p = desce ? 1 : suave(Math.min(1, tl / 3.0)), paira = !desce && tl > 2.6 && tl < 3.4 ? Math.sin((tl - 2.6) * 8) * 6 : 0;
-        double quica = !desce && tl > 3.4 && tl < 4.2 ? Math.abs(Math.sin((tl - 3.4) * 8)) * 10 * (4.2 - tl) : 0;
+        double p = desce ? 1 : .55 + .45 * suave(Math.min(1, tl / 2.4)), paira = !desce && tl < 2.4 ? Math.sin(tl * 5) * 5 : 0;
+        double quica = !desce && tl > 2.6 && tl < 3.4 ? Math.abs(Math.sin((tl - 2.6) * 8)) * 10 * (3.4 - tl) : 0;
         double giro = desce ? 0 : Math.sin(tl * 2.3) * .06 * (1 - p); // balanca na descida e pousa reta
         int ny = chao - fh - (int) ((1 - p) * 560) - (int) paira - (int) quica + (desce ? (int) (Math.sin(tl * 2) * 1.5) : 0);
         g.setColor(new Color(0, 0, 0, (int) (40 + 100 * p))); int so = (int) (160 + 260 * p); g.fillOval(cx - so / 2, chao - 22, so, 36);
@@ -318,7 +318,7 @@ final class CenaPouso {
             if (!desce && tl < 3.6) { double forca = tl < 2.6 ? 1 : (3.6 - tl); for (int k = -1; k <= 1; k += 2) chama(n, cx + (int) (k * bocal[0] * fw), ny + (int) (bocal[1] * fh), (int) (bocal[2] * fw * 1.5), (int) ((120 + (1 - p) * 90) * forca), tl + k); }
             n.drawImage(frente, cx - fw / 2, ny, fw, fh, null); n.dispose();
         }
-        if (!desce && tl > 2.8) { double q = Math.min(1, (tl - 2.8) / 1.6); g.setColor(new Color(170, 150, 170, (int) (140 * (1 - q)))); for (int k = 0; k < 16; k++) { int r = (int) (16 + q * 60); g.fillOval(cx - 230 + k * 30 - r / 2, chao - r / 2 - 8, r, r / 2); } }
+        if (!desce && tl > 2.2) { double q = Math.min(1, (tl - 2.2) / 1.6); g.setColor(new Color(170, 150, 170, (int) (140 * (1 - q)))); for (int k = 0; k < 16; k++) { int r = (int) (16 + q * 60); g.fillOval(cx - 230 + k * 30 - r / 2, chao - r / 2 - 8, r, r / 2); } }
         if (!desce) return;
         if (SALTO != null) { if (!atras) saltoWenger(g, tl, cx, ny, fh, chao); return; }
         if (flavio == null) return;
@@ -489,7 +489,7 @@ final class CenaPouso {
         double u = Math.min(1, tl / 3.4), nx = (1 - u) * (1 - u) * sx + 2 * u * (1 - u) * mx + u * u * hx, ny = (1 - u) * (1 - u) * sy + 2 * u * (1 - u) * my + u * u * hy;
         double dx = 2 * (1 - u) * (mx - sx) + 2 * u * (hx - mx), dy = 2 * (1 - u) * (my - sy) + 2 * u * (hy - my), ang = Math.atan2(dy, dx) + Math.PI / 2;
         // chegou no H: termina a curva (gira de nariz pra cima) e desce ate pousar em cima da propria sombra
-        double pousa = suave(Math.max(0, Math.min(1, (tl - 3.4) / 1.8)));
+        double pousa = .55 * suave(Math.max(0, Math.min(1, (tl - 3.4) / 1.8))); // desce so ate pairar sobre o H
         // inclinacao lateral (bank) na curva: a nave se deita pro lado da curva e endireita ao pousar
         double bank = Math.pow(Math.sin(u * Math.PI), 2) * .18 * (1 - pousa);
         double esc = (1 - u * .25) * (1 - .3 * pousa), desloc = 1 - pousa;
