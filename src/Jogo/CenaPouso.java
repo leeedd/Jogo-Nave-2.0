@@ -314,7 +314,6 @@ final class CenaPouso {
         else { double c = Math.min(1, (tl - 1.2) / 1.3); q = 11; x = 490 - c * 20; pe = 500 - c * 160; s = .58 - c * .36; alt = Math.sin(c * Math.PI) * 120; a = (float) Math.max(0, 1 - Math.max(0, c - .75) * 4); }
         Graphics2D w = (Graphics2D) g.create(); w.setComposite(AlphaComposite.SrcOver.derive(a));
         sprite(w, flavio, 12, q, (int) x, (int) (pe - alt), s, false); w.dispose();
-        if (tl > 2.3) { g.setColor(new Color(225, 165, 125)); for (int k = 0; k < 9; k++) { int hx = 430 + k * 13, hy = 322 - (int) (Math.abs(Math.sin((tl - 2.3) * 6 + k)) * 10); g.fillRect(hx, hy, 4, 12); } }
     }
 
     /** Bandeira de pais em pixel, tremulando num mastro (pe do mastro em x,y). */
