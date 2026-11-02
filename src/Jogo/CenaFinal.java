@@ -89,6 +89,8 @@ public final class CenaFinal {
         double antes = tempo;
         if (!Double.isNaN(dt) && !Double.isInfinite(dt)) tempo += Math.max(0, dt);
         if (passou(antes, INICIO_SILHUETA + .3)) SomJogo.tocar(SomJogo.Efeito.TROVAO);
+        // a silhueta aparece entre raios: mais trovoes enquanto ela esta na tela
+        if (passou(antes, INICIO_SILHUETA + 2.4) || passou(antes, INICIO_SILHUETA + 4.2)) SomJogo.tocar(SomJogo.Efeito.TROVAO);
         for (double[] r : RELAMPAGOS) if (passou(antes, r[0])) SomJogo.tocar(SomJogo.Efeito.TROVAO);
     }
     private boolean passou(double antes, double marco) { return antes < marco && tempo >= marco; }
