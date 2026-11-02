@@ -289,15 +289,18 @@ final class CenaPouso {
     /** Heliponto: a nave desce no H (parte 1); o Wenger desce, tira o macacao e sobe a escadinha do palco (parte 2). */
     private void cenaHeliponto(Graphics2D g, double tl, boolean desce) {
         int W = Config.LARGURA, H = Config.ALTURA;
-        fundo(g, HELIPONTO, tl + (desce ? 4.6 : 0), 11.8, 1.0, 1.08, .6, .7);
+        fundo(g, HELIPONTO, tl + (desce ? 4.6 : 0), 11.8, 1.2, 1.22, 0, .7);
         BufferedImage frente = FRENTE[Math.max(0, Math.min(4, modelo))];
-        int cx = 835, chao = 515, fh = 245;
+        int cx = 700, chao = 515, fh = 245;
         // desce balancando, paira um instante, toca o chao e quica no trem de pouso
         double p = desce ? 1 : suave(Math.min(1, tl / 3.0)), paira = !desce && tl > 2.6 && tl < 3.4 ? Math.sin((tl - 2.6) * 8) * 6 : 0;
         double quica = !desce && tl > 3.4 && tl < 4.2 ? Math.abs(Math.sin((tl - 3.4) * 8)) * 10 * (4.2 - tl) : 0;
-        double giro = -.07 * p + (desce ? 0 : Math.sin(tl * 2.3) * .06 * (1 - p)); // pousada, fica inclinada pra direita
+        double giro = -.12 * p + (desce ? 0 : Math.sin(tl * 2.3) * .06 * (1 - p)); // pousada, fica inclinada pra direita
         int ny = chao - fh - (int) ((1 - p) * 560) - (int) paira - (int) quica + (desce ? (int) (Math.sin(tl * 2) * 1.5) : 0);
         g.setColor(new Color(0, 0, 0, (int) (40 + 100 * p))); int so = (int) (160 + 260 * p); g.fillOval(cx - so / 2, chao - 22, so, 36);
+        // correndo pra escada ele passa por tras da nave
+        boolean atras = desce && SALTO != null && tl >= 4.4;
+        if (atras) saltoWenger(g, tl, cx, ny, fh, chao);
         if (frente != null) {
             int fw = frente.getWidth() * fh / frente.getHeight();
             Graphics2D n = (Graphics2D) g.create(); n.rotate(giro, cx, ny + fh / 2.0);
@@ -308,7 +311,7 @@ final class CenaPouso {
         }
         if (!desce && tl > 2.8) { double q = Math.min(1, (tl - 2.8) / 1.6); g.setColor(new Color(170, 150, 170, (int) (140 * (1 - q)))); for (int k = 0; k < 16; k++) { int r = (int) (16 + q * 60); g.fillOval(cx - 230 + k * 30 - r / 2, chao - r / 2 - 8, r, r / 2); } }
         if (!desce) return;
-        if (SALTO != null) { saltoWenger(g, tl, cx, ny, fh, chao); return; }
+        if (SALTO != null) { if (!atras) saltoWenger(g, tl, cx, ny, fh, chao); return; }
         if (flavio == null) return;
         // Wenger: desce do lado da nave, tira o macacao e corre ate a escadinha (545,412) e sobe ate (608,300)
         int q; double x, pe, s = .36;
@@ -351,16 +354,16 @@ final class CenaPouso {
     private static final BufferedImage FAS_FRENTE = ler("galera_frente.png");
     private void saltoWenger(Graphics2D g, double tl, int cx, int ny, int fh, int chao) {
         int q; double x, pe, s = .36;
-        double cabX = cx, cabPe = ny + fh * .5, chaoX = 520, chaoPe = chao + 6;
+        double cabX = cx, cabPe = ny + fh * .5, chaoX = 400, chaoPe = chao + 6;
         if (tl < .9) { q = 0; x = cabX; pe = cabPe; }                                              // de pe na cabine
         else if (tl < 1.3) { q = 1; x = cabX; pe = cabPe; }                                       // impulso
         else if (tl < 2.1) { double c = (tl - 1.3) / .8; q = 2; x = cabX + (chaoX - cabX) * c; pe = cabPe + (chaoPe - cabPe) * c - Math.sin(c * Math.PI) * 90; } // salto
         else if (tl < 2.7) { q = 3; x = chaoX; pe = chaoPe; }                                     // aterrissa estilo heroi
         else if (tl < 3.5) { q = 4; x = chaoX; pe = chaoPe; }                                     // arranca o macacao
         else if (tl < 4.4) { q = 5; x = chaoX; pe = chaoPe; }                                     // chifrinho
-        else if (tl < 5.6) { double c = suave((tl - 4.4) / 1.2); q = 6 + (int) (tl / .13) % 2; x = chaoX + c * 30; pe = chaoPe - c * 94; s = .36 - c * .08; } // corre pra escada
-        else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 6 + (int) (tl / .16) % 2; x = 550 + c * 58; pe = 418 - c * 112; s = .28 - c * .04; } // sobe a escada
-        if (tl >= 3.5) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(555, chao, 44, 9, 5, 5); g.setColor(new Color(160, 70, 20)); g.fillRect(561, chao + 3, 32, 2); }
+        else if (tl < 5.6) { double c = suave((tl - 4.4) / 1.2); q = 6 + (int) (tl / .13) % 2; x = chaoX + c * 261; pe = chaoPe - c * 103; s = .36 - c * .06; } // desce da plataforma e corre pra escada
+        else { double c = Math.min(1, (tl - 5.6) / 1.4); q = 6 + (int) (tl / .16) % 2; x = 661 + c * 66; pe = 418 - c * 126; s = .3 - c * .05; } // sobe a escada
+        if (tl >= 3.5) { g.setColor(new Color(230, 110, 30)); g.fillRoundRect(425, chao, 44, 9, 5, 5); g.setColor(new Color(160, 70, 20)); g.fillRect(431, chao + 3, 32, 2); }
         if (tl > 1.5 && tl < 2.6) { // o capacete voando longe
             double c = (tl - 1.5) / 1.1; g.setColor(Color.WHITE); int hx = (int) (cabX - 40 - c * 260), hy = (int) (cabPe - 100 + c * c * 220); g.fillOval(hx, hy, 18, 16); g.setColor(new Color(200, 30, 40)); g.fillRect(hx + 4, hy + 3, 3, 10); }
         // o quadro 2 da arte ja traz o capacete; nos demais o sprite vai sozinho
@@ -478,7 +481,8 @@ final class CenaPouso {
         double dx = 2 * (1 - u) * (mx - sx) + 2 * u * (hx - mx), dy = 2 * (1 - u) * (my - sy) + 2 * u * (hy - my), ang = Math.atan2(dy, dx) + Math.PI / 2;
         // chegou no H: termina a curva (gira de nariz pra cima) e desce ate pousar em cima da propria sombra
         double pousa = suave(Math.max(0, Math.min(1, (tl - 3.4) / 1.8)));
-        ang = ang * (1 - pousa);
+        // inclinacao lateral (bank) na curva: a nave se deita pro lado da curva e endireita ao pousar
+        double bank = Math.sin(u * Math.PI) * .55 * (1 - pousa);
         double esc = (1 - u * .25) * (1 - .3 * pousa), desloc = 1 - pousa;
         BufferedImage semCima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
         if (semCima == null) { // sombra em forma de nave (asa delta) cruzando a galera
@@ -489,10 +493,10 @@ final class CenaPouso {
         if (semCima != null && sombra != null) {
             // silhueta da nave correndo sobre a galera, deslocada pela luz do palco
             boolean folha = sombra.getWidth() >= sombra.getHeight() * 1.5; int fw = folha ? sombra.getWidth() / 3 : sombra.getWidth(), qs = folha ? Math.max(0, Math.min(2, ArteNaves.estagio(nivelNave))) : 0;
-            Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx + 120 * esc * desloc + 6, ny + 150 * esc * desloc + 6); sb.rotate(ang); sb.scale(esc * 1.15, esc * 1.15);
+            Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx + 120 * esc * desloc + 6, ny + 150 * esc * desloc + 6); sb.rotate(ang); sb.scale(esc * 1.15 * (1 - bank), esc * 1.15);
             int w = 190, h = w * sombra.getHeight() / fw; sb.drawImage(sombra, -w / 2, -h / 2, w / 2, h / 2, qs * fw, 0, qs * fw + fw, sombra.getHeight(), null); sb.dispose();
         }
-        Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang); n.scale(esc, esc);
+        Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang); n.scale(esc * (1 - bank), esc);
         BufferedImage cima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
         if (cima != null) {
             // folha com os 3 estagios de evolucao lado a lado: usa o estagio em que o jogador terminou
