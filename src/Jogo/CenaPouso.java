@@ -295,7 +295,7 @@ final class CenaPouso {
         // desce balancando, paira um instante, toca o chao e quica no trem de pouso
         double p = desce ? 1 : suave(Math.min(1, tl / 3.0)), paira = !desce && tl > 2.6 && tl < 3.4 ? Math.sin((tl - 2.6) * 8) * 6 : 0;
         double quica = !desce && tl > 3.4 && tl < 4.2 ? Math.abs(Math.sin((tl - 3.4) * 8)) * 10 * (4.2 - tl) : 0;
-        double giro = -.12 * p + (desce ? 0 : Math.sin(tl * 2.3) * .06 * (1 - p)); // pousada, fica inclinada pra direita
+        double giro = desce ? 0 : Math.sin(tl * 2.3) * .06 * (1 - p); // balanca na descida e pousa reta
         int ny = chao - fh - (int) ((1 - p) * 560) - (int) paira - (int) quica + (desce ? (int) (Math.sin(tl * 2) * 1.5) : 0);
         g.setColor(new Color(0, 0, 0, (int) (40 + 100 * p))); int so = (int) (160 + 260 * p); g.fillOval(cx - so / 2, chao - 22, so, 36);
         // correndo pra escada ele passa por tras da nave
