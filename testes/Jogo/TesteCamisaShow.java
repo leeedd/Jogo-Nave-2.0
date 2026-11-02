@@ -19,11 +19,14 @@ public class TesteCamisaShow {
             e.confirmar();
             if (e.banda() != alvo) throw new AssertionError("selecionou " + alvo + " e abriu " + e.banda());
         }
-        // escolheu o show: 10 s da musica dele e depois volta a trilha
-        CenaPouso dois = new CenaPouso(0, 1 << 2 | 1 << 5); dois.confirmar();
-        if ((int) TesteInvasao093.get(dois, "previaTocando") != dois.banda()) throw new AssertionError("previa deveria tocar ao escolher");
+        // parou numa banda na tela de escolha: 10 s da musica dela, depois volta a trilha
+        CenaPouso dois = new CenaPouso(0, 1 << 2 | 1 << 5);
+        for (int i = 0; i < 10; i++) dois.atualizar(.1);
+        if ((int) TesteInvasao093.get(dois, "previaTocando") != dois.cursor()) throw new AssertionError("previa deveria tocar na banda selecionada");
         for (int i = 0; i < 110; i++) dois.atualizar(.1);
-        if ((int) TesteInvasao093.get(dois, "previaTocando") != -1) throw new AssertionError("depois de 10 s volta a trilha");
+        if ((int) TesteInvasao093.get(dois, "previaTocando") >= 0) throw new AssertionError("depois de 10 s a previa para");
+        while (dois.cursor() != 2) dois.mover(1); for (int i = 0; i < 6; i++) dois.atualizar(.1);
+        if ((int) TesteInvasao093.get(dois, "previaTocando") != dois.cursor()) throw new AssertionError("trocou de banda: toca a previa da nova");
         CenaPouso um = new CenaPouso(0, 1 << 6);
         if (um.escolhendo() || um.banda() != 6) throw new AssertionError("com um passe so, vai direto para o show dele");
         // so abrem os palcos das reliquias conquistadas; a Lula sempre

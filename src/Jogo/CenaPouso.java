@@ -79,8 +79,8 @@ final class CenaPouso {
         banda = Math.max(0, Math.min(aberto(FESTIVAL) ? FESTIVAL : Fase.BANDAS.length - 1, b));
         // no festival completo a camisa e a da Lula, onde a jornada comecou
         if (FLAVIO != null) flavio = banda == COMUM || banda == FESTIVAL ? FLAVIO : estampar(FLAVIO, CamisaShow.emblema(banda));
-        // escolheu o show: toca 10 s da musica dele, so pra dar o gostinho
-        if (banda != COMUM) { previaTocando = banda; MusicaJogo.previaShow(banda); }
+        // confirmou: o gostinho acabou, a cutscene segue com a trilha do jogo
+        if (previaTocando != -1) { previaTocando = -1; SomJogo.trocarMusica("trilha_metal"); }
         if (WENGER != null) { fasFundo = escurecer(WENGER, .3f); fasLonge = escurecer(WENGER, .45f); fasMeio = escurecer(WENGER, .6f); fasPerto = escurecer(WENGER, .7f); }
     }
     private int previaTocando = -1, ultimoCursor = -1;
@@ -96,11 +96,14 @@ final class CenaPouso {
     void atualizar(double dt) {
         if (banda < 0) {
             tEscolha += Math.max(0, dt); avisoFechado = Math.max(0, avisoFechado - Math.max(0, dt));
+            // o cursor parou numa banda: toca 10 s da musica dela (um gostinho), depois volta a trilha
+            if (cursor != ultimoCursor) { ultimoCursor = cursor; paradoNoCursor = 0; if (previaTocando >= 0) { previaTocando = -1; SomJogo.trocarMusica("trilha_metal"); } }
+            paradoNoCursor += Math.max(0, dt);
+            if (previaTocando < 0 && paradoNoCursor > .4 && paradoNoCursor < 10 && aberto(cursor) && cursor != FESTIVAL) { previaTocando = cursor; MusicaJogo.previaShow(cursor); }
+            if (previaTocando >= 0 && paradoNoCursor >= 10.4) { previaTocando = -2; SomJogo.trocarMusica("trilha_metal"); }
             return;
         }
         double antes = t; t = Math.min(DURACAO, t + Math.max(0, dt));
-        // depois do gostinho de 10 s da musica do show, volta a trilha do jogo
-        if (previaTocando >= 0 && antes < 10 && t >= 10) { previaTocando = -1; SomJogo.trocarMusica("trilha_metal"); }
         for (Object[] s : SONS) { double m = ((Number) s[0]).doubleValue(); if (antes < m && t >= m) SomJogo.tocar((SomJogo.Efeito) s[1], 480); }
     }
     boolean terminou() { return t >= DURACAO; }
