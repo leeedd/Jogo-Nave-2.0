@@ -164,10 +164,25 @@ final class CenaPouso {
     /** Arte da cabine por cima do ombro (cabine_wenger.png); o para-brisa preto vira janela pro espaco. */
     /** Cabine de cada nave (cabine_N.png); sem a da nave, usa a generica (cabine_wenger.png). */
     private static final BufferedImage[] CABINES = new BufferedImage[5];
+    private static final BufferedImage[][] LUZES = new BufferedImage[5][];
     private static final BufferedImage CABINE_PADRAO = janela(ler("cabine_wenger.png"));
-    static { for (int i = 0; i < 5; i++) CABINES[i] = janela(ler("cabine_" + i + ".png")); }
+    static { for (int i = 0; i < 5; i++) { CABINES[i] = janela(ler("cabine_" + i + ".png")); LUZES[i] = luzes(CABINES[i]); } }
     /** Tubo do nucleo em cada cabine: centro x, centro y, largura, altura (fracoes da tela) e cor do brilho. */
     private static final double[][] NUCLEO = {{.94, .48, .07, .25, 110, 180, 255}, null, null, null, null};
+    /** Luzes da propria arte da cabine: vermelhas (piscam em 3 grupos) e telas verdes (tremulam). */
+    private static BufferedImage[] luzes(BufferedImage a) {
+        if (a == null) return null;
+        int w = a.getWidth(), h = a.getHeight(); BufferedImage[] l = new BufferedImage[4];
+        for (int k = 0; k < 4; k++) l[k] = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+            int c = a.getRGB(x, y); if ((c >>> 24) < 200) continue; int r = c >> 16 & 255, g = c >> 8 & 255, b = c & 255;
+            if (r > 200 && g < 60 && b < 60) l[(x * 3 / w + y * 2 / h) % 3].setRGB(x, y, 0xFF000000);   // luz vermelha: grupo por regiao
+            else if (g > 140 && r < 140 && b < 140) l[3].setRGB(x, y, 0xFF000000);                         // tela verde
+        }
+        return l;
+    }
+    /** Centro e raio do radar em cada cabine (fracoes da tela), para a varredura. */
+    private static final double[][] RADAR = {{.515, .655, .062}, null, null, null, null};
     private BufferedImage cabine() { BufferedImage c = CABINES[Math.max(0, Math.min(4, modelo))]; return c != null ? c : CABINE_PADRAO; }
     /** A galera jogando o Wenger pra cima (wenger_galera.png, 4 quadros com as maos embaixo). */
     private static final BufferedImage GALERA = ler("wenger_galera.png");
@@ -183,10 +198,12 @@ final class CenaPouso {
     /** Tomada 1: dentro da cabine, por cima do ombro do Wenger, saindo da dobra espacial. */
     private void cenaCabine(Graphics2D g, double tl) {
         int W = Config.LARGURA, H = Config.ALTURA, cx = W / 2, cy = 220;
-        double treme = tl < 2.2 ? (Math.sin(tl * 60) * 3) : 0;
+        double treme = tl < 2.2 ? Math.sin(tl * 60) * 4 : tl < 2.9 ? Math.sin(tl * 45) * 6 * (2.9 - tl) / .7 : 0;
         // camera inclinada (dutch angle) e um pouco mais perto: a cabine e o espaco giram juntos
         Graphics2D v = (Graphics2D) g.create(); v.translate(treme, treme * .6);
         boolean artePropria = CABINES[Math.max(0, Math.min(4, modelo))] != null;
+        // voo: a cabine balanca devagar (respiro da nave)
+        if (artePropria) { v.rotate(Math.sin(tl * 1.3) * .012, W / 2.0, H * .7); v.translate(Math.sin(tl * .9) * 4, Math.sin(tl * 1.7) * 3); v.translate(W / 2.0, H / 2.0); v.scale(1.03, 1.03); v.translate(-W / 2.0, -H / 2.0); }
         if (!artePropria) { v.rotate(-.11, W / 2.0, H / 2.0); v.translate(W / 2.0, H / 2.0); v.scale(1.16, 1.16); v.translate(-W / 2.0, -H / 2.0); }
         // o espaco la fora: tunel de dobra, clarao e depois as estrelas com o sol do festival ao longe
         v.setColor(Color.BLACK); v.fillRect(-10, -10, W + 20, H + 20);
@@ -201,6 +218,21 @@ final class CenaPouso {
         if (tl > 1.9 && tl < 2.6) { v.setColor(new Color(225, 240, 255, (int) (255 * Math.max(0, 1 - Math.abs(tl - 2.2) / .35)))); v.fillRect(-10, -10, W + 20, H + 20); }
         BufferedImage cab = cabine();
         if (cab != null) v.drawImage(cab, 0, 0, W, H, null);
+        BufferedImage[] luz = LUZES[Math.max(0, Math.min(4, modelo))];
+        if (artePropria && luz != null) {
+            // cada grupo de luzes vermelhas apaga no seu ritmo; as telas verdes tremulam
+            for (int k = 0; k < 3; k++) { double on = Math.sin(tl * (2.2 + k * 1.3) + k * 2); if (on < -.2) { Graphics2D q = (Graphics2D) v.create(); q.setComposite(AlphaComposite.SrcOver.derive(.6f)); q.drawImage(luz[k], 0, 0, W, H, null); q.dispose(); } }
+            float fl = (float) (.08 + .1 * Math.abs(Math.sin(tl * 13)) + (Math.sin(tl * 3.1) > .96 ? .3 : 0));
+            Graphics2D q = (Graphics2D) v.create(); q.setComposite(AlphaComposite.SrcOver.derive(fl)); q.drawImage(luz[3], 0, 0, W, H, null); q.dispose();
+            double[] rd = RADAR[Math.max(0, Math.min(4, modelo))];
+            if (rd != null) {
+                int rx = (int) (rd[0] * W), ry = (int) (rd[1] * H), rr = (int) (rd[2] * W);
+                Graphics2D rq = (Graphics2D) v.create(); rq.clip(new java.awt.geom.Ellipse2D.Double(rx - rr, ry - rr * .8, rr * 2, rr * 1.6));
+                double an = tl * 3;
+                for (int k = 0; k < 10; k++) { rq.setColor(new Color(120, 255, 120, 120 - k * 12)); rq.fillArc(rx - rr, (int) (ry - rr * .8), rr * 2, (int) (rr * 1.6), (int) Math.toDegrees(-an) + k * 6, 6); }
+                rq.dispose();
+            }
+        }
         else cabineCodigo(v, tl);
         v.dispose();
     }
@@ -278,7 +310,10 @@ final class CenaPouso {
         if (semCima != null) g.fillOval((int) (nx + 40 - 45 * esc), (int) (ny + 60 - 20 * esc), (int) (90 * esc), (int) (40 * esc));
         Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang); n.scale(esc, esc);
         BufferedImage cima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
-        if (cima != null) { int w = 150, h = w * cima.getHeight() / cima.getWidth(); n.drawImage(cima, -w / 2, -h / 2, w, h, null); }
+        if (cima != null) {
+            // folha com os 3 estagios de evolucao lado a lado: usa o estagio em que o jogador terminou
+            boolean folha = cima.getWidth() >= cima.getHeight() * 2.4; int fw = folha ? cima.getWidth() / 3 : cima.getWidth(), q = folha ? Math.max(0, Math.min(2, ArteNaves.estagio(nivelNave))) : 0;
+            int w = 150, h = w * cima.getHeight() / fw; n.drawImage(cima, -w / 2, -h / 2, w / 2, h / 2, q * fw, 0, q * fw + fw, cima.getHeight(), null); }
         // sem a arte de cima, so a sombra da nave passa sobre a galera (nada de sprite torto)
         n.dispose();
     }
