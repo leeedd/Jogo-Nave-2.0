@@ -394,7 +394,7 @@ final class CenaPouso {
         if (tl < 1.2) { double c = suave(tl / 1.2); q = 8 + (int) (tl / .12) % 2; x = 820 - c * 330; pe = 520 + c * 30; s = .52 + c * .06; }
         else { double c = Math.min(1, (tl - 1.2) / 1.3); q = 11; x = 490 - c * 20; pe = 500 - c * 160; s = .58 - c * .36; alt = Math.sin(c * Math.PI) * 120; a = (float) Math.max(0, 1 - Math.max(0, c - .75) * 4); }
         Graphics2D w = (Graphics2D) g.create(); w.setComposite(AlphaComposite.SrcOver.derive(a));
-        sprite(w, flavio, 12, q, (int) x, (int) (pe - alt), s, false); w.dispose();
+        sprite(w, flavio, 12, q, (int) x, (int) (pe - alt), s, true); w.dispose(); // virado pra esquerda, pro lado da galera
     }
 
     /** Bandeira de pais em pixel, tremulando num mastro (pe do mastro em x,y). */
@@ -482,7 +482,7 @@ final class CenaPouso {
         // chegou no H: termina a curva (gira de nariz pra cima) e desce ate pousar em cima da propria sombra
         double pousa = suave(Math.max(0, Math.min(1, (tl - 3.4) / 1.8)));
         // inclinacao lateral (bank) na curva: a nave se deita pro lado da curva e endireita ao pousar
-        double bank = Math.sin(u * Math.PI) * .55 * (1 - pousa);
+        double bank = Math.pow(Math.sin(u * Math.PI), 2) * .18 * (1 - pousa);
         double esc = (1 - u * .25) * (1 - .3 * pousa), desloc = 1 - pousa;
         BufferedImage semCima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
         if (semCima == null) { // sombra em forma de nave (asa delta) cruzando a galera
@@ -493,10 +493,10 @@ final class CenaPouso {
         if (semCima != null && sombra != null) {
             // silhueta da nave correndo sobre a galera, deslocada pela luz do palco
             boolean folha = sombra.getWidth() >= sombra.getHeight() * 1.5; int fw = folha ? sombra.getWidth() / 3 : sombra.getWidth(), qs = folha ? Math.max(0, Math.min(2, ArteNaves.estagio(nivelNave))) : 0;
-            Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx + 120 * esc * desloc + 6, ny + 150 * esc * desloc + 6); sb.rotate(ang); sb.scale(esc * 1.15 * (1 - bank), esc * 1.15);
+            Graphics2D sb = (Graphics2D) g.create(); sb.translate(nx + 120 * esc * desloc + 6, ny + 150 * esc * desloc + 6); sb.rotate(ang + bank); sb.scale(esc * 1.15, esc * 1.15);
             int w = 190, h = w * sombra.getHeight() / fw; sb.drawImage(sombra, -w / 2, -h / 2, w / 2, h / 2, qs * fw, 0, qs * fw + fw, sombra.getHeight(), null); sb.dispose();
         }
-        Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang); n.scale(esc * (1 - bank), esc);
+        Graphics2D n = (Graphics2D) g.create(); n.translate(nx, ny); n.rotate(ang + bank); n.scale(esc, esc);
         BufferedImage cima = NAVE_CIMA[Math.max(0, Math.min(4, modelo))];
         if (cima != null) {
             // folha com os 3 estagios de evolucao lado a lado: usa o estagio em que o jogador terminou
