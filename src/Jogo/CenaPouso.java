@@ -305,10 +305,13 @@ final class CenaPouso {
 
     /** Nave de frente no estagio do jogador (nave_N_frente_estagios.png) e cockpit abrindo (nave_N_aberta.png, so estagio 1). */
     private static final BufferedImage[] FRENTE_EST = new BufferedImage[5], ABERTA = new BufferedImage[5];
-    static { for (int i = 0; i < 5; i++) { FRENTE_EST[i] = ler("nave_" + i + "_frente_estagios.png"); ABERTA[i] = ler("nave_" + i + "_aberta.png"); } }
+    /** Grade 3x3 de frente (nave_N_pouso.png): linhas = estagios, colunas = fechada, abrindo, aberta. Tem prioridade. */
+    private static final BufferedImage[] POUSO = new BufferedImage[5];
+    static { for (int i = 0; i < 5; i++) { FRENTE_EST[i] = ler("nave_" + i + "_frente_estagios.png"); ABERTA[i] = ler("nave_" + i + "_aberta.png"); POUSO[i] = ler("nave_" + i + "_pouso.png"); } }
     /** tl >= 0: tempo desde o pouso, para abrir a cabine antes do Wenger sair. */
     private BufferedImage naveFrente(double tl) {
         int m = Math.max(0, Math.min(4, modelo)), est = Math.max(0, Math.min(2, ArteNaves.estagio(nivelNave)));
+        if (POUSO[m] != null) { int fw = POUSO[m].getWidth() / 3, fh = POUSO[m].getHeight() / 3, q = tl < 0 || tl < .6 ? 0 : tl < .95 ? 1 : 2; return POUSO[m].getSubimage(q * fw, est * fh, fw, fh); }
         if (est == 0 && ABERTA[m] != null && tl >= 0) { int fw = ABERTA[m].getWidth() / 3, q = tl < .6 ? 0 : tl < .95 ? 1 : 2; return ABERTA[m].getSubimage(q * fw, 0, fw, ABERTA[m].getHeight()); }
         if (FRENTE_EST[m] != null) { int fw = FRENTE_EST[m].getWidth() / 3; return FRENTE_EST[m].getSubimage(est * fw, 0, fw, FRENTE_EST[m].getHeight()); }
         return FRENTE[m];
@@ -383,7 +386,7 @@ final class CenaPouso {
     private void saltoWenger(Graphics2D g, double tl, int cx, int ny, int fh, int chao) {
         int q; double x, pe, s = .36;
         double cabX = cx, cabPe = ny + fh * .5, chaoX = 400, chaoPe = chao + 6;
-        boolean abre = ArteNaves.estagio(nivelNave) == 0 && ABERTA[Math.max(0, Math.min(4, modelo))] != null;
+        int mm = Math.max(0, Math.min(4, modelo)); boolean abre = POUSO[mm] != null || ArteNaves.estagio(nivelNave) == 0 && ABERTA[mm] != null;
         if (abre) { tl -= .5; if (tl < .5) return; }                                               // a cabine ainda esta abrindo
         if (tl < .9) { q = 0; x = cabX; pe = cabPe; }                                              // de pe na cabine
         else if (tl < 1.3) { q = 1; x = cabX; pe = cabPe; }                                       // impulso
