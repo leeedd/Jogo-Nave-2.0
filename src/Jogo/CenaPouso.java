@@ -207,7 +207,7 @@ final class CenaPouso {
         return l;
     }
     /** Centro e raio do radar em cada cabine (fracoes da tela), para a varredura. */
-    private static final double[][] RADAR = {{.5, .706, .075}, null, null, null, null};
+    private static final double[][] RADAR = {{.515, .655, .062}, null, null, null, null};
     /** Inclinacao fixa da camera da cabine, em graus (a arte vem reta; a turbulencia da dobra balanca por cima). */
     static double INCLINACAO_CABINE = Double.parseDouble(System.getProperty("metalspace.inclinacao", "0"));
     private BufferedImage cabine() { BufferedImage c = CABINES[Math.max(0, Math.min(4, modelo))]; return c != null ? c : CABINE_PADRAO; }
