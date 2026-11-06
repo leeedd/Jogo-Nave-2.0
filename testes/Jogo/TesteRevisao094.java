@@ -15,6 +15,8 @@ public final class TesteRevisao094 {
    call(f,"derrotarChefao");for(int s=0;s<8&&f.getMiniChefeTeste()==null;s++)tick(f,1);
    // fortaleza: as 8 bandas reunidas antes do final
    for(int b=0;b<8;b++){MiniChefe g=f.getMiniChefeTeste();ok(g!=null&&g.bandaReunida(),"fortaleza banda "+(b+1));while(!g.receberDano(50)){}call(f,"derrotarMiniChefe");TesteInvasao093.set(f,"base",null);TesteInvasao093.set(f,"esperaViagem",-1.0);for(int s=0;s<8&&f.getMiniChefeTeste()==null&&!f.getEtapaTeste().equals("CREDITOS");s++)tick(f,1);}}
+  if(id==1){ok(f.getEtapaTeste().equals("BATALHA_CHEFE")&&f.getChefeTeste()!=null&&f.getChefeTeste().getFase()==Fase.FINAL,"luta final depois da fortaleza");
+   call(f,"derrotarChefao");for(int s=0;s<20&&!f.getEtapaTeste().equals("CREDITOS");s++)tick(f,1);}
   ok(f.getEtapaTeste().equals(id==1?"CREDITOS":"DOBRA"),"transicao "+id);
   if(id!=1){int hp=f.getNave().getVida();tick(f,4.3);ok(f.getEtapaTeste().equals("COMBATE"),"proximo setor "+id);ok(f.getNave().getVida()==hp,"sem reparo na dobra "+id);}
  }

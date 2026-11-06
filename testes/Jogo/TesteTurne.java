@@ -45,5 +45,8 @@ e.getNave().teleportar(100,480);Asteroide perto=new Asteroide(120,495,12,1).lanc
    java.util.List<?> mem=(java.util.List<?>)TesteInvasao093.get(gr,"banda");ok(mem.size()==Turne.integrantes(b)+(b>0?1:0),"banda completa com o vocalista: "+mem.size());
    while(!gr.receberDano(50)){}call(z,"derrotarMiniChefe");TesteInvasao093.set(z,"base",null);
    if(b<7){for(int i=0;i<300&&TesteInvasao093.get(z,"miniChefe")==null;i++)z.atualizarSimulacao(1/60.0);}}
-  ok(z.getEtapaTeste().equals("CREDITOS"),"depois da oitava banda vem o final");
+  ok(z.getEtapaTeste().equals("BATALHA_CHEFE")&&z.getChefeTeste()!=null&&z.getChefeTeste().getFase()==Fase.FINAL,"depois da oitava banda vem a luta final");
+  java.lang.reflect.Method dc=Fase.class.getDeclaredMethod("derrotarChefao");dc.setAccessible(true);dc.invoke(z);
+  for(int i=0;i<60*20&&!z.getEtapaTeste().equals("CREDITOS");i++)z.atualizarSimulacao(1/60.0);
+  ok(z.getEtapaTeste().equals("CREDITOS"),"depois do Dio vem os creditos");
   System.out.println("OK turne");}}

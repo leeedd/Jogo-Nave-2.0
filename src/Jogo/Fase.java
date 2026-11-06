@@ -182,6 +182,17 @@ implements ActionListener {
     private boolean rainhaChegou;
     /** Fortaleza (depois do Hellraiser): cada banda reunida, todos os integrantes juntos, uma fase por banda. */
     private boolean reuniao, reuniaoVencida; private int bandaReuniao; private double esperaReuniao;
+    /** Luta final (depois da fortaleza): Tenacious D, Deezleboss e Dio. */
+    private boolean finalVencido;
+    private void iniciarFinal() {
+        itens.clear(); capsulas.clear(); alien.clear(); asteroides.clear(); tirosInimigos.clear(); tirosChefes.clear(); tirosElementais.clear(); nave.getMisseis().clear();
+        reuniao = false; emHellraiser = false; miniChefe = null; base = null; cenaChefe = null;
+        nave.definirVida(nave.getVidaMaxima());
+        gravarRetomada(); if (retomada != null) retomada[14] = 3;
+        iniciarChefao(FINAL);
+        mostrarAviso("O SHOW FINAL: TENACIOUS D!");
+        if (!partidaTeste) radio.urgente("O Tenacious D subiu no palco. Dizem que eles tem os dentes do demonio...");
+    }
     static final String[] BANDAS = {"CRIAS DO ABISMO", "JUDAS PRIEST", "IRON MAIDEN", "MOTORHEAD", "METALLICA", "SLAYER", "TESTAMENT", "BLACK SABBATH"};
     private void iniciarReuniao(int b) {
         itens.clear(); capsulas.clear(); alien.clear(); asteroides.clear(); tirosInimigos.clear(); tirosChefes.clear(); tirosElementais.clear(); nave.getMisseis().clear();
@@ -241,7 +252,7 @@ implements ActionListener {
         "Ele chegou na Colmeia. Soltem os enxames.",
         "Intruso no Vortice. Fechem o cerco.",
         "Ele ousou vir a Citadela. Todas as naves, agora!"};
-    static final int HELLRAISER = 9;
+    static final int HELLRAISER = 9, FINAL = 10;
     private boolean novoJogoMais;
     private boolean usarLendaria;
     private int modeloVisual;
@@ -529,6 +540,7 @@ implements ActionListener {
         if (comandoSalvo != null) comando = comandoSalvo.copia(); // o inimigo nao esquece o que aprendeu
         if (r.length > 14 && r[14] == 1) { esperaProximoEsquadrao = 99; iniciarHellraiser(); }
         else if (r.length > 24 && r[14] == 2) { esperaProximoEsquadrao = 99; hellraiserVencido = true; iniciarReuniao((int) r[24]); }
+        else if (r.length > 14 && r[14] == 3) { esperaProximoEsquadrao = 99; hellraiserVencido = reuniaoVencida = true; iniciarFinal(); }
     }
     /** Troca de nave no hangar: so entre as desbloqueadas; a nova mantem o nivel e a porcentagem do casco. */
     private void trocarNaveNaBase(int passo) {
@@ -1419,6 +1431,7 @@ implements ActionListener {
             } else if (this.etapa == Etapa.BATALHA_CHEFE && this.chefe != null) {
                 tempoBatalhaChefe+=d;int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, alvoX(), alvoY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
                 String pedido=chefe.consumirCena();if(pedido!=null)abrirCenaChefe(pedido);
+                String avisoChefe=chefe.consumirAviso();if(avisoChefe!=null){mostrarAviso(avisoChefe);tirosChefes.clear();if(chefe.getAtoFinalTeste()==ChefeFinal.DIO)MusicaJogo.trocarSeDisponivel("HolyDiver");}
                 // empurrao das caixas de som e puxao do gancho da van
                 if(empurraoNave>0){nave.teleportar(nave.getX()-empurraoNave*d,nave.getY());empurraoNave=Math.max(0,empurraoNave-1300*d);}
                 double[] puxao=chefe!=null?chefe.puxaoNave():null;
@@ -1526,6 +1539,7 @@ implements ActionListener {
         if(trofeuPendente!=0)return;
         if(chefesDerrotados==TOTAL_SETORES&&!hellraiserVencido){iniciarHellraiser();return;}
         if(chefesDerrotados==TOTAL_SETORES&&!reuniaoVencida){iniciarReuniao(0);return;}
+        if(chefesDerrotados==TOTAL_SETORES&&!finalVencido){iniciarFinal();return;}
         if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual, ProgressoJogo.passesFestival());cenaFinal.nivelNave(nave.getNivel());MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
         this.itens.clear(); capsulas.clear();
         this.tempoAviso = 0.0;
@@ -1889,7 +1903,7 @@ implements ActionListener {
         if (reuniao) {
             // banda reunida derrotada: proxima banda da fortaleza, ou o final
             bandaReuniao++;
-            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; emJogo = false; venceu = true; etapa = Etapa.CREDITOS; cenaFinal = new CenaFinal(modeloVisual, ProgressoJogo.passesFestival()); cenaFinal.nivelNave(nave.getNivel()); MusicaJogo.trocarSeDisponivel("GoGoPowerRangers"); return; }
+            if (bandaReuniao >= BANDAS.length) { reuniao = false; reuniaoVencida = true; iniciarFinal(); return; }
             esperaReuniao = 4; mostrarAviso(BANDAS[bandaReuniao - 1] + " DERROTADA! PROXIMA: " + BANDAS[bandaReuniao]);
         } else if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
             // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta
@@ -1940,6 +1954,7 @@ implements ActionListener {
         }
         int id=chefe.getFase();cenaDerrota=new CenaDerrotaChefe(chefe);
         if(id==HELLRAISER){premiar(30000);hellraiserVencido=true;emHellraiser=false;trofeuPendente=0;}
+        else if(id==FINAL){premiar(50000);finalVencido=true;trofeuPendente=0;}
         else{premiar(id*2500);++chefesDerrotados;setoresVencidos|=1<<setorAtual;trofeuPendente=id;
             }
         chefe=null;cenaChefe=null;
@@ -2289,7 +2304,7 @@ implements ActionListener {
     private void reiniciar() {
         partidaTeste = false; painelTeste = false;
         emboscadaUsada = emboscadaPendente = intercepcao = false; tempoInterdicao = saidaIntercepcao = 0;
-        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;douradoPerdido=0;hangarPendente=hangarAberto=false;esperaViagem=viagemIda=viagemVolta=-1;geloPressionado=false;fogoPressionado=false;
+        cenaDerrota=null;cenaChefe=null;empurraoNave=0;reuniao=false;reuniaoVencida=false;finalVencido=false;bandaReuniao=0;comando=new ComandoInimigo();radio.limpar();abatesSeguidos=0;avisouSangrando=false;if(contrato!=null){contrato.falhar("NAVE DESTRUIDA");arquivar(contrato);}contrato=null;quadroBase=false;emHellraiser=false;hellraiserVencido=false;douradoPerdido=0;hangarPendente=hangarAberto=false;esperaViagem=viagemIda=viagemVolta=-1;geloPressionado=false;fogoPressionado=false;
         this.nave = new Nave();
         aplicarInventario();
         this.nave.ativarLendaria(this.usarLendaria && ProgressoJogo.lendariaDisponivel());
@@ -2476,6 +2491,7 @@ implements ActionListener {
         return this.chefesDerrotados;
     }
 
+    java.util.List<TiroChefe> getTirosChefesTeste() { return tirosChefes; }
     String getEtapaTeste() {
         return this.etapa.name();
     }
