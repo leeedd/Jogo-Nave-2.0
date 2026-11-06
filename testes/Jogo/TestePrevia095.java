@@ -11,6 +11,7 @@ public final class TestePrevia095 {
  static void ok(boolean b,String s){if(!b)throw new AssertionError(s);n++;}
  static void key(Fase f,int k){TesteRevisao094.key(f,k,true);}
  public static void main(String[] args)throws Exception{
+  new File("work095/Metal_Space_0.9.4").mkdirs();
   Preferences prefs=Preferences.userRoot().node("metal095-fixture");prefs.clear();Placar p=new Placar(prefs);
   ok(!p.salvar("AB",100,"RECRUTA"),"tres iniciais obrigatorias");
   ok(!p.salvar("ABC",0,"RECRUTA"),"zero nao entra");
@@ -26,11 +27,13 @@ public final class TestePrevia095 {
   TesteInvasao093.set(f,"creditos",0);ok(f.getPontos()==250,"saldo nao altera placar");
   f.getItens().clear();Nave nave=f.getNave();nave.danoDiretoTeste(8);int hp=nave.getVida();
   Item kit=new Item(Item.Tipo.REPARO,nave.getX(),nave.getY(),false);f.getItens().add(kit);f.checarColisoes();
-  ok(nave.getVida()==hp,"coleta nao cura automaticamente");ok((int)TesteInvasao093.get(f,"kitsReparo")==1,"guarda kit");
-  Item extra=new Item(Item.Tipo.REPARO,nave.getX(),nave.getY(),false);f.getItens().add(extra);f.checarColisoes();ok(extra.isVisible(),"kit excedente fica no campo");
-  key(f,KeyEvent.VK_R);ok(nave.getVida()==Math.min(nave.getVidaMaxima(),hp+(nave.getVidaMaxima()+1)/2),"reparo cinquenta por cento");
-  ok((int)TesteInvasao093.get(f,"kitsReparo")==0,"consome kit");
-  TesteInvasao093.set(f,"kitsReparo",1);nave.curar(100);key(f,KeyEvent.VK_R);ok((int)TesteInvasao093.get(f,"kitsReparo")==1,"nao gasta com vida cheia");
+  // 0.9.9: o reparo cura na hora 10% do casco; o excedente vai para os subtanques
+  int unidade=(int)Math.ceil(nave.getVidaMaxima()*.10);
+  ok(nave.getVida()==Math.min(nave.getVidaMaxima(),hp+unidade),"coleta cura dez por cento");ok(!kit.isVisible(),"kit coletado some");
+  nave.curar(1000);ProgressaoNave inv=(ProgressaoNave)TesteInvasao093.get(f,"inventario");
+  Item extra=new Item(Item.Tipo.REPARO,nave.getX(),nave.getY(),false);f.getItens().add(extra);f.checarColisoes();
+  ok(extra.isVisible()==!inv.reservaDisponivel(),"vida cheia sem subtanque deixa o kit no campo");
+  int cheia=nave.getVida();key(f,KeyEvent.VK_R);ok(nave.getVida()==cheia,"subtanque nao gasta com vida cheia");
   Fase mf=TesteInvasao093.fase(951);mf.getAliens().clear();
   @SuppressWarnings("unchecked") java.util.List<Asteroide> ast=(java.util.List<Asteroide>)TesteInvasao093.get(mf,"asteroides");
   Asteroide mineral=new Asteroide(600,300,25,7);ast.add(mineral);

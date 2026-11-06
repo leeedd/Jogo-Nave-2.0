@@ -437,7 +437,7 @@ implements ActionListener {
         base.atualizar(dt);
         // Enquanto a base espera, nao chegam esquadroes novos.
         if (base.aguardando()) esperaProximoEsquadrao = Math.max(esperaProximoEsquadrao, .5);
-        if (base.aguardando() && nave.getBounds().intersects(base.doca())) atracar();
+        if (base.aguardando() && nave.getBounds().intersects(base.doca())) { atracar(); return; } // atracar() tira a base da tela
         if (base.saiu()) base = null;
     }
     private void atracar() {

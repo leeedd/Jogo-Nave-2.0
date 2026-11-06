@@ -13,6 +13,7 @@ public final class TesteViagem096 {
  static Object get(Object o,String n)throws Exception{return TesteInvasao093.get(o,n);}
  static void call(Fase f,String n)throws Exception{TesteRevisao094.call(f,n);}
  public static void main(String[] args)throws Exception {
+  new File("refino").mkdirs();
   Fase f=TesteInvasao093.fase(965);key(f,KeyEvent.VK_ENTER);key(f,KeyEvent.VK_3);
   ok((boolean)get(f,"pausado")&&(int)get(f,"abaPausa")==2,"insignias na pausa");
   key(f,KeyEvent.VK_4);ok((int)get(f,"abaPausa")==3,"mapa na pausa");TesteRefino096.render(f,"Mapa_Estelar");
@@ -34,10 +35,16 @@ public final class TesteViagem096 {
   TesteRevisao094.tick(f,1.7);ok(f.getEtapaTeste().equals("INTERDICAO"),"interrompe dobra");
   TesteRevisao094.tick(f,.7);TesteRefino096.render(f,"Cutscene_Interdicao");
   key(f,KeyEvent.VK_ENTER);double tempo=(double)get(f,"tempoInterdicao");TesteRevisao094.tick(f,1);ok((double)get(f,"tempoInterdicao")==tempo,"cutscene pausa");key(f,KeyEvent.VK_ENTER);
-  TesteRevisao094.tick(f,5.6);ok((boolean)get(f,"intercepcao")&&f.getMiniChefeTeste()!=null,"boss aparece");ok(f.getAliens().size()==8,"enxame aparece");
+  // 0.9.9: primeiro a revoada do enxame; a rainha so chega quando o enxame acaba
+  TesteRevisao094.tick(f,5.6);ok((boolean)get(f,"intercepcao")&&f.getMiniChefeTeste()==null,"interdicao comeca sem a rainha");
+  long vivos=f.getAliens().stream().filter(Alien::isVisible).count();ok(vivos>0&&vivos<=9,"enxame aparece");
+  TesteInvasao093.set(f,"reforcosEnxame",0);f.getAliens().clear();TesteRevisao094.tick(f,.1);
+  ok(f.getMiniChefeTeste()!=null&&(boolean)get(f,"rainhaChegou"),"rainha chega depois do enxame");
   TesteRevisao094.tick(f,2);TesteRefino096.render(f,"Encontro_Interdicao");
   int setor=f.getChefesDerrotadosTeste(),eliminados=(int)get(f,"eliminadosAntesIntercepcao");
-  f.getAliens().clear();f.getMiniChefeTeste().receberDano(10000);call(f,"derrotarMiniChefe");
+  // a rainha so apanha com a guarda aberta e leva 2,8 s morrendo: o teste encerra direto
+  Object cmd=get(f.getMiniChefeTeste(),"comandante");TesteInvasao093.set(cmd,"estado",ComandanteEnxame.Estado.MORTO);ok(f.getMiniChefeTeste().derrotado(),"rainha derrotada");
+  TesteInvasao093.set(f,"reforcosEnxame",0);f.getAliens().clear();call(f,"derrotarMiniChefe");
   TesteRevisao094.tick(f,2.2);ok(f.getEtapaTeste().equals("DOBRA"),"retoma dobra apos limpar");
   ok(f.getChefesDerrotadosTeste()==setor,"emboscada nao avanca setor");ok((int)get(f,"eliminados")==eliminados,"nao contamina contagem");
   TesteRevisao094.tick(f,4.3);ok(f.getEtapaTeste().equals("COMBATE")&&!(boolean)get(f,"intercepcao"),"chega ao destino");ok((boolean)get(f,"emboscadaUsada"),"limite uma emboscada");
