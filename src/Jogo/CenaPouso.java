@@ -207,7 +207,9 @@ final class CenaPouso {
         return l;
     }
     /** Centro e raio do radar em cada cabine (fracoes da tela), para a varredura. */
-    private static final double[][] RADAR = {{.515, .655, .062}, null, null, null, null};
+    private static final double[][] RADAR = {{.5, .706, .075}, null, null, null, null};
+    /** Inclinacao fixa da camera da cabine, em graus (a arte vem reta; a turbulencia da dobra balanca por cima). */
+    static double INCLINACAO_CABINE = Double.parseDouble(System.getProperty("metalspace.inclinacao", "0"));
     private BufferedImage cabine() { BufferedImage c = CABINES[Math.max(0, Math.min(4, modelo))]; return c != null ? c : CABINE_PADRAO; }
     /** A galera jogando o Wenger pra cima (wenger_galera.png, 4 quadros com as maos embaixo). */
     private static final BufferedImage GALERA = ler("wenger_galera.png");
@@ -232,7 +234,7 @@ final class CenaPouso {
         Graphics2D v = (Graphics2D) g.create(); v.translate(treme, treme * .6);
         boolean artePropria = CABINES[Math.max(0, Math.min(4, modelo))] != null;
         // voo: a cabine balanca devagar (respiro da nave)
-        if (artePropria) { v.rotate(roll + Math.sin(tl * 1.3) * .012, W / 2.0, H * .7); v.translate(lado + Math.sin(tl * .9) * 4, Math.sin(tl * 1.7) * 3 + Math.abs(lado) * .3); v.translate(W / 2.0, H / 2.0); v.scale(1.08, 1.08); v.translate(-W / 2.0, -H / 2.0); }
+        if (artePropria) { v.rotate(Math.toRadians(-INCLINACAO_CABINE) + roll + Math.sin(tl * 1.3) * .012, W / 2.0, H * .7); v.translate(lado + Math.sin(tl * .9) * 4, Math.sin(tl * 1.7) * 3 + Math.abs(lado) * .3); v.translate(W / 2.0, H / 2.0); v.scale(1.08, 1.08); v.translate(-W / 2.0, -H / 2.0); }
         if (!artePropria) { v.rotate(-.11, W / 2.0, H / 2.0); v.translate(W / 2.0, H / 2.0); v.scale(1.16, 1.16); v.translate(-W / 2.0, -H / 2.0); }
         // o espaco la fora: tunel de dobra, clarao e depois as estrelas com o sol do festival ao longe
         v.setColor(Color.BLACK); v.fillRect(-10, -10, W + 20, H + 20);
