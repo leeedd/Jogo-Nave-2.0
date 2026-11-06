@@ -218,7 +218,8 @@ final class CenaPouso {
     private static BufferedImage janela(BufferedImage a) {
         if (a == null) return null;
         int w = a.getWidth(), h = a.getHeight(); boolean[] v = new boolean[w * h]; java.util.ArrayDeque<int[]> f = new java.util.ArrayDeque<>();
-        int[] semente = {w / 2, h / 4}; f.add(semente); v[semente[1] * w + semente[0]] = true;
+        // varias sementes na metade de cima: o vidro pode ser dividido (grade da Berserker)
+        for (int sy = h / 8; sy < h / 2; sy += h / 40) for (int sx = w / 4; sx < w * 3 / 4; sx += w / 60) { int c0 = a.getRGB(sx, sy); if (Math.max(c0 >> 16 & 255, Math.max(c0 >> 8 & 255, c0 & 255)) <= 9 && !v[sy * w + sx]) { v[sy * w + sx] = true; f.add(new int[]{sx, sy}); } }
         while (!f.isEmpty()) { int[] p = f.poll(); int x = p[0], y = p[1], c = a.getRGB(x, y); if (Math.max(c >> 16 & 255, Math.max(c >> 8 & 255, c & 255)) > 9) continue; a.setRGB(x, y, 0);
             int[][] viz = {{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}}; for (int[] n : viz) if (n[0] >= 0 && n[1] >= 0 && n[0] < w && n[1] < h && !v[n[1] * w + n[0]]) { v[n[1] * w + n[0]] = true; f.add(n); } }
         return a;
