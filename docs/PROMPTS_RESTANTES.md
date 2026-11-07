@@ -113,3 +113,13 @@ Tira horizontal com 4 quadros do mesmo tamanho:
 1: de pé, girando a corrente acima da cabeça. 2: corrente puxada para trás, preparando. 3: corrente estalando para a esquerda como chicote. 4: inclinado para frente, mergulhando para a esquerda em voo.
 Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem texto.
 ```
+
+### E3. deezleboss.png (o Beelzeboss)
+Anexe a arco_final_099.png como referência de estilo e escala.
+```
+Pixel art 16-bit estilo Super Nintendo, no MESMO estilo, traço e escala da imagem anexada.
+Um demônio roqueiro gigante: pele VERMELHA, chifres grandes curvados para trás, orelhas pontudas, dentes afiados à mostra, cavanhaque comprido grisalho, peito nu musculoso, pernas peludas de bode com cascos. Toca uma guitarra preta em formato de ESTRELA com bolinhas vermelhas. Corpo inteiro virado para a ESQUERDA.
+Tira horizontal com 4 quadros do mesmo tamanho:
+1: de pé tocando a guitarra em estrela, mostrando a língua. 2: os dois braços erguidos para o alto, surgindo e rugindo (a guitarra pendurada). 3: o riff: uma onda de fogo saindo da guitarra para a esquerda. 4: sentado atrás de uma bateria com três bumbos marcados 6 6 6, baquetas no ar.
+Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem texto.
+```

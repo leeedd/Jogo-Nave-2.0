@@ -28,6 +28,8 @@ public final class TesteFinal099 {
   bater(f,ChefeFinal.KYLE);ok(c.getAtoFinalTeste()==ChefeFinal.DEEZLE&&c.getDentesTeste()==2,"Kyle arranca o 2o dente");
   tick(f,1.8);foto(f,"final_3_invocacao");tick(f,3.4);foto(f,"final_4_deezleboss");
   ok(c.getVida()==c.getVidaMaxima(),"Deezleboss com a vida cheia");
+  boolean bateria=false;for(int i=0;i<60*16&&!bateria;i++){f.getNave().curar(1000);f.getNave().teleportar(120,300);f.atualizarSimulacao(1.0/60);if((double)get(get(c,"fim"),"bateria")>0&&(double)get(get(c,"fim"),"bateria")<1.2){bateria=true;foto(f,"final_4b_bateria_666");}}
+  ok(bateria,"Beelzeboss toca a bateria 666");
   bater(f,ChefeFinal.DEEZLE);ok(c.getAtoFinalTeste()==ChefeFinal.DIO&&c.estaVivo(),"Deezleboss vira o Dio");
   tick(f,1.6);foto(f,"final_5_revelacao");tick(f,3);
   boolean raio=false,espada=false;
