@@ -22,11 +22,11 @@ public final class TesteFinal099 {
   ok(c!=null&&c.getFase()==Fase.FINAL,"luta final comeca");ok(c.getAtoFinalTeste()==ChefeFinal.JACK&&c.getDentesTeste()==0,"primeiro o Jack");
   ok(!c.receberDano(50)&&c.getVida()==c.getVidaMaxima(),"entrando nao leva dano");
   tick(f,3.3);foto(f,"final_1_jack");ok(!f.getTirosChefesTeste().isEmpty(),"Jack ataca");
-  bater(f,ChefeFinal.JACK);ok(c.getAtoFinalTeste()==ChefeFinal.KYLE&&c.getDentesTeste()==1,"Jack arranca o 1o dente");
+  bater(f,ChefeFinal.JACK);ok(c.getAtoFinalTeste()==ChefeFinal.KYLE&&c.getDentesTeste()==1,"Jack deixa metade da palheta");
   tick(f,.1);ok(f.getTirosChefesTeste().isEmpty(),"troca de ato limpa os tiros");
   tick(f,3.6);foto(f,"final_2_kyle");
-  bater(f,ChefeFinal.KYLE);ok(c.getAtoFinalTeste()==ChefeFinal.DEEZLE&&c.getDentesTeste()==2,"Kyle arranca o 2o dente");
-  tick(f,1.8);foto(f,"final_3_invocacao");tick(f,3.4);foto(f,"final_4_deezleboss");
+  bater(f,ChefeFinal.KYLE);ok(c.getAtoFinalTeste()==ChefeFinal.DEEZLE&&c.getDentesTeste()==2,"Kyle deixa a outra metade");
+  tick(f,1.1);foto(f,"final_3_invocacao");tick(f,4.1);foto(f,"final_4_deezleboss");
   ok(c.getVida()==c.getVidaMaxima(),"Deezleboss com a vida cheia");
   boolean bateria=false;for(int i=0;i<60*16&&!bateria;i++){f.getNave().curar(1000);f.getNave().teleportar(120,300);f.atualizarSimulacao(1.0/60);if((double)get(get(c,"fim"),"bateria")>0&&(double)get(get(c,"fim"),"bateria")<1.2){bateria=true;foto(f,"final_4b_bateria_666");}}
   ok(bateria,"Beelzeboss toca a bateria 666");

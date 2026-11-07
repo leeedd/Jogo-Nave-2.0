@@ -12,8 +12,8 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
- * Luta final, depois da fortaleza. Ato I: Jack Black (arranca o 1o dente do demonio).
- * Ato II: Kyle Gass (arranca o 2o dente). Ato III: com os dois dentes a dupla invoca o
+ * Luta final, depois da fortaleza. Ato I: Jack Black (deixa cair metade da Palheta do Destino).
+ * Ato II: Kyle Gass (deixa a outra metade). Ato III: a Palheta do Destino se junta e invoca o
  * Deezleboss. Ato IV: o Deezleboss derrotado se revela Ronnie James Dio (arco-iris).
  * Ato V: o Dio vira o demonio do Holy Diver, com a corrente que agarra, o chicote e o mergulho.
  * Arte: arco_final_099.png (grade 4x4: Jack, Kyle, Deezleboss e Dio; quadros repouso,
@@ -29,6 +29,8 @@ final class ChefeFinal {
     private static final BufferedImage DIO_ESPADA = ler("dio_espada.png");
     /** Beelzeboss (4 quadros: guitarra em estrela, preparando, riff de fogo, na bateria 666). Sem a arte, usa a linha do demonio da grade. */
     private static final BufferedImage DEEZLE_ARTE = ler("deezleboss.png");
+    /** Palheta do Destino (3 quadros: metade esquerda, metade direita, inteira brilhando). Feita do dente do demonio. */
+    private static final BufferedImage PALHETA = ler("palheta_destino.png");
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD;
     /** Tamanho na tela de cada ato (a celula da grade e quadrada). */
     private static final int[] TAM = {0, 250, 250, 400, 290, 360};
@@ -330,8 +332,8 @@ final class ChefeFinal {
         if (vida > 0) return false;
         if (ato == HOLY) return true;
         SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE);
-        if (ato == JACK) { dentes = 1; aviso = "JACK CAIU! 1o DENTE DO DEMONIO ARRANCADO"; proximo(KYLE, vidaKyle, 2.2); }
-        else if (ato == KYLE) { dentes = 2; aviso = "2o DENTE ARRANCADO! A DUPLA INVOCA O DEEZLEBOSS!"; proximo(DEEZLE, vidaDeezle, 3.2); }
+        if (ato == JACK) { dentes = 1; aviso = "JACK CAIU! METADE DA PALHETA DO DESTINO"; proximo(KYLE, vidaKyle, 2.2); }
+        else if (ato == KYLE) { dentes = 2; aviso = "A PALHETA DO DESTINO SE JUNTOU! A DUPLA INVOCA O DEEZLEBOSS!"; proximo(DEEZLE, vidaDeezle, 3.2); }
         else if (ato == DEEZLE) { aviso = "O DEMONIO SE REVELA: RONNIE JAMES DIO!"; proximo(DIO, vidaDio, 3.0); }
         else { aviso = "DIO VIRA O DEMONIO DO HOLY DIVER!"; proximo(HOLY, vidaHoly, 3.2); }
         return false;
@@ -397,7 +399,7 @@ final class ChefeFinal {
         sprite(g, 1, q == 0 ? 3 : 0, W - s - 10, H - s - 4 + Math.sin(tempo * 2 + 1) * 6, s, a * .85f);
     }
     private void desenharTransicao(Graphics2D g) {
-        // o ato que caiu some piscando; os dentes do demonio contam a historia
+        // o ato que caiu some piscando; as metades da Palheta do Destino contam a historia
         double p = 1 - transicao / (ato == KYLE ? 2.2 : ato == DEEZLE ? 3.2 : ato == HOLY ? 3.2 : 3.0);
         int ant = ato - 1;
         if (ato == HOLY) {
@@ -416,6 +418,10 @@ final class ChefeFinal {
         }
         if (ato == DEEZLE) {
             // Jack e Kyle juntos invocam: o demonio cresce do fogo
+            // as duas metades saem da dupla, voam e se juntam; a palheta inteira brilha e o demonio sobe
+            if (p < .45) { double j = Math.min(1, p / .3); int cx = W - TAM[DEEZLE] / 2 - 20, cy = TOPO + 150;
+                palheta(g, 0, cx - 60 + j * 46 - 20, cy + (1 - j) * 200, 40, 1f); palheta(g, 1, cx + 60 - j * 46 - 20, cy + (1 - j) * 200, 40, 1f);
+                if (j >= 1) { int r = (int) (30 + (p - .3) * 600); g.setColor(new Color(90, 255, 120, (int) (200 * Math.max(0, 1 - (p - .3) / .15)))); g.setStroke(new BasicStroke(4)); g.drawOval(cx - r, cy + 20 - r, r * 2, r * 2); palheta(g, 2, cx - 26, cy, 52, 1f); } }
             // como no filme: o demonio sobe atras deles de bracos erguidos e a dupla fica na frente
             if (p > .25) { float a = (float) Math.min(1, (p - .25) / .45); int t = (int) (TAM[DEEZLE] * (.5 + .5 * a)); corpo(g, DEEZLE, 1, W - TAM[DEEZLE] - 20 + (TAM[DEEZLE] - t) / 2, TOPO + (H - TOPO - t) / 2.0 + (1 - a) * 120, t, a); }
             float d = (float) Math.min(1, p * 3) * (float) Math.max(0, Math.min(1, (1 - p) * 4)); int s = 190, q = (int) (tempo * 3) % 2 == 0 ? 0 : 3;
@@ -517,6 +523,18 @@ final class ChefeFinal {
         }
         return demonioEscuro = b;
     }
+    /** Metade (0 esquerda, 1 direita) ou a palheta inteira (2). Sem a arte, uma ponta verde simples. */
+    private static void palheta(Graphics2D g, int q, double x, double y, int t, float alfa) {
+        Graphics2D a = (Graphics2D) g.create(); a.setComposite(AlphaComposite.SrcOver.derive(Math.max(0f, Math.min(1f, alfa))));
+        if (PALHETA != null) { int fw = PALHETA.getWidth() / 3, fh = PALHETA.getHeight(), w = t * fw / fh; a.drawImage(PALHETA, (int) x, (int) y, (int) x + w, (int) y + t, q * fw, 0, q * fw + fw, fh, null); }
+        else {
+            int w = q == 2 ? t : t / 2, x0 = (int) x, y0 = (int) y;
+            int[] px = q == 0 ? new int[]{x0, x0 + w, x0 + w} : q == 1 ? new int[]{x0, x0 + w, x0} : new int[]{x0, x0 + w, x0 + w / 2};
+            int[] py = q == 0 ? new int[]{y0, y0, y0 + t} : q == 1 ? new int[]{y0, y0, y0 + t} : new int[]{y0, y0, y0 + t};
+            a.setColor(new Color(40, 150, 70)); a.fillPolygon(px, py, 3); a.setColor(new Color(10, 40, 20)); a.drawPolygon(px, py, 3);
+        }
+        a.dispose();
+    }
     private static void sprite(Graphics2D g, int linha, int q, double x, double y, int t, float alfa) {
         if (ARCO == null) { g.setColor(new Color(150, 30, 30)); g.fillRect((int) x + t / 3, (int) y + t / 5, t / 2, t * 3 / 4); return; }
         int c = ARCO.getWidth() / 4;
@@ -535,11 +553,8 @@ final class ChefeFinal {
         g.setPaint(new GradientPaint(218, TOPO + 32, c, 744, TOPO + 52, new Color(222, 36, 70)));
         g.fillRoundRect(220, TOPO + 33, (int) (522.0 * Math.max(0, vida) / Math.max(1, getVidaMaxima())), 18, 8, 8);
         g.setColor(new Color(255, 255, 255, 130)); g.drawRoundRect(218, TOPO + 31, 526, 22, 10, 10);
-        // os dois dentes do demonio: acesos quando arrancados
-        for (int k = 0; k < 2; k++) {
-            int dx = 756 + k * 22; g.setColor(k < dentes ? new Color(255, 245, 220) : new Color(90, 70, 70));
-            g.fillPolygon(new int[]{dx, dx + 14, dx + 7}, new int[]{TOPO + 32, TOPO + 32, TOPO + 52}, 3);
-        }
+        // as duas metades da Palheta do Destino: acendem quando o Jack e o Kyle caem
+        for (int k = 0; k < 2; k++) palheta(g, k, 760 + k * 15, TOPO + 30, 26, k < dentes ? 1f : .25f);
     }
 
     private static BufferedImage ler(String n) {
