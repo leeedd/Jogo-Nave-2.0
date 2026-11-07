@@ -31,6 +31,8 @@ final class ChefeFinal {
     private static final BufferedImage DEEZLE_ARTE = ler("deezleboss.png");
     /** Palheta do Destino (3 quadros: metade esquerda, metade direita, inteira brilhando). Feita do dente do demonio. */
     private static final BufferedImage PALHETA = ler("palheta_destino.png");
+    /** Moldura da barra de vida (faixa preta da vida e dois escudos para as metades da palheta). */
+    private static final BufferedImage BARRA = ler("barra_chefe_final.png");
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD;
     /** Tamanho na tela de cada ato (a celula da grade e quadrada). */
     private static final int[] TAM = {0, 250, 250, 400, 290, 360};
@@ -76,7 +78,7 @@ final class ChefeFinal {
         faiscaCorrente = Math.max(0, faiscaCorrente - dt);
         if (transicao > 0) { transicao = Math.max(0, transicao - dt); gancho = 0; raio = cargaRaio = demonio = avisoDemonio = 0; return; }
         int t = TAM[ato];
-        double alvoX = W - t - (ato == DEEZLE ? 20 : 40);
+        double alvoX = W - t - (ato == DEEZLE ? (DEEZLE_ARTE != null ? 110 : 20) : 40);
         if (entrada < 1) {
             entrada = Math.min(1, entrada + dt / 1.3);
             x = W + 40 - (W + 40 - alvoX) * (1 - Math.pow(1 - entrada, 3)); baseX = alvoX;
@@ -545,15 +547,32 @@ final class ChefeFinal {
     }
 
     void desenharVida(Graphics2D g) {
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14)); g.setColor(Color.WHITE);
         String[] atos = {"", "  [ATO I]", "  [ATO II]", "  [ATO III]", "  [ATO IV]", "  [ATO V]"};
-        g.drawString(getNome() + atos[ato], 217, TOPO + 24);
         Color c = ato == JACK ? new Color(255, 120, 40) : ato == KYLE ? new Color(80, 220, 90) : ato == DEEZLE ? new Color(220, 40, 30) : ato == DIO ? new Color(170, 90, 255) : new Color(120, 40, 200);
+        double frac = Math.max(0, vida) / (double) Math.max(1, getVidaMaxima());
+        if (BARRA != null) {
+            // moldura da arte: a vida enche a faixa preta e as metades da palheta acendem nos escudos
+            int bx = 140, bw = 680, bh = bw * BARRA.getHeight() / BARRA.getWidth(), by = TOPO - 2;
+            int fx = bx + (int) (bw * .118), fw = (int) (bw * (.773 - .118)), fy = by + (int) (bh * .364), fh = (int) (bh * (.616 - .364));
+            g.drawImage(BARRA, bx, by, bw, bh, null);
+            // o miolo da moldura e preto opaco: a vida vai por cima dele
+            g.setPaint(new GradientPaint(fx, fy, c.brighter(), fx, fy + fh, c.darker().darker()));
+            g.fillRect(fx + 2, fy + 2, (int) ((fw - 4) * frac), fh - 4);
+            g.setColor(new Color(255, 255, 255, 90)); g.fillRect(fx + 2, fy + 3, (int) ((fw - 4) * frac), 2);
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13)); String nome = getNome() + atos[ato];
+            int tx = fx + 10, ty = fy + fh / 2 + 5;
+            g.setColor(new Color(0, 0, 0, 200)); g.drawString(nome, tx + 1, ty + 1); g.setColor(Color.WHITE); g.drawString(nome, tx, ty);
+            double[] escudo = {.791, .84};
+            for (int k = 0; k < 2; k++) { int sx = bx + (int) (bw * escudo[k]), sy = by + (int) (bh * .36), sh = (int) (bh * .26);
+                palheta(g, k, sx + 2, sy, sh, k < dentes ? 1f : .18f); }
+            return;
+        }
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14)); g.setColor(Color.WHITE);
+        g.drawString(getNome() + atos[ato], 217, TOPO + 24);
         g.setColor(new Color(8, 22, 34, 222)); g.fillRoundRect(218, TOPO + 31, 526, 22, 10, 10);
         g.setPaint(new GradientPaint(218, TOPO + 32, c, 744, TOPO + 52, new Color(222, 36, 70)));
-        g.fillRoundRect(220, TOPO + 33, (int) (522.0 * Math.max(0, vida) / Math.max(1, getVidaMaxima())), 18, 8, 8);
+        g.fillRoundRect(220, TOPO + 33, (int) (522.0 * frac), 18, 8, 8);
         g.setColor(new Color(255, 255, 255, 130)); g.drawRoundRect(218, TOPO + 31, 526, 22, 10, 10);
-        // as duas metades da Palheta do Destino: acendem quando o Jack e o Kyle caem
         for (int k = 0; k < 2; k++) palheta(g, k, 760 + k * 15, TOPO + 30, 26, k < dentes ? 1f : .25f);
     }
 

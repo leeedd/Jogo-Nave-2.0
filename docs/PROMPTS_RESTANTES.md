@@ -130,3 +130,6 @@ Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), sem
 Uma palheta de guitarra mágica VERDE em formato de coração com dois chifres enrolados em espiral no alto, entalhes pretos em relevo pela superfície. Tira horizontal com 3 quadros do mesmo tamanho:
 1: só a METADE ESQUERDA da palheta, com a borda de quebra irregular no meio. 2: só a METADE DIREITA, com a quebra encaixando na outra. 3: a palheta INTEIRA, brilhando com um contorno de luz verde.
 ```
+
+### E5. barra_chefe_final.png (feita)
+Moldura com chifres, caveira e correntes; faixa preta da vida e dois escudos para as metades da palheta.

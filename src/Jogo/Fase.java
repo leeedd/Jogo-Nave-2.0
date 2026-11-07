@@ -1045,7 +1045,7 @@ implements ActionListener {
         graphics2D.setColor(new Color(2,5,14,225));graphics2D.fillRect(630,chefe!=null?78:575,330,25);
         Arte095.desenhar(graphics2D,8,635,chefe!=null?80:577,20,20);
         graphics2D.setColor(Color.WHITE);graphics2D.setFont(new Font("Monospaced",1,12));
-        {int hy=chefe!=null?95:592;graphics2D.drawString("CR "+inventario.saldo(),630,hy);
+        {int hy=chefe!=null?95:592;graphics2D.drawString("CR "+inventario.saldo(),chefe!=null&&chefe.getFase()==FINAL?828:630,hy);
             // barras de calor do gelo (Q) e do fogo (E): vermelho piscando quando superaquecidas
             for(int i=0;i<2;i++){int bx=730+i*112;if(!(i==0?geloColetado:fogoColetado))continue;boolean trava=energia.superaquecida(i);
                 graphics2D.setColor(Color.WHITE);graphics2D.drawString((i==0?"Q ":"E ")+energia.carga(i)+"%",bx,hy);
