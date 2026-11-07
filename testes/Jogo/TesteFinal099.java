@@ -30,18 +30,26 @@ public final class TesteFinal099 {
   ok(c.getVida()==c.getVidaMaxima(),"Deezleboss com a vida cheia");
   bater(f,ChefeFinal.DEEZLE);ok(c.getAtoFinalTeste()==ChefeFinal.DIO&&c.estaVivo(),"Deezleboss vira o Dio");
   tick(f,1.6);foto(f,"final_5_revelacao");tick(f,3);
-  boolean agarrou=false,raio=false,demonio=false;double x0=0;
-  for(int i=0;i<60*24&&!(agarrou&&raio&&demonio);i++){
-   f.getNave().curar(1000);f.getNave().teleportar(120,300);f.atualizarSimulacao(1.0/60);
-   Object fim=get(c,"fim");
+  boolean raio=false,espada=false;
+  for(int i=0;i<60*24&&!(raio&&espada);i++){
+   f.getNave().curar(1000);f.getNave().teleportar(120,300);f.atualizarSimulacao(1.0/60);Object fim=get(c,"fim");
    if(!raio&&(double)get(fim,"raio")>0){raio=true;foto(f,"final_6_raio_arco_iris");}
-   if(!demonio&&(double)get(fim,"demonio")>0&&(double)get(fim,"demonioX")<700){demonio=true;foto(f,"final_7_demonio_holy_diver");}
-   if(!agarrou&&c.naveAgarrada()){agarrou=true;x0=f.getNave().getX();for(int k=0;k<20;k++){f.getNave().curar(1000);f.atualizarSimulacao(1.0/60);}foto(f,"final_8_corrente");ok(f.getNave().getX()>x0,"corrente arrasta a nave para o Dio");}
+   if(!espada&&(double)get(fim,"investida")>0&&(double)get(fim,"investida")<.5){espada=true;foto(f,"final_7_dio_espada");}
   }
-  ok(raio,"Dio solta o arco-iris");ok(demonio,"demonio do Holy Diver ataca");ok(agarrou,"corrente do Holy Diver agarra a nave");
-  bater(f,ChefeFinal.DIO);ok(f.getChefeTeste()==null,"Dio derrotado");ok((boolean)get(f,"finalVencido"),"final vencido");
+  ok(raio,"Dio solta o arco-iris");ok(espada,"Dio avanca de espada");
+  bater(f,ChefeFinal.DIO);ok(c.getAtoFinalTeste()==ChefeFinal.HOLY&&c.estaVivo(),"Dio vira o demonio do Holy Diver");
+  tick(f,1.8);foto(f,"final_8_vira_holy_diver");tick(f,3.2);
+  boolean agarrou=false,chicote=false,mergulho=false;double x0=0;
+  for(int i=0;i<60*30&&!(agarrou&&chicote&&mergulho);i++){
+   f.getNave().curar(1000);f.getNave().teleportar(120,300);f.atualizarSimulacao(1.0/60);Object fim=get(c,"fim");
+   if(!chicote&&(double)get(fim,"chicote")>0&&(double)get(fim,"chicote")<.4){chicote=true;foto(f,"final_9_chicote");}
+   if(!mergulho&&(double)get(fim,"demonio")>0&&(double)get(fim,"demonioX")<600){mergulho=true;foto(f,"final_10_mergulho");}
+   if(!agarrou&&c.naveAgarrada()){agarrou=true;x0=f.getNave().getX();for(int k=0;k<20;k++){f.getNave().curar(1000);f.atualizarSimulacao(1.0/60);}foto(f,"final_11_corrente");ok(f.getNave().getX()>x0,"corrente arrasta a nave");}
+  }
+  ok(chicote,"chicote da corrente");ok(mergulho,"mergulho do demonio");ok(agarrou,"corrente do Holy Diver agarra a nave");
+  bater(f,ChefeFinal.HOLY);ok(f.getChefeTeste()==null,"demonio derrotado");ok((boolean)get(f,"finalVencido"),"final vencido");
   for(int i=0;i<60*20&&!f.getEtapaTeste().equals("CREDITOS");i++){f.getNave().curar(1000);f.atualizarSimulacao(1.0/60);}
-  ok(f.getEtapaTeste().equals("CREDITOS"),"depois do Dio vem os creditos");
+  ok(f.getEtapaTeste().equals("CREDITOS"),"depois do Holy Diver vem os creditos");
   System.out.println("OK Final: "+n+" verificacoes");System.exit(0);
  }
 }

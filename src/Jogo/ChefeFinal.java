@@ -14,21 +14,25 @@ import java.util.List;
 /**
  * Luta final, depois da fortaleza. Ato I: Jack Black (arranca o 1o dente do demonio).
  * Ato II: Kyle Gass (arranca o 2o dente). Ato III: com os dois dentes a dupla invoca o
- * Deezleboss. Ato IV: o Deezleboss derrotado se revela Ronnie James Dio, com a corrente
- * do Holy Diver e o demonio do Holy Diver atacando a nave.
+ * Deezleboss. Ato IV: o Deezleboss derrotado se revela Ronnie James Dio (arco-iris).
+ * Ato V: o Dio vira o demonio do Holy Diver, com a corrente que agarra, o chicote e o mergulho.
  * Arte: arco_final_099.png (grade 4x4: Jack, Kyle, Deezleboss e Dio; quadros repouso,
  * preparo, golpe e bate-cabeca, todos virados para a esquerda).
  */
 final class ChefeFinal {
-    static final int JACK = 1, KYLE = 2, DEEZLE = 3, DIO = 4;
+    static final int JACK = 1, KYLE = 2, DEEZLE = 3, DIO = 4, HOLY = 5;
     private static final BufferedImage ARCO = ler("arco_final_099.png"), ELO = ler("hellraiser_corrente_elo.png"),
             GANCHO_ABERTO = ler("hellraiser_gancho_aberto.png"), GANCHO_FECHADO = ler("hellraiser_gancho_fechado.png");
+    /** Demonio do Holy Diver (4 quadros: girando a corrente, preparando, chicoteando, mergulhando). Sem a arte, usa o Deezleboss tingido. */
+    private static final BufferedImage HOLY_DIVER = ler("holy_diver_demonio.png");
+    /** Dio de espada (4 quadros: espada erguida, preparando, corte com a meia-lua prateada, chifres). Sem a arte, usa a linha do Dio da grade. */
+    private static final BufferedImage DIO_ESPADA = ler("dio_espada.png");
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD;
     /** Tamanho na tela de cada ato (a celula da grade e quadrada). */
-    private static final int[] TAM = {0, 250, 250, 400, 290};
+    private static final int[] TAM = {0, 250, 250, 400, 290, 360};
 
     private int ato = JACK, dentes;
-    private final int vidaJack, vidaKyle, vidaDeezle, vidaDio;
+    private final int vidaJack, vidaKyle, vidaDeezle, vidaDio, vidaHoly;
     private int vida;
     private double tempo, entrada, flash, gesto, intervalo = 1.6, transicao;
     private String aviso;
@@ -43,12 +47,15 @@ final class ChefeFinal {
     private double hx, hy, hvx, hvy, faseGancho, tempoPreso, faiscaCorrente;
     private int vidaCorrente, danoGancho;
     private boolean acertouCorrente;
-    private double demonioX, demonioY, demonio, avisoDemonio; // demonio > 0: atravessando a tela
+    private double demonioX, demonioY, demonio, avisoDemonio; // mergulho: demonio > 0 atravessando a tela
+    // chicote da corrente: aviso do arco e depois a corrente varre de cima para baixo (ou o contrario)
+    private double avisoChicote, chicote, anguloChicote, inicioChicote, fimChicote;
+    private boolean acertouChicote;
 
     ChefeFinal(Dificuldade dif) {
         double r = dif.resistenciaChefe;
         vidaJack = (int) Math.round(230 * r); vidaKyle = (int) Math.round(250 * r);
-        vidaDeezle = (int) Math.round(480 * r); vidaDio = (int) Math.round(420 * r);
+        vidaDeezle = (int) Math.round(480 * r); vidaDio = (int) Math.round(340 * r); vidaHoly = (int) Math.round(460 * r);
         vida = vidaJack;
         y = TOPO + (H - TOPO - TAM[JACK]) / 2.0;
     }
@@ -76,7 +83,8 @@ final class ChefeFinal {
         if (ato == JACK) jack(dt, naveX, naveY, cad * (furia ? 1.3 : 1), tiros, furia);
         else if (ato == KYLE) kyle(dt, naveX, naveY, cad * (furia ? 1.3 : 1), tiros, furia);
         else if (ato == DEEZLE) deezle(dt, naveX, naveY, cad * (furia ? 1.25 : 1), tiros, furia);
-        else dio(dt, naveX, naveY, cad * (furia ? 1.25 : 1), tiros, furia);
+        else if (ato == DIO) dio(dt, naveX, naveY, cad * (furia ? 1.25 : 1), tiros, furia);
+        else holy(dt, naveX, naveY, cad * (furia ? 1.25 : 1), tiros, furia);
     }
 
     /** Acompanha a nave na vertical, devagar, balancando. */
@@ -155,16 +163,21 @@ final class ChefeFinal {
         }
         intervalo = furia ? 1.3 : 1.7;
     }
-    private boolean avisandoInvestida() { return ato == DEEZLE && investida > 1.1; }
+    private boolean avisandoInvestida() { return ato == DEEZLE && investida > 1.1 || ato == DIO && investida > .8; }
 
     // ---------------- ato IV: Ronnie James Dio ----------------
-    private double maoX() { return x + TAM[DIO] * .32; }
-    private double maoY() { return y + TAM[DIO] * .42; }
+    private double maoX() { return ato == HOLY ? x + TAM[HOLY] * .28 : x + TAM[DIO] * .32; }
+    private double maoY() { return ato == HOLY ? y + TAM[HOLY] * .3 : y + TAM[DIO] * .42; }
     private static final double ALCANCE_RAIO = 1100;
     private void dio(double dt, int naveX, int naveY, double cad, List<TiroChefe> tiros, boolean furia) {
-        atualizarGancho(dt, naveX, naveY);
-        atualizarDemonio(dt, naveY);
-        if (gancho != 3) flutuar(dt, naveY, .9);
+        if (investida > 0) {
+            // investida de espada: avanca ate o ponto travado e volta
+            investida = Math.max(0, investida - dt);
+            double p = investida > .8 ? 0 : 1 - investida / .8, arco = Math.sin(p * Math.PI);
+            x = baseX + (alvoInvX - baseX) * arco; y += (alvoInvY - y) * Math.min(1, dt * 5) * arco;
+            return;
+        }
+        flutuar(dt, naveY, .9);
         x += (baseX + Math.sin(tempo * .9) * 24 - x) * Math.min(1, dt * 2);
         double alvo = Math.atan2(naveY + 18 - maoY(), naveX + 22 - maoX());
         if (cargaRaio > 0) {
@@ -179,19 +192,55 @@ final class ChefeFinal {
             direcaoRaio += Math.max(-giro, Math.min(giro, dif));
             return;
         }
+        intervalo -= dt * cad;
+        if (intervalo > 0 || tiros.size() > 50) return;
+        golpes++; gesto = .55;
+        Color[] cores = {new Color(255, 60, 60), new Color(255, 160, 40), new Color(255, 240, 60), new Color(80, 230, 90), new Color(70, 150, 255), new Color(170, 90, 255)};
+        int g = golpes % 4;
+        if (g == 1) cargaRaio = 1.0;
+        else if (g == 2) {
+            // cortes da espada: meias-luas prateadas, duas levas
+            for (int i = -1; i <= 1; i++) { tiro(tiros, maoX(), maoY(), alvo + i * .2, 330, true, TiroChefe.ENERGIA, TiroChefe.Movimento.ACELERADO, new Color(220, 235, 255)); if (furia) tiro(tiros, maoX() + 40, maoY(), alvo + i * .2 + .1, 280, true, TiroChefe.ENERGIA, TiroChefe.Movimento.ACELERADO, new Color(170, 200, 255)); }
+        } else if (g == 3) {
+            // orbes do arco-iris, cada uma de uma cor
+            for (int i = 0; i < 6; i++) tiro(tiros, maoX(), maoY(), alvo + (i - 2.5) * .15, 250, false, TiroChefe.ENERGIA, TiroChefe.Movimento.ONDA, cores[i]);
+        } else {
+            investida = .8 + .6; int t = TAM[DIO];
+            alvoInvX = Math.max(-40, naveX - t * .3); alvoInvY = Math.max(TOPO, Math.min(H - t, naveY + 18 - t * .45));
+            SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA);
+        }
+        intervalo = furia ? 1.2 : 1.6;
+    }
+
+    // ---------------- ato V: o demonio do Holy Diver ----------------
+    private void holy(double dt, int naveX, int naveY, double cad, List<TiroChefe> tiros, boolean furia) {
+        atualizarGancho(dt, naveX, naveY);
+        atualizarDemonio(dt, naveY);
+        if (avisoChicote > 0) { avisoChicote = Math.max(0, avisoChicote - dt); if (avisoChicote == 0) { chicote = .75; acertouChicote = false; SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO); } return; }
+        if (chicote > 0) { chicote = Math.max(0, chicote - dt); double p = 1 - chicote / .75; anguloChicote = inicioChicote + (fimChicote - inicioChicote) * p * p * (3 - 2 * p); if (chicote == 0) intervalo = Math.max(intervalo, .7); return; }
+        if (demonio > 0 || avisoDemonio > 0) return; // mergulhando: o corpo esta atravessando a tela
+        if (gancho != 3) flutuar(dt, naveY, .9);
+        x += (baseX + Math.sin(tempo * .9) * 24 - x) * Math.min(1, dt * 2);
         if (gancho != 0) return;
         intervalo -= dt * cad;
         if (intervalo > 0 || tiros.size() > 50) return;
         golpes++; gesto = .55;
-        int g = golpes % 4;
-        if (g == 1) cargaRaio = 1.0;
-        else if (g == 2) { gancho = 1; faseGancho = 0; }
-        else if (g == 3) {
-            // orbes do arco-iris, cada uma de uma cor
-            Color[] cores = {new Color(255, 60, 60), new Color(255, 160, 40), new Color(255, 240, 60), new Color(80, 230, 90), new Color(70, 150, 255), new Color(170, 90, 255)};
-            for (int i = 0; i < 6; i++) tiro(tiros, maoX(), maoY(), alvo + (i - 2.5) * .15, 250, false, TiroChefe.ENERGIA, TiroChefe.Movimento.ONDA, cores[i]);
-        } else if (demonio <= 0 && avisoDemonio <= 0) { avisoDemonio = 1.0; demonioY = Math.max(TOPO, Math.min(H - 190, naveY + 18 - 95)); }
-        intervalo = furia ? 1.2 : 1.6;
+        int g = golpes % 3;
+        if (g == 1) { gancho = 1; faseGancho = 0; }
+        else if (g == 2) {
+            // chicote: a corrente varre um arco grande a partir da mao; o aviso mostra o caminho
+            boolean deCima = naveY + 18 < maoY(); avisoChicote = .8;
+            inicioChicote = Math.PI + (deCima ? .95 : -.95); fimChicote = Math.PI + (deCima ? -.95 : .95); anguloChicote = inicioChicote;
+            if (furia) { inicioChicote += deCima ? .25 : -.25; fimChicote += deCima ? -.25 : .25; }
+        } else { avisoDemonio = 1.0; demonioY = Math.max(TOPO - 40, Math.min(H - TAM[HOLY] + 40, naveY + 18 - TAM[HOLY] / 2.0)); }
+        intervalo = furia ? 1.15 : 1.5;
+    }
+    private static final double ALCANCE_CHICOTE = 760;
+    private boolean noChicote(Rectangle r) {
+        if (chicote <= 0) return false;
+        double ax = r.getCenterX() - maoX(), ay = r.getCenterY() - maoY(), ux = Math.cos(anguloChicote), uy = Math.sin(anguloChicote);
+        double ao = ax * ux + ay * uy; if (ao < 0 || ao > ALCANCE_CHICOTE) return false;
+        return Math.abs(ax * uy - ay * ux) < 20;
     }
     /** Corrente do Holy Diver: sai da mao do Dio, agarra a nave e arrasta. Doze tiros na corrente soltam. */
     private void atualizarGancho(double dt, int naveX, int naveY) {
@@ -222,13 +271,12 @@ final class ChefeFinal {
             return;
         }
         if (demonio <= 0) return;
-        demonioX -= 780 * dt;
-        if (demonioX < -260) demonio = 0;
+        demonioX -= 820 * dt; x = demonioX; y = demonioY;
+        if (demonioX < -TAM[HOLY] - 40) { demonio = 0; x = W + 40; entrada = 0; } // volta entrando pela direita
     }
-    private Rectangle corpoDemonio() { return new Rectangle((int) demonioX + 40, (int) demonioY + 40, 140, 120); }
     int consumirDanoGancho() { int d = danoGancho; danoGancho = 0; return d; }
-    boolean naveAgarrada() { return ato == DIO && gancho == 3; }
-    double[] puxaoNave() { return ato == DIO && gancho == 3 ? new double[]{maoX(), maoY()} : null; }
+    boolean naveAgarrada() { return ato == HOLY && gancho == 3; }
+    double[] puxaoNave() { return ato == HOLY && gancho == 3 ? new double[]{maoX(), maoY()} : null; }
     private boolean naCorrente(Rectangle r) {
         if (gancho != 2 && gancho != 3) return false;
         double ax = maoX(), ay = maoY(), dx2 = hx - ax, dy2 = hy - ay, l2 = dx2 * dx2 + dy2 * dy2;
@@ -249,7 +297,7 @@ final class ChefeFinal {
 
     // ---------------- dano e colisao ----------------
     boolean colide(Rectangle r) {
-        if (ato == DIO && naCorrente(r)) { acertouCorrente = true; return true; }
+        if (ato == HOLY && naCorrente(r)) { acertouCorrente = true; return true; }
         return r.intersects(getBounds());
     }
     boolean receberDano(int dano) {
@@ -261,30 +309,31 @@ final class ChefeFinal {
         }
         flash = .16; vida = Math.max(0, vida - Math.max(0, dano));
         if (vida > 0) return false;
-        if (ato == DIO) return true;
+        if (ato == HOLY) return true;
         SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE);
         if (ato == JACK) { dentes = 1; aviso = "JACK CAIU! 1o DENTE DO DEMONIO ARRANCADO"; proximo(KYLE, vidaKyle, 2.2); }
         else if (ato == KYLE) { dentes = 2; aviso = "2o DENTE ARRANCADO! A DUPLA INVOCA O DEEZLEBOSS!"; proximo(DEEZLE, vidaDeezle, 3.2); }
-        else { aviso = "O DEMONIO SE REVELA: RONNIE JAMES DIO!"; proximo(DIO, vidaDio, 3.0); }
+        else if (ato == DEEZLE) { aviso = "O DEMONIO SE REVELA: RONNIE JAMES DIO!"; proximo(DIO, vidaDio, 3.0); }
+        else { aviso = "DIO VIRA O DEMONIO DO HOLY DIVER!"; proximo(HOLY, vidaHoly, 3.2); }
         return false;
     }
     private void proximo(int novo, int v, double pausa) {
         ato = novo; vida = v; transicao = pausa; entrada = 0; x = W + 40; intervalo = 1.6; golpes = 0; investida = 0;
         y = TOPO + (H - TOPO - TAM[novo]) / 2.0;
     }
-    boolean estaVivo() { return ato != DIO || vida > 0; }
+    boolean estaVivo() { return ato != HOLY || vida > 0; }
     int getVida() { return vida; }
-    int getVidaMaxima() { return ato == JACK ? vidaJack : ato == KYLE ? vidaKyle : ato == DEEZLE ? vidaDeezle : vidaDio; }
-    String getNome() { return ato == JACK ? "JACK BLACK - TENACIOUS D" : ato == KYLE ? "KYLE GASS - TENACIOUS D" : ato == DEEZLE ? "DEEZLEBOSS" : "RONNIE JAMES DIO - HOLY DIVER"; }
+    int getVidaMaxima() { return ato == JACK ? vidaJack : ato == KYLE ? vidaKyle : ato == DEEZLE ? vidaDeezle : ato == DIO ? vidaDio : vidaHoly; }
+    String getNome() { return ato == JACK ? "JACK BLACK - TENACIOUS D" : ato == KYLE ? "KYLE GASS - TENACIOUS D" : ato == DEEZLE ? "DEEZLEBOSS" : ato == DIO ? "RONNIE JAMES DIO" : "O DEMONIO DO HOLY DIVER"; }
     Rectangle getBounds() {
         int t = TAM[ato];
-        if (ato == DEEZLE) return new Rectangle((int) (x + t * .2), (int) (y + t * .12), (int) (t * .6), (int) (t * .78));
+        if (ato == DEEZLE || ato == HOLY) return new Rectangle((int) (x + t * .22), (int) (y + t * .12), (int) (t * .56), (int) (t * .78));
         return new Rectangle((int) (x + t * .42), (int) (y + t * .1), (int) (t * .42), (int) (t * .82));
     }
     boolean tocaNave(Rectangle nave) {
         if (transicao > 0 || entrada < 1) return false;
         if (ato == DIO && noRaio(nave.getCenterX(), nave.getCenterY())) return true;
-        if (ato == DIO && demonio > 0 && nave.intersects(corpoDemonio())) return true;
+        if (ato == HOLY && noChicote(nave) && !acertouChicote) { acertouChicote = true; return true; }
         return nave.intersects(getBounds());
     }
     int getX() { return getBounds().x; }
@@ -297,15 +346,15 @@ final class ChefeFinal {
         if (transicao > 0) desenharTransicao(g);
         else {
             if (ato == DEEZLE) dupla(g, 1f);
-            if (ato == DIO) desenharDemonio(g);
+            if (ato == HOLY) desenharAvisos(g);
             int q = quadro();
-            if (avisandoInvestida()) { g.setColor(new Color(255, 40, 20, (int) (90 + 80 * Math.sin(tempo * 30)))); g.setStroke(new BasicStroke(3)); g.drawLine((int) (x + TAM[DEEZLE] * .4), (int) (y + TAM[DEEZLE] * .5), (int) alvoInvX + 60, (int) alvoInvY + TAM[DEEZLE] / 2); }
-            sprite(g, ato - 1, q, x, y + (q == 3 ? 4 : 0), TAM[ato], 1f);
+            if (avisandoInvestida()) { int t = TAM[ato]; g.setColor(new Color(255, 40, 20, (int) (90 + 80 * Math.sin(tempo * 30)))); g.setStroke(new BasicStroke(3)); g.drawLine((int) (x + t * .4), (int) (y + t * .5), (int) alvoInvX + 60, (int) alvoInvY + t / 2); }
+            corpo(g, ato, q, x, y + (q == 3 && ato != HOLY ? 4 : 0), TAM[ato], 1f);
             if (ato == DIO) {
                 if (cargaRaio > 0) { int r = (int) (10 + (1 - cargaRaio) * 28 + Math.sin(tempo * 40) * 3); g.setColor(Color.getHSBColor((float) (tempo * 2 % 1), .8f, 1f)); g.fillOval((int) maoX() - r, (int) maoY() - r, r * 2, r * 2); }
                 if (raio > 0) desenharRaio(g);
-                if (gancho >= 2) desenharCorrente(g);
             }
+            if (ato == HOLY) { if (gancho >= 2) desenharCorrente(g); if (chicote > 0) desenharChicote(g, anguloChicote, 1f); }
         }
         if (flash > 0) {
             g.setColor(new Color(255, 220, 160, (int) (flash / .16 * 200))); Rectangle b = getBounds();
@@ -314,7 +363,8 @@ final class ChefeFinal {
         g.dispose();
     }
     private int quadro() {
-        if (ato == DIO) return raio > 0 ? 2 : cargaRaio > 0 || gancho == 1 ? 1 : gesto > 0 ? 3 : 0;
+        if (ato == DIO) return raio > 0 || investida > 0 && investida <= .8 ? 2 : cargaRaio > 0 || avisandoInvestida() ? 1 : gesto > 0 ? 3 : 0;
+        if (ato == HOLY) return demonio > 0 ? 3 : chicote > 0 || gancho >= 2 ? 2 : avisoChicote > 0 || gancho == 1 || avisoDemonio > 0 ? 1 : 0;
         if (avisandoInvestida()) return 1;
         if (gesto > .25) return 2;
         if (gesto > 0) return 1;
@@ -328,11 +378,20 @@ final class ChefeFinal {
     }
     private void desenharTransicao(Graphics2D g) {
         // o ato que caiu some piscando; os dentes do demonio contam a historia
-        double p = 1 - transicao / (ato == KYLE ? 2.2 : ato == DEEZLE ? 3.2 : 3.0);
+        double p = 1 - transicao / (ato == KYLE ? 2.2 : ato == DEEZLE ? 3.2 : ato == HOLY ? 3.2 : 3.0);
         int ant = ato - 1;
+        if (ato == HOLY) {
+            // o Dio ergue os chifres, some na fumaca roxa e o demonio sai dela girando a corrente
+            if (p < .6) corpo(g, DIO, 3, W - TAM[DIO] - 40, TOPO + (H - TOPO - TAM[DIO]) / 2.0, TAM[DIO], (float) Math.max(0, 1 - p / .6));
+            java.util.Random r = new java.util.Random(5);
+            for (int k = 0; k < 40; k++) { double a = r.nextDouble() * Math.PI * 2, d = 20 + p * (80 + r.nextInt(220)); int rr = 18 + r.nextInt(30);
+                g.setColor(new Color(90 + r.nextInt(60), 30, 140 + r.nextInt(80), (int) (160 * Math.sin(Math.min(1, p) * Math.PI)))); g.fillOval(W - 210 + (int) (Math.cos(a) * d) - rr, H / 2 + (int) (Math.sin(a) * d * .7) - rr, rr * 2, rr * 2); }
+            if (p > .45) { float a = (float) Math.min(1, (p - .45) / .4); int t = (int) (TAM[HOLY] * (.5 + .5 * a)); corpo(g, HOLY, 0, W - t - 30, TOPO + (H - TOPO - t) / 2.0, t, a); }
+            return;
+        }
         if (p < .5) {
             float a = (float) Math.max(0, 1 - p * 2);
-            if ((int) (tempo * 20) % 2 == 0) sprite(g, ant - 1, 3, W - TAM[ant] - 40, TOPO + (H - TOPO - TAM[ant]) / 2.0, TAM[ant], a);
+            if ((int) (tempo * 20) % 2 == 0) corpo(g, ant, 3, W - TAM[ant] - 40, TOPO + (H - TOPO - TAM[ant]) / 2.0, TAM[ant], a);
         }
         if (ato == DEEZLE) {
             // Jack e Kyle juntos invocam: o demonio cresce do fogo
@@ -342,7 +401,7 @@ final class ChefeFinal {
             // clarao arco-iris: o demonio vira o Dio
             float a = (float) Math.min(1, p * 1.6);
             if (p < .6) sprite(g, 2, 3, W - TAM[DEEZLE] - 20, TOPO + (H - TOPO - TAM[DEEZLE]) / 2.0, TAM[DEEZLE], 1f - a * .9f);
-            if (p > .4) sprite(g, 3, 0, W - TAM[DIO] - 40, TOPO + (H - TOPO - TAM[DIO]) / 2.0, TAM[DIO], (float) Math.min(1, (p - .4) / .4));
+            if (p > .4) corpo(g, DIO, 0, W - TAM[DIO] - 40, TOPO + (H - TOPO - TAM[DIO]) / 2.0, TAM[DIO], (float) Math.min(1, (p - .4) / .4));
             // aneis do arco-iris abrindo a partir do peito do demonio
             int cx = W - TAM[DEEZLE] / 2 - 20, cy = TOPO + (H - TOPO) / 2;
             g.setStroke(new BasicStroke(5));
@@ -384,20 +443,42 @@ final class ChefeFinal {
         if (gc != null) { Graphics2D h = (Graphics2D) g.create(); h.translate(hx, hy); h.rotate(a + Math.PI); int w = (int) (gc.getWidth() * .6), hh = (int) (gc.getHeight() * .6); h.drawImage(gc, -w / 3, -hh / 2, w, hh, null); h.dispose(); }
         g.dispose();
     }
-    /** O demonio do Holy Diver: a silhueta do Deezleboss, escura e translucida, rasgando a faixa avisada. */
-    private void desenharDemonio(Graphics2D g) {
+    /** Avisos do demonio do Holy Diver: faixa do mergulho e o arco que a corrente vai varrer. */
+    private void desenharAvisos(Graphics2D g) {
         if (avisoDemonio > 0) {
             g.setColor(new Color(170, 40, 255, (int) (60 + 60 * Math.sin(tempo * 25))));
-            g.fillRect(0, (int) demonioY + 40, W, 120);
+            g.fillRect(0, (int) (demonioY + TAM[HOLY] * .25), W, (int) (TAM[HOLY] * .5));
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); g.setColor(new Color(230, 180, 255));
-            g.drawString("<<< HOLY DIVER", W - 200, (int) demonioY + 105);
-            return;
+            g.drawString("<<< HOLY DIVER", W - 200, (int) (demonioY + TAM[HOLY] * .5));
         }
-        if (demonio <= 0 || ARCO == null) return;
-        BufferedImage s = escuro();
-        int c = ARCO.getWidth() / 4, q = (int) (tempo * 8) % 2 == 0 ? 0 : 1, t = 220;
-        Graphics2D a = (Graphics2D) g.create(); a.setComposite(AlphaComposite.SrcOver.derive(.8f));
-        a.drawImage(s, (int) demonioX, (int) demonioY, (int) demonioX + t, (int) demonioY + t, q * c, 0, q * c + c, c, null);
+        if (avisoChicote > 0) {
+            Graphics2D a = (Graphics2D) g.create(); a.setColor(new Color(255, 60, 60, (int) (70 + 60 * Math.sin(tempo * 30))));
+            int r = (int) ALCANCE_CHICOTE, gi = (int) Math.toDegrees(-inicioChicote), gf = (int) Math.toDegrees(-fimChicote);
+            a.fillArc((int) maoX() - r, (int) maoY() - r, r * 2, r * 2, Math.min(gi, gf), Math.abs(gf - gi)); a.dispose();
+            desenharChicote(g, inicioChicote, .5f);
+        }
+    }
+    /** A corrente esticada a partir da mao, na direcao do angulo. */
+    private void desenharChicote(Graphics2D tela, double ang, float alfa) {
+        Graphics2D g = (Graphics2D) tela.create(); g.setComposite(AlphaComposite.SrcOver.derive(alfa));
+        double ax = maoX(), ay = maoY();
+        if (ELO != null) {
+            int ew = ELO.getWidth() * 3 / 4, eh = ELO.getHeight() * 3 / 4;
+            g.translate(ax, ay); g.rotate(ang);
+            for (double t = 0; t < ALCANCE_CHICOTE; t += ew * .8) g.drawImage(ELO, (int) t, -eh / 2 + (int) (Math.sin(t * .02 + tempo * 20) * 4), ew, eh, null);
+        } else { g.setColor(new Color(150, 150, 160)); g.setStroke(new BasicStroke(5)); g.drawLine((int) ax, (int) ay, (int) (ax + Math.cos(ang) * ALCANCE_CHICOTE), (int) (ay + Math.sin(ang) * ALCANCE_CHICOTE)); }
+        g.dispose();
+    }
+    /** Corpo de cada ato: arte propria do Dio de espada e do demonio do Holy Diver quando existir; senao a grade. */
+    private static void corpo(Graphics2D g, int ato, int q, double x, double y, int t, float alfa) {
+        BufferedImage arte = ato == DIO ? DIO_ESPADA : ato == HOLY ? HOLY_DIVER : null;
+        if (arte == null && ato == HOLY && ARCO != null) arte = escuro();
+        if (arte == null) { sprite(g, ato - 1, q, x, y, t, alfa); return; }
+        int fw = arte.getWidth() / (arte == demonioEscuro ? 2 : 4), fh = arte.getHeight(), qq = arte == demonioEscuro ? (q == 2 || q == 3 ? 1 : 0) : q;
+        int w = t * fw / fh;
+        Graphics2D a = (Graphics2D) g.create();
+        if (alfa < 1) a.setComposite(AlphaComposite.SrcOver.derive(Math.max(0f, Math.min(1f, alfa))));
+        a.drawImage(arte, (int) x + (t - w) / 2, (int) y, (int) x + (t - w) / 2 + w, (int) y + t, qq * fw, 0, qq * fw + fw, fh, null);
         a.dispose();
     }
     private static BufferedImage demonioEscuro;
@@ -424,9 +505,9 @@ final class ChefeFinal {
 
     void desenharVida(Graphics2D g) {
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14)); g.setColor(Color.WHITE);
-        String[] atos = {"", "  [ATO I]", "  [ATO II]", "  [ATO III]", "  [ATO IV]"};
+        String[] atos = {"", "  [ATO I]", "  [ATO II]", "  [ATO III]", "  [ATO IV]", "  [ATO V]"};
         g.drawString(getNome() + atos[ato], 217, TOPO + 24);
-        Color c = ato == JACK ? new Color(255, 120, 40) : ato == KYLE ? new Color(80, 220, 90) : ato == DEEZLE ? new Color(220, 40, 30) : new Color(170, 90, 255);
+        Color c = ato == JACK ? new Color(255, 120, 40) : ato == KYLE ? new Color(80, 220, 90) : ato == DEEZLE ? new Color(220, 40, 30) : ato == DIO ? new Color(170, 90, 255) : new Color(120, 40, 200);
         g.setColor(new Color(8, 22, 34, 222)); g.fillRoundRect(218, TOPO + 31, 526, 22, 10, 10);
         g.setPaint(new GradientPaint(218, TOPO + 32, c, 744, TOPO + 52, new Color(222, 36, 70)));
         g.fillRoundRect(220, TOPO + 33, (int) (522.0 * Math.max(0, vida) / Math.max(1, getVidaMaxima())), 18, 8, 8);

@@ -90,3 +90,26 @@ Pixel art 16-bit estilo Super Nintendo. A MESMA nave da imagem anexada, mesma vi
 1: cabine fechada. 2: a tampa de vidro abrindo pra cima, com fumacinha de pressão. 3: tampa toda aberta, assento vazio, luzes internas acesas.
 Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem texto.
 ```
+
+---
+
+## E. Luta final: Dio de espada e o demonio do Holy Diver
+Mande cada um como ARQUIVO, com o nome indicado. Anexe a arco_final_099.png como referência de estilo e escala.
+
+### E1. dio_espada.png
+```
+Pixel art 16-bit estilo Super Nintendo, no MESMO estilo, traço e escala da imagem anexada (linha de baixo, o cantor de cabelo cacheado com armadura preta e dourada e capa vermelha).
+O mesmo personagem agora lutando com uma ESPADA longa de lâmina prateada e cabo dourado, corpo inteiro virado para a ESQUERDA.
+Tira horizontal com 4 quadros do mesmo tamanho:
+1: de pé, espada erguida ao lado do rosto. 2: preparando o golpe, espada atrás do ombro. 3: o corte para a esquerda, com um rastro em meia-lua prateado brilhando. 4: espada apontada para o chão e a outra mão fazendo os chifres do metal.
+Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem texto.
+```
+
+### E2. holy_diver_demonio.png
+```
+Pixel art 16-bit estilo Super Nintendo, tom sombrio, no MESMO estilo e escala do demônio vermelho da imagem anexada (terceira linha).
+Um demônio ORIGINAL magro e alto, pele preta com reflexos vermelhos, chifres longos, olhos vermelhos brilhando, segurando uma CORRENTE de ferro comprida. Corpo inteiro virado para a ESQUERDA.
+Tira horizontal com 4 quadros do mesmo tamanho:
+1: de pé, girando a corrente acima da cabeça. 2: corrente puxada para trás, preparando. 3: corrente estalando para a esquerda como chicote. 4: inclinado para frente, mergulhando para a esquerda em voo.
+Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem texto.
+```
