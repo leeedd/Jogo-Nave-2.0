@@ -133,3 +133,10 @@ Uma palheta de guitarra mágica VERDE em formato de coração com dois chifres e
 
 ### E5. barra_chefe_final.png (feita)
 Moldura com chifres, caveira e correntes; faixa preta da vida e dois escudos para as metades da palheta.
+
+### E6. portal_inferno.png (o portal que a Palheta do Destino abre)
+```
+Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), sem texto.
+Um portal do inferno redondo visto de frente: um redemoinho de fogo vermelho e laranja girando em espiral, borda de pedra rachada com runas brilhando em verde, centro escuro com um brilho vermelho profundo e pequenas brasas sendo puxadas para dentro.
+Tira horizontal com 4 quadros do mesmo tamanho, o redemoinho girando um pouco a cada quadro (animação em loop).
+```

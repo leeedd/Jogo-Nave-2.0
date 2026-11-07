@@ -33,6 +33,10 @@ final class ChefeFinal {
     private static final BufferedImage PALHETA = ler("palheta_destino.png");
     /** Moldura da barra de vida (faixa preta da vida e dois escudos para as metades da palheta). */
     private static final BufferedImage BARRA = ler("barra_chefe_final.png");
+    /** Portal do inferno que a palheta abre (4 quadros girando). Sem a arte, um redemoinho de fagulhas. */
+    private static final BufferedImage PORTAL = ler("portal_inferno.png");
+    /** Duracao da cena da invocacao: metades erguidas, juntando, raio, portal abrindo, demonio saindo, portal fechando. */
+    static final double INVOCACAO = 7.0;
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD;
     /** Tamanho na tela de cada ato (a celula da grade e quadrada). */
     private static final int[] TAM = {0, 250, 250, 400, 290, 360};
@@ -335,7 +339,7 @@ final class ChefeFinal {
         if (ato == HOLY) return true;
         SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE);
         if (ato == JACK) { dentes = 1; aviso = "JACK CAIU! METADE DA PALHETA DO DESTINO"; proximo(KYLE, vidaKyle, 2.2); }
-        else if (ato == KYLE) { dentes = 2; aviso = "A PALHETA DO DESTINO SE JUNTOU! A DUPLA INVOCA O DEEZLEBOSS!"; proximo(DEEZLE, vidaDeezle, 3.2); }
+        else if (ato == KYLE) { dentes = 2; aviso = "A PALHETA DO DESTINO SE JUNTOU! A DUPLA INVOCA O DEEZLEBOSS!"; proximo(DEEZLE, vidaDeezle, INVOCACAO); }
         else if (ato == DEEZLE) { aviso = "O DEMONIO SE REVELA: RONNIE JAMES DIO!"; proximo(DIO, vidaDio, 3.0); }
         else { aviso = "DIO VIRA O DEMONIO DO HOLY DIVER!"; proximo(HOLY, vidaHoly, 3.2); }
         return false;
@@ -343,6 +347,11 @@ final class ChefeFinal {
     private void proximo(int novo, int v, double pausa) {
         ato = novo; vida = v; transicao = pausa; entrada = 0; x = W + 40; intervalo = 1.6; golpes = 0; investida = 0; bateria = 0;
         y = TOPO + (H - TOPO - TAM[novo]) / 2.0;
+        if (novo == DEEZLE) {
+            // o demonio ja comeca de pe onde saiu do portal, sem voar de novo para a tela
+            int t = TAM[DEEZLE]; entrada = 1; baseX = W - t - (DEEZLE_ARTE != null ? 110 : 20);
+            x = W - 250 - t / 2.0; y = TOPO + (H - TOPO) / 2 - 20 - t / 2.0 + 20;
+        }
     }
     boolean estaVivo() { return ato != HOLY || vida > 0; }
     int getVida() { return vida; }
@@ -368,7 +377,6 @@ final class ChefeFinal {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         if (transicao > 0) desenharTransicao(g);
         else {
-            if (ato == DEEZLE) dupla(g, 1f);
             if (ato == HOLY) desenharAvisos(g);
             int q = quadro();
             if (avisandoInvestida()) { int t = TAM[ato]; g.setColor(new Color(255, 40, 20, (int) (90 + 80 * Math.sin(tempo * 30)))); g.setStroke(new BasicStroke(3)); g.drawLine((int) (x + t * .4), (int) (y + t * .5), (int) alvoInvX + 60, (int) alvoInvY + t / 2); }
@@ -402,7 +410,7 @@ final class ChefeFinal {
     }
     private void desenharTransicao(Graphics2D g) {
         // o ato que caiu some piscando; as metades da Palheta do Destino contam a historia
-        double p = 1 - transicao / (ato == KYLE ? 2.2 : ato == DEEZLE ? 3.2 : ato == HOLY ? 3.2 : 3.0);
+        double p = 1 - transicao / (ato == KYLE ? 2.2 : ato == DEEZLE ? INVOCACAO : ato == HOLY ? 3.2 : 3.0);
         int ant = ato - 1;
         if (ato == HOLY) {
             // o Dio ergue os chifres, some na fumaca roxa e o demonio sai dela girando a corrente
@@ -414,21 +422,12 @@ final class ChefeFinal {
             if (p > .45) { float a = (float) Math.min(1, (p - .45) / .4); int t = (int) (TAM[HOLY] * (.5 + .5 * a)); corpo(g, HOLY, 0, W - t - 30, TOPO + (H - TOPO - t) / 2.0, t, a); }
             return;
         }
+        if (ato == DEEZLE) { invocacao(g, transicao > 0 ? INVOCACAO - transicao : INVOCACAO); return; }
         if (p < .5) {
             float a = (float) Math.max(0, 1 - p * 2);
             if ((int) (tempo * 20) % 2 == 0) corpo(g, ant, 3, W - TAM[ant] - 40, TOPO + (H - TOPO - TAM[ant]) / 2.0, TAM[ant], a);
         }
-        if (ato == DEEZLE) {
-            // Jack e Kyle juntos invocam: o demonio cresce do fogo
-            // as duas metades saem da dupla, voam e se juntam; a palheta inteira brilha e o demonio sobe
-            if (p < .45) { double j = Math.min(1, p / .3); int cx = W - TAM[DEEZLE] / 2 - 20, cy = TOPO + 150;
-                palheta(g, 0, cx - 60 + j * 46 - 20, cy + (1 - j) * 200, 40, 1f); palheta(g, 1, cx + 60 - j * 46 - 20, cy + (1 - j) * 200, 40, 1f);
-                if (j >= 1) { int r = (int) (30 + (p - .3) * 600); g.setColor(new Color(90, 255, 120, (int) (200 * Math.max(0, 1 - (p - .3) / .15)))); g.setStroke(new BasicStroke(4)); g.drawOval(cx - r, cy + 20 - r, r * 2, r * 2); palheta(g, 2, cx - 26, cy, 52, 1f); } }
-            // como no filme: o demonio sobe atras deles de bracos erguidos e a dupla fica na frente
-            if (p > .25) { float a = (float) Math.min(1, (p - .25) / .45); int t = (int) (TAM[DEEZLE] * (.5 + .5 * a)); corpo(g, DEEZLE, 1, W - TAM[DEEZLE] - 20 + (TAM[DEEZLE] - t) / 2, TOPO + (H - TOPO - t) / 2.0 + (1 - a) * 120, t, a); }
-            float d = (float) Math.min(1, p * 3) * (float) Math.max(0, Math.min(1, (1 - p) * 4)); int s = 190, q = (int) (tempo * 3) % 2 == 0 ? 0 : 3;
-            sprite(g, 0, q, W - TAM[DEEZLE] - 40, H - s - 10, s, d); sprite(g, 1, 3 - q, W - TAM[DEEZLE] + 110, H - s - 6, s, d);
-        } else if (ato == DIO) {
+        if (ato == DIO) {
             // clarao arco-iris: o demonio vira o Dio
             float a = (float) Math.min(1, p * 1.6);
             if (p < .6) corpo(g, DEEZLE, 3, W - TAM[DEEZLE] - 20, TOPO + (H - TOPO - TAM[DEEZLE]) / 2.0, TAM[DEEZLE], 1f - a * .9f);
@@ -444,6 +443,66 @@ final class ChefeFinal {
                 g.drawOval(cx - (int) r, cy - (int) r, (int) r * 2, (int) r * 2);
             }
         }
+    }
+    /** Invocacao do Deezleboss, em segundos desde o Kyle cair. */
+    private void invocacao(Graphics2D g, double t) {
+        int px = W - 250, py = TOPO + (H - TOPO) / 2 - 20;            // centro do portal
+        int s = 190, q = (int) (tempo * 3) % 2 == 0 ? 0 : 3;
+        int jx = 230, kx = 390, chao = H - s - 8;                       // a dupla de pe a esquerda, olhando o portal
+        double maos = chao + s * .35;
+        // 1) portal: abre com o raio (2.6 s), fica aberto e fecha depois que o demonio sai (6.2 s)
+        double abre = t < 2.6 ? 0 : Math.min(1, (t - 2.6) / .7), fecha = t < 6.2 ? 1 : Math.max(0, 1 - (t - 6.2) / .6);
+        double tam = abre * fecha;
+        if (tam > 0) portal(g, px, py, (int) (330 * tam));
+        // 2) o demonio sai do portal de bracos erguidos (3.4 s a 5.6 s) e fica na frente dele
+        if (t > 3.4) { double e = Math.min(1, (t - 3.4) / 2.2), ee = e * e * (3 - 2 * e); int tt = (int) (TAM[DEEZLE] * (.25 + .75 * ee));
+            corpo(g, DEEZLE, 1, px - tt / 2.0, py - tt / 2.0 + (1 - ee) * 30 + 20, tt, (float) Math.min(1, e * 2)); }
+        // 3) a dupla: aparece e ergue as metades; sai de cena quando o demonio ja esta de pe
+        float d = (float) Math.min(1, t / .5) * (float) Math.max(0, Math.min(1, (INVOCACAO - t) / .6));
+        sprite(g, 0, t < 2.6 ? 3 : q, jx, chao, s, d); sprite(g, 1, t < 2.6 ? 3 : 3 - q, kx, chao + 4, s, d);
+        // 4) as metades: sobem das maos (0.4-1.2 s), giram e se juntam no meio (1.2-2.0 s), brilho (2.0-2.6 s)
+        double mx = (jx + kx + s) / 2.0, my = TOPO + 120;
+        if (t > .4 && t < 2.0) {
+            double sobe = Math.min(1, (t - .4) / .8), junta = t < 1.2 ? 0 : Math.min(1, (t - 1.2) / .8), jj = junta * junta;
+            double ax = jx + s * .45 + (mx - 40 - (jx + s * .45)) * jj, bx = kx + s * .45 + (mx - (kx + s * .45)) * jj;
+            double ay = maos - (maos - my) * sobe + Math.sin(t * 9) * 6 * (1 - jj), by = ay + Math.sin(t * 9 + 1) * 6 * (1 - jj);
+            brilho(g, ax + 20, ay + 34, 34 + 10 * Math.sin(t * 12)); brilho(g, bx + 20, by + 34, 34 + 10 * Math.sin(t * 12 + 1));
+            palheta(g, 0, ax, ay, 68, 1f); palheta(g, 1, bx, by, 68, 1f);
+        } else if (t >= 2.0 && t < 6.2) {
+            double fim = t < 3.4 ? 1 : Math.max(0, 1 - (t - 3.4) / .6);
+            if (t < 2.4) { // clarao do encaixe
+                int r = (int) (40 + (t - 2.0) * 900); g.setColor(new Color(160, 255, 170, (int) (230 * (1 - (t - 2.0) / .4)))); g.setStroke(new BasicStroke(6)); g.drawOval((int) mx - r, (int) my + 34 - r, r * 2, r * 2);
+                g.setColor(new Color(220, 255, 220, (int) (120 * (1 - (t - 2.0) / .4)))); g.fillRect(0, TOPO, W, H - TOPO); }
+            if (fim > .05) brilho(g, mx, my + 34, (46 + 12 * Math.sin(t * 10)) * fim);
+            if (t >= 2.4 && t < 3.2) { // o raio da palheta rasga o ar ate o centro do portal
+                float a = (float) (1 - (t - 2.4) / .8); Graphics2D r = (Graphics2D) g.create();
+                r.setColor(new Color(120, 255, 140, (int) (230 * a))); r.setStroke(new BasicStroke(10)); r.drawLine((int) mx, (int) my + 34, px, py);
+                r.setColor(new Color(240, 255, 240, (int) (255 * a))); r.setStroke(new BasicStroke(4)); r.drawLine((int) mx, (int) my + 34, px, py); r.dispose(); }
+            Graphics2D a = (Graphics2D) g.create(); a.setComposite(AlphaComposite.SrcOver.derive((float) fim));
+            palheta(a, 2, mx - 38, my, 76, 1f); a.dispose();
+        }
+        // legendas da cena
+        String txt = t < 1.2 ? "AS DUAS METADES..." : t < 2.4 ? "A PALHETA DO DESTINO!" : t < 3.6 ? "O PORTAL SE ABRE..." : t < 6.2 ? "DEEZLEBOSS!" : "";
+        if (!txt.isEmpty()) { g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, txt.equals("DEEZLEBOSS!") ? 34 : 22)); int w = g.getFontMetrics().stringWidth(txt);
+            g.setColor(new Color(0, 0, 0, 180)); g.drawString(txt, (W - w) / 2 + 2, H - 40 + 2); g.setColor(txt.equals("DEEZLEBOSS!") ? new Color(255, 90, 60) : new Color(170, 255, 180)); g.drawString(txt, (W - w) / 2, H - 40); }
+    }
+    private static void brilho(Graphics2D g, double cx, double cy, double r) {
+        for (int k = 3; k >= 1; k--) { int rr = (int) (r * k / 3); g.setColor(new Color(90, 255, 120, 40 + (3 - k) * 30)); g.fillOval((int) cx - rr, (int) cy - rr, rr * 2, rr * 2); }
+    }
+    /** Portal do inferno girando; sem a arte, aneis de fagulhas vermelhas e laranjas puxadas para o centro. */
+    private void portal(Graphics2D tela, int cx, int cy, int d) {
+        if (d <= 2) return;
+        Graphics2D g = (Graphics2D) tela.create();
+        if (PORTAL != null) { int fw = PORTAL.getWidth() / 4, fh = PORTAL.getHeight(), q = (int) (tempo * 10) % 4, w = d * fw / fh;
+            g.drawImage(PORTAL, cx - w / 2, cy - d / 2, cx + w / 2, cy + d / 2, q * fw, 0, q * fw + fw, fh, null); g.dispose(); return; }
+        g.setColor(new Color(20, 0, 10, 230)); g.fillOval(cx - d / 2 + d / 8, cy - d / 2 + d / 8, d * 3 / 4, d * 3 / 4);
+        java.util.Random r = new java.util.Random(9);
+        for (int k = 0; k < 220; k++) {
+            double raio = d / 2.0 * (.35 + .65 * r.nextDouble()), a = r.nextDouble() * Math.PI * 2 + tempo * (2.5 - raio / d * 2);
+            int x = cx + (int) (Math.cos(a) * raio), y = cy + (int) (Math.sin(a) * raio), tq = 3 + r.nextInt(3) * 2;
+            g.setColor(r.nextInt(3) == 0 ? new Color(255, 210, 80) : r.nextBoolean() ? new Color(255, 90, 30) : new Color(190, 20, 30)); g.fillRect(x, y, tq, tq);
+        }
+        g.dispose();
     }
     private void desenharRaio(Graphics2D tela) {
         Graphics2D g = (Graphics2D) tela.create();

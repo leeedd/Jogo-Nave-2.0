@@ -26,7 +26,7 @@ public final class TesteFinal099 {
   tick(f,.1);ok(f.getTirosChefesTeste().isEmpty(),"troca de ato limpa os tiros");
   tick(f,3.6);foto(f,"final_2_kyle");
   bater(f,ChefeFinal.KYLE);ok(c.getAtoFinalTeste()==ChefeFinal.DEEZLE&&c.getDentesTeste()==2,"Kyle deixa a outra metade");
-  tick(f,1.1);foto(f,"final_3_invocacao");tick(f,4.1);foto(f,"final_4_deezleboss");
+  tick(f,.9);foto(f,"final_3a_metades");tick(f,.8);foto(f,"final_3b_juntando");tick(f,.5);foto(f,"final_3c_palheta");tick(f,.6);foto(f,"final_3d_raio_portal");tick(f,1.6);foto(f,"final_3_invocacao");tick(f,1.4);foto(f,"final_3e_portal_fechando");tick(f,1.5);foto(f,"final_4_deezleboss");
   ok(c.getVida()==c.getVidaMaxima(),"Deezleboss com a vida cheia");
   boolean bateria=false;for(int i=0;i<60*16&&!bateria;i++){f.getNave().curar(1000);f.getNave().teleportar(120,300);f.atualizarSimulacao(1.0/60);if((double)get(get(c,"fim"),"bateria")>0&&(double)get(get(c,"fim"),"bateria")<1.2){bateria=true;foto(f,"final_4b_bateria_666");}}
   ok(bateria,"Beelzeboss toca a bateria 666");
