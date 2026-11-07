@@ -113,7 +113,7 @@ final class ChefeFinal {
         intervalo -= dt * cad;
         if (intervalo > 0 || tiros.size() > 46) return;
         golpes++; gesto = .5;
-        double ox = x + TAM[JACK] * .3, oy = y + TAM[JACK] * .45, mira = Math.atan2(naveY + 18 - oy, naveX + 22 - ox);
+        double ox = x + TAM[JACK] * (JACK_VIOLAO != null ? .12 : .3), oy = y + TAM[JACK] * .45, mira = Math.atan2(naveY + 18 - oy, naveX + 22 - ox);
         if (golpes % 3 == 0) {
             // meia-lua de fogo do riff: arco largo de chamas com um buraco onde a nave esta
             int n = furia ? 11 : 9;
@@ -132,7 +132,7 @@ final class ChefeFinal {
         intervalo -= dt * cad;
         if (intervalo > 0 || tiros.size() > 46) return;
         golpes++; gesto = .5;
-        double ox = x + TAM[KYLE] * .25, oy = y + TAM[KYLE] * .5;
+        double ox = x + TAM[KYLE] * (KYLE_VIOLAO != null ? .12 : .25), oy = y + TAM[KYLE] * .5;
         if (golpes % 2 == 0) {
             // parede de ondas verdes com um corredor so: tem que achar o buraco
             int buraco = Math.max(1, Math.min(7, (naveY - TOPO) / 60));
@@ -362,6 +362,7 @@ final class ChefeFinal {
     Rectangle getBounds() {
         int t = TAM[ato];
         if (ato == DEEZLE || ato == HOLY) return new Rectangle((int) (x + t * .22), (int) (y + t * .12), (int) (t * .56), (int) (t * .78));
+        if ((ato == JACK ? JACK_VIOLAO : ato == KYLE ? KYLE_VIOLAO : null) != null) return new Rectangle((int) (x + t * (PE_DUPLA - .22)), (int) (y + t * .1), (int) (t * .44), (int) (t * .82));
         return new Rectangle((int) (x + t * .42), (int) (y + t * .1), (int) (t * .42), (int) (t * .82));
     }
     boolean tocaNave(Rectangle nave) {
@@ -568,9 +569,11 @@ final class ChefeFinal {
         if (arte == null) { sprite(g, ato - 1, q, x, y, t, alfa); return; }
         int fw = arte.getWidth() / (arte == demonioEscuro ? 2 : 4), fh = arte.getHeight(), qq = arte == demonioEscuro ? (q == 2 || q == 3 ? 1 : 0) : q;
         int w = t * fw / fh;
+        // Jack e Kyle: o golpe ocupa a esquerda do quadro; os pes ficam no mesmo ponto da caixa do ato
+        int x0 = ato == JACK || ato == KYLE ? (int) (x + t * PE_DUPLA - pe(arte, fw, fh) * w) : (int) x + (t - w) / 2;
         Graphics2D a = (Graphics2D) g.create();
         if (alfa < 1) a.setComposite(AlphaComposite.SrcOver.derive(Math.max(0f, Math.min(1f, alfa))));
-        a.drawImage(arte, (int) x + (t - w) / 2, (int) y, (int) x + (t - w) / 2 + w, (int) y + t, qq * fw, 0, qq * fw + fw, fh, null);
+        a.drawImage(arte, x0, (int) y, x0 + w, (int) y + t, qq * fw, 0, qq * fw + fw, fh, null);
         a.dispose();
     }
     private static BufferedImage demonioEscuro;
@@ -597,6 +600,16 @@ final class ChefeFinal {
             a.setColor(new Color(40, 150, 70)); a.fillPolygon(px, py, 3); a.setColor(new Color(10, 40, 20)); a.drawPolygon(px, py, 3);
         }
         a.dispose();
+    }
+    /** Onde ficam os pes do Jack e do Kyle dentro da caixa do ato (com a arte de violao). */
+    private static final double PE_DUPLA = .35;
+    private static final java.util.Map<BufferedImage, Double> PES = new java.util.HashMap<>();
+    /** Onde ficam os pes no primeiro quadro (fracao da largura), medido uma vez. */
+    private static double pe(BufferedImage arte, int fw, int fh) {
+        Double v = PES.get(arte); if (v != null) return v;
+        long soma = 0, n = 0;
+        for (int yy = fh * 9 / 10; yy < fh; yy++) for (int xx = 0; xx < fw; xx++) if ((arte.getRGB(xx, yy) >>> 24) > 0) { soma += xx; n++; }
+        v = n == 0 ? .5 : soma / (double) n / fw; PES.put(arte, v); return v;
     }
     private static void sprite(Graphics2D g, int linha, int q, double x, double y, int t, float alfa) {
         if (ARCO == null) { g.setColor(new Color(150, 30, 30)); g.fillRect((int) x + t / 3, (int) y + t / 5, t / 2, t * 3 / 4); return; }
