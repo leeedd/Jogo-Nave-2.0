@@ -27,6 +27,8 @@ final class ChefeFinal {
     private static final BufferedImage HOLY_DIVER = ler("holy_diver_demonio.png");
     /** Dio de espada (4 quadros: espada erguida, preparando, corte com a meia-lua prateada, chifres). Sem a arte, usa a linha do Dio da grade. */
     private static final BufferedImage DIO_ESPADA = ler("dio_espada.png");
+    /** Jack e Kyle de VIOLAO (4 quadros cada: repouso, preparo, golpe, bate-cabeca). Sem a arte, a grade (de guitarra). */
+    private static final BufferedImage JACK_VIOLAO = ler("jack_violao.png"), KYLE_VIOLAO = ler("kyle_violao.png");
     /** Beelzeboss (4 quadros: guitarra em estrela, preparando, riff de fogo, na bateria 666). Sem a arte, usa a linha do demonio da grade. */
     private static final BufferedImage DEEZLE_ARTE = ler("deezleboss.png");
     /** Palheta do Destino (3 quadros: metade esquerda, metade direita, inteira brilhando). Feita do dente do demonio. */
@@ -405,8 +407,8 @@ final class ChefeFinal {
     /** Jack e Kyle tocando la no fundo enquanto o Deezleboss luta (nao levam tiro). */
     private void dupla(Graphics2D g, float a) {
         int s = 150; int q = (int) (tempo * 2.4) % 2 == 0 ? 0 : 3;
-        sprite(g, 0, q, W - s - 10, TOPO + 4 + Math.sin(tempo * 2) * 6, s, a * .85f);
-        sprite(g, 1, q == 0 ? 3 : 0, W - s - 10, H - s - 4 + Math.sin(tempo * 2 + 1) * 6, s, a * .85f);
+        corpo(g, JACK, q, W - s - 10, TOPO + 4 + Math.sin(tempo * 2) * 6, s, a * .85f);
+        corpo(g, KYLE, q == 0 ? 3 : 0, W - s - 10, H - s - 4 + Math.sin(tempo * 2 + 1) * 6, s, a * .85f);
     }
     private void desenharTransicao(Graphics2D g) {
         // o ato que caiu some piscando; as metades da Palheta do Destino contam a historia
@@ -459,7 +461,7 @@ final class ChefeFinal {
             corpo(g, DEEZLE, 1, px - tt / 2.0, py - tt / 2.0 + (1 - ee) * 30 + 20, tt, (float) Math.min(1, e * 2)); }
         // 3) a dupla: aparece e ergue as metades; sai de cena quando o demonio ja esta de pe
         float d = (float) Math.min(1, t / .5) * (float) Math.max(0, Math.min(1, (INVOCACAO - t) / .6));
-        sprite(g, 0, t < 2.6 ? 3 : q, jx, chao, s, d); sprite(g, 1, t < 2.6 ? 3 : 3 - q, kx, chao + 4, s, d);
+        corpo(g, JACK, t < 2.6 ? 3 : q, jx, chao, s, d); corpo(g, KYLE, t < 2.6 ? 3 : 3 - q, kx, chao + 4, s, d);
         // 4) as metades: sobem das maos (0.4-1.2 s), giram e se juntam no meio (1.2-2.0 s), brilho (2.0-2.6 s)
         double mx = (jx + kx + s) / 2.0, my = TOPO + 120;
         if (t > .4 && t < 2.0) {
@@ -561,7 +563,7 @@ final class ChefeFinal {
     }
     /** Corpo de cada ato: arte propria do Dio de espada e do demonio do Holy Diver quando existir; senao a grade. */
     private static void corpo(Graphics2D g, int ato, int q, double x, double y, int t, float alfa) {
-        BufferedImage arte = ato == DIO ? DIO_ESPADA : ato == HOLY ? HOLY_DIVER : ato == DEEZLE ? DEEZLE_ARTE : null;
+        BufferedImage arte = ato == DIO ? DIO_ESPADA : ato == HOLY ? HOLY_DIVER : ato == DEEZLE ? DEEZLE_ARTE : ato == JACK ? JACK_VIOLAO : ato == KYLE ? KYLE_VIOLAO : null;
         if (arte == null && ato == HOLY && ARCO != null) arte = escuro();
         if (arte == null) { sprite(g, ato - 1, q, x, y, t, alfa); return; }
         int fw = arte.getWidth() / (arte == demonioEscuro ? 2 : 4), fh = arte.getHeight(), qq = arte == demonioEscuro ? (q == 2 || q == 3 ? 1 : 0) : q;

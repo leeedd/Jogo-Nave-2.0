@@ -140,3 +140,13 @@ Pixel art 16-bit estilo Super Nintendo, fundo MAGENTA PURO E LISO (#FF00FF), sem
 Um portal do inferno redondo visto de frente: um redemoinho de fogo vermelho e laranja girando em espiral, borda de pedra rachada com runas brilhando em verde, centro escuro com um brilho vermelho profundo e pequenas brasas sendo puxadas para dentro.
 Tira horizontal com 4 quadros do mesmo tamanho, o redemoinho girando um pouco a cada quadro (animação em loop).
 ```
+
+### E7. jack_violao.png e kyle_violao.png (o Tenacious D toca VIOLAO)
+Um chat para cada. Anexe a arco_final_099.png como referência (linha 1 = Jack, linha 2 = Kyle).
+```
+Pixel art 16-bit estilo Super Nintendo, no MESMO estilo, traço, armadura e escala do personagem da [PRIMEIRA / SEGUNDA] linha da imagem anexada, corpo inteiro virado para a ESQUERDA.
+Troque a guitarra elétrica por um VIOLÃO acústico de madeira (corpo arredondado com boca redonda).
+Tira horizontal com 4 quadros do mesmo tamanho:
+1: de pé tocando o violão. 2: preparando, violão puxado para trás. 3: o golpe: um acorde forte com uma onda de energia saindo do violão para a esquerda ([JACK: meia-lua de FOGO laranja / KYLE: onda sonora VERDE]). 4: bate-cabeça com o violão.
+Fundo MAGENTA PURO E LISO (#FF00FF), sem sombra, sem texto.
+```
