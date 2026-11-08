@@ -481,8 +481,7 @@ final class ChefeFinal {
                 float a = (float) (1 - (t - 2.4) / .8); Graphics2D r = (Graphics2D) g.create();
                 r.setColor(new Color(120, 255, 140, (int) (230 * a))); r.setStroke(new BasicStroke(10)); r.drawLine((int) mx, (int) my + 34, px, py);
                 r.setColor(new Color(240, 255, 240, (int) (255 * a))); r.setStroke(new BasicStroke(4)); r.drawLine((int) mx, (int) my + 34, px, py); r.dispose(); }
-            Graphics2D a = (Graphics2D) g.create(); a.setComposite(AlphaComposite.SrcOver.derive((float) fim));
-            palheta(a, 2, mx - 38, my, 76, 1f); a.dispose();
+            if (fim > 0) palheta(g, 2, mx - 38, my, 76, (float) fim);
         }
         // legendas da cena
         String txt = t < 1.2 ? "AS DUAS METADES..." : t < 2.4 ? "A PALHETA DO DESTINO!" : t < 3.6 ? "O PORTAL SE ABRE..." : t < 6.2 ? "DEEZLEBOSS!" : "";
