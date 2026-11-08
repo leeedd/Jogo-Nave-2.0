@@ -433,7 +433,7 @@ final class ChefeFinal {
         if (ato == DIO) {
             // clarao arco-iris: o demonio vira o Dio
             float a = (float) Math.min(1, p * 1.6);
-            if (p < .6) corpo(g, DEEZLE, 3, W - TAM[DEEZLE] - 20, TOPO + (H - TOPO - TAM[DEEZLE]) / 2.0, TAM[DEEZLE], 1f - a * .9f);
+            if (p < .6) corpo(g, DEEZLE, 0, W - TAM[DEEZLE] - 20, TOPO + (H - TOPO - TAM[DEEZLE]) / 2.0, TAM[DEEZLE], 1f - a * .9f);
             if (p > .4) corpo(g, DIO, 0, W - TAM[DIO] - 40, TOPO + (H - TOPO - TAM[DIO]) / 2.0, TAM[DIO], (float) Math.min(1, (p - .4) / .4));
             // aneis do arco-iris abrindo a partir do peito do demonio
             int cx = W - TAM[DEEZLE] / 2 - 20, cy = TOPO + (H - TOPO) / 2;

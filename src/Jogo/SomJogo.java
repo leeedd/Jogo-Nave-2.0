@@ -31,8 +31,10 @@ public final class SomJogo {
  public static void volumeEfeitos(int v){efeitos=Math.max(0,Math.min(100,v));PREFS.putInt("efeitos",efeitos);}
  public static void alternarMudo(){mudo=!mudo;PREFS.putBoolean("mudo",mudo);}
  public static synchronized void iniciar(){if(iniciado||OFFLINE)return;iniciado=true;Thread t=new Thread(SomJogo::executar,"MetalSpace-Audio");t.setDaemon(true);t.start();}
+ /** Para as previas em video: recebe cada efeito tocado (null no jogo). */
+ static java.util.function.Consumer<Efeito> gravador;
  public static void tocar(Efeito e){tocar(e,480);}
- public static synchronized void tocar(Efeito e,double x){if(pausado&&!e.ui())return;long now=System.nanoTime();int i=e.ordinal();if(now-ULTIMO[i]<e.intervalo*1000000L)return;ULTIMO[i]=now;CONTAGEM[i]++;if(OFFLINE)return;iniciar();FILA.offer(new Pedido(e,(float)Math.max(-.8,Math.min(.8,(x-480)/600)),now));}
+ public static synchronized void tocar(Efeito e,double x){if(pausado&&!e.ui())return;long now=System.nanoTime();int i=e.ordinal();if(now-ULTIMO[i]<e.intervalo*1000000L)return;ULTIMO[i]=now;CONTAGEM[i]++;if(gravador!=null)gravador.accept(e);if(OFFLINE)return;iniciar();FILA.offer(new Pedido(e,(float)Math.max(-.8,Math.min(.8,(x-480)/600)),now));}
  /** Troca a musica de fundo por um arquivo local (pasta musicas/ ao lado do jogo, em .wav).
   *  As musicas das bandas nao vao no repositorio: quem tem os arquivos coloca na pasta.
   *  Sem o arquivo, volta a trilha original. Carrega em outra thread para nao travar o jogo. */
