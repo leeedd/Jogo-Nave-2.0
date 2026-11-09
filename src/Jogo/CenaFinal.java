@@ -21,6 +21,9 @@ public final class CenaFinal {
     private static final int TOPO_ROLAGEM = 80;
     private static final Image SILHUETA = olhosAmarelos(Assets.imagem("megazord_relampago_16bits.png"));
     private static final Image REVELACAO = Assets.imagem("megazord_cabeca_099.png");
+    /** Letreiro HEAVY METAL NEVER DIES em pixel art (caveira com chifres e correntes) embaixo da foto. */
+    private static final BufferedImage LEMA = lerLema();
+    private static BufferedImage lerLema() { java.net.URL u = CenaFinal.class.getResource("/ImagemIcon/heavy_metal_never_dies_final.png"); if (u == null) return null; try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; } }
     private static final BufferedImage FOTO_EQUIPE = escalar(pixelar(nitida(Assets.imagem("flavio_wenger.jpg"), 150), 12), 2);
     private static final BufferedImage CABECA_NO_ESCURO = cabecaNoEscuro(REVELACAO);
 
@@ -385,21 +388,31 @@ public final class CenaFinal {
     private void desenharFoto(Graphics2D g, int w, int h) {
         // Chave de ouro: foto dos criadores em pixel art nitido, o lema e o agradecimento.
         int fw = FOTO_EQUIPE.getWidth(), fh = FOTO_EQUIPE.getHeight();
-        int fx = (w - fw) / 2, fy = 34;
+        if (LEMA != null) { fw = fw * 78 / 100; fh = fh * 78 / 100; } // foto menor para o letreiro caber grande
+        int fx = (w - fw) / 2, fy = 30;
         HudMetal.painel(g, fx - 14, fy - 14, fw + 28, fh + 28);
         g.drawImage(FOTO_EQUIPE, fx, fy, fw, fh, null);
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 40));
-        String lema = "HEAVY METAL NEVER DIES";
-        int ly = fy + fh + 62;
-        FontMetrics fm = g.getFontMetrics();
-        int lx = (w - fm.stringWidth(lema)) / 2;
-        g.setColor(new Color(60, 8, 14));
-        g.drawString(lema, lx + 3, ly + 3);
-        g.setColor(new Color(238, 72, 83));
-        g.drawString(lema, lx, ly);
+        int ly;
+        if (LEMA != null) {
+            // letreiro em pixel art: ocupa a largura livre embaixo da foto
+            int lw = Math.min(w - 60, (h - (fy + fh + 30) - 52) * LEMA.getWidth() / LEMA.getHeight()), lh = lw * LEMA.getHeight() / LEMA.getWidth();
+            int lx = (w - lw) / 2, lt = fy + fh + 22;
+            Graphics2D a = (Graphics2D) g.create(); a.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            a.drawImage(LEMA, lx, lt, lw, lh, null); a.dispose(); ly = lt + lh - 2;
+        } else {
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 40));
+            String lema = "HEAVY METAL NEVER DIES";
+            ly = fy + fh + 62;
+            FontMetrics fm = g.getFontMetrics();
+            int lx = (w - fm.stringWidth(lema)) / 2;
+            g.setColor(new Color(60, 8, 14));
+            g.drawString(lema, lx + 3, ly + 3);
+            g.setColor(new Color(238, 72, 83));
+            g.drawString(lema, lx, ly);
+        }
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 20));
         g.setColor(new Color(255, 213, 98));
-        centralizar(g, "OBRIGADO POR JOGAR!", w, ly + 40);
+        centralizar(g, "OBRIGADO POR JOGAR!", w, LEMA != null ? ly + 18 : ly + 40);
         if (podeEncerrar() && ((int) (tempo * 2)) % 2 == 0) {
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 13));
             g.setColor(new Color(225, 221, 231));
