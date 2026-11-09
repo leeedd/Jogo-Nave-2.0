@@ -10,8 +10,8 @@ import java.util.List;
 
 /**
  * Ato I do James Hetfield (Master of Puppets): uma mao de marionetista no alto controla um boneco de
- * madeira do James. Tiro no boneco nao adianta: so a mao leva dano. Quando a nave fica na altura da
- * mao, ela puxa o boneco para cima, na frente dela, como escudo (com folego limitado). Ataques
+ * madeira do James. Tiro no boneco nao adianta: so a mao leva dano;
+ * quando a mao leva tiro, o boneco sobe na frente dela por 1,5 s e depois desce (2,4 s ate poder de novo). Ataques
  * comandados pela mao: raio da guitarra (puxa), chuva de notas (abre os dedos), investida do boneco
  * (fecha o punho). Mao destruida: o boneco desmonta e quem puxava os fios aparece.
  */
@@ -21,7 +21,7 @@ final class MarionetePuppets {
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD;
     private static final int MAO_T = 230, BON_T = 300;
 
-    private double tempo, entrada, hx = W + 40, hy, bOff = 150, bDx, recarga = 1.8, comando, protegendo, folego = 2.6, cansado, flash, faisca;
+    private double tempo, entrada, hx = W + 40, hy, bOff = 150, bDx, recarga = 1.8, comando, guarda, espera, flash, faisca;
     private int golpes, comandoTipo = -1;
     private boolean acertouBoneco;
     private double vidaFrac = 1;
@@ -41,16 +41,14 @@ final class MarionetePuppets {
         if (entrada < 1) { entrada = Math.min(1, entrada + dt / 1.4); hx = W + 40 - (W + 40 - baseX()) * (1 - Math.pow(1 - entrada, 3)); }
         else hx += (baseX() + Math.sin(tempo * .6) * 26 - hx) * Math.min(1, dt * 2);
         // a mao patrulha a metade de cima da tela
-        double alvoY = TOPO + 20 + (Math.sin(tempo * .55) * .5 + .5) * 170;
+        double alvoY = TOPO + 10 + (Math.sin(tempo * .55) * .5 + .5) * 90;
         hy += (alvoY - hy) * Math.min(1, dt * 1.6);
-        // escudo: se a nave esta na altura da mao, o boneco sobe na frente dela, ate cansar
-        double naveCy = naveY + 18; Rectangle m = mao();
-        boolean naMira = naveCy > m.y - 10 && naveCy < m.y + m.height + 10 && comandoTipo != 2;
-        if (cansado > 0) { cansado = Math.max(0, cansado - dt); protegendo = 0; }
-        else if (naMira) { protegendo += dt; folego -= dt; if (folego <= 0) { cansado = 1.6; folego = 2.6; } }
-        else { protegendo = 0; folego = Math.min(2.6, folego + dt * .8); }
-        double alvoOff = protegendo > 0 && cansado <= 0 ? -10 : 150;
-        bOff += (alvoOff - bOff) * Math.min(1, dt * 7);
+        double naveCy = naveY + 18;
+        // escudo reativo: quando a mao leva tiro, o boneco sobe na frente dela por um instante e depois desce
+        if (guarda > 0) { guarda = Math.max(0, guarda - dt); if (guarda == 0) espera = 2.4; }
+        else espera = Math.max(0, espera - dt);
+        double alvoOff = guarda > 0 ? -10 : 150;
+        bOff += (alvoOff - bOff) * Math.min(1, dt * (guarda > 0 ? 12 : 4));
         if (entrada < 1) return;
         // comandos da mao
         if (comando > 0) {
@@ -75,7 +73,9 @@ final class MarionetePuppets {
     /** Tiro do jogador: o boneco segura (sem dano); so a mao conta. */
     boolean colide(Rectangle r) {
         if (r.intersects(boneco())) { acertouBoneco = true; faisca = .12; return true; }
-        return r.intersects(mao());
+        if (!r.intersects(mao())) return false;
+        if (guarda <= 0 && espera <= 0 && comandoTipo != 2) guarda = 1.5; // a mao foi atacada: o boneco vem proteger
+        return true;
     }
     /** true se o ultimo acerto foi no boneco (o dano nao vale). */
     boolean consumirBloqueio() { boolean b = acertouBoneco; acertouBoneco = false; return b; }
@@ -86,11 +86,11 @@ final class MarionetePuppets {
         Graphics2D g = (Graphics2D) tela.create();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         if (alfa < 1) g.setComposite(AlphaComposite.SrcOver.derive(Math.max(0, alfa)));
-        int qb = comandoTipo == 0 ? 2 : protegendo > 0 && cansado <= 0 ? 1 : cansado > 0 ? 3 : 0;
+        int qb = comandoTipo == 0 ? 2 : guarda > 0 ? 1 : espera > 0 ? 3 : 0;
         // o boneco fica atras da mao quando esta pendurado e na frente quando protege
         boolean frente = bOff < 60;
         if (!frente) quadro(g, BONECO, qb, bonecoX(), bonecoY(), BON_T);
-        int qm = vidaFrac < .35 || comandoTipo == 2 ? 3 : comandoTipo == 1 ? 2 : comandoTipo == 0 || (protegendo > 0 && cansado <= 0) ? 1 : 0;
+        int qm = vidaFrac < .35 || comandoTipo == 2 ? 3 : comandoTipo == 1 ? 2 : comandoTipo == 0 || guarda > 0 ? 1 : 0;
         quadro(g, MAO, qm, hx, hy, MAO_T);
         if (frente) quadro(g, BONECO, qb, bonecoX(), bonecoY(), BON_T);
         if (flash > 0) { Rectangle m = mao(); g.setColor(new Color(255, 120, 120, (int) (flash / .16 * 230))); for (int k = 0; k < 8; k++) { double a = k * Math.PI / 4; int r = 20 + (int) ((.16 - flash) * 260); g.fillRect((int) m.getCenterX() + (int) (Math.cos(a) * r) - 3, (int) m.getCenterY() + (int) (Math.sin(a) * r) - 3, 6, 6); } }
