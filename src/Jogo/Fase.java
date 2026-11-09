@@ -184,6 +184,8 @@ implements ActionListener {
     private boolean reuniao, reuniaoVencida; private int bandaReuniao; private double esperaReuniao;
     /** Luta final (depois da fortaleza): Tenacious D, Deezleboss e Dio. */
     private boolean finalVencido;
+    /** Fantasmas aliados: vem uma vez por luta quando o casco cai abaixo de 30%. */
+    private final java.util.List<FantasmaAliado> fantasmas = new java.util.ArrayList<>(); private boolean fantasmaUsado;
     private void iniciarFinal() {
         itens.clear(); capsulas.clear(); alien.clear(); asteroides.clear(); tirosInimigos.clear(); tirosChefes.clear(); tirosElementais.clear(); nave.getMisseis().clear();
         reuniao = false; emHellraiser = false; miniChefe = null; base = null; cenaChefe = null;
@@ -1019,6 +1021,7 @@ implements ActionListener {
                 }
             } else if (this.etapa == Etapa.BATALHA_CHEFE && this.chefe != null) {
                 this.chefe.desenhar(graphics2D2);
+                for (FantasmaAliado fa : fantasmas) fa.desenhar(graphics2D2);
                 for (TiroChefe tiroChefe : this.tirosChefes) {
                     if (!tiroChefe.isVisible()) continue;
                     tiroChefe.desenhar(graphics2D2);
@@ -1431,6 +1434,12 @@ implements ActionListener {
             } else if (this.etapa == Etapa.BATALHA_CHEFE && this.chefe != null) {
                 tempoBatalhaChefe+=d;int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, alvoX(), alvoY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
                 String pedido=chefe.consumirCena();if(pedido!=null)abrirCenaChefe(pedido);
+                if(chefe!=null&&!fantasmaUsado&&nave.getVida()<nave.getVidaMaxima()*.3){int[] q=FantasmaAliado.da(chefe.getFase());
+                    if(q.length>0){fantasmaUsado=true;for(int k=0;k<q.length;k++)fantasmas.add(new FantasmaAliado(q[k],k,nave.getX(),nave.getY()));
+                        mostrarAviso(q.length==1?FantasmaAliado.NOMES[q[0]]+" VEIO AJUDAR!":FantasmaAliado.NOMES[q[0]]+" E "+FantasmaAliado.NOMES[q[1]]+" VIERAM AJUDAR!");}}
+                for(java.util.Iterator<FantasmaAliado> it=fantasmas.iterator();it.hasNext();){FantasmaAliado fa=it.next();int dn=fa.atualizar(d,nave.getX(),nave.getY(),chefe);
+                    if(dn>0&&chefe!=null&&chefe.receberDano(dn)){derrotarChefao();fantasmas.clear();break;}if(!fa.ativo())it.remove();}
+                if(chefe==null)return;
                 String avisoChefe=chefe.consumirAviso();if(avisoChefe!=null){mostrarAviso(avisoChefe);tirosChefes.clear();if(chefe.getAtoFinalTeste()==ChefeFinal.DIO)MusicaJogo.trocarSeDisponivel("HolyDiver");}
                 // empurrao das caixas de som e puxao do gancho da van
                 if(empurraoNave>0){nave.teleportar(nave.getX()-empurraoNave*d,nave.getY());empurraoNave=Math.max(0,empurraoNave-1300*d);}
@@ -1936,7 +1945,7 @@ implements ActionListener {
         abrirCenaChefe(CenaChefe.VAN);
         mostrarAviso("SETOR FINAL: HELLRAISER");
     }
-    private void iniciarChefao(int n) {SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA);
+    private void iniciarChefao(int n) {SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA);fantasmas.clear();fantasmaUsado=false;
         this.etapa = Etapa.BATALHA_CHEFE;
         this.chefePendente = 0;
         this.tempoEtapa = 0.0;
@@ -2492,6 +2501,7 @@ implements ActionListener {
     }
 
     java.util.List<TiroChefe> getTirosChefesTeste() { return tirosChefes; }
+    java.util.List<FantasmaAliado> getFantasmasTeste() { return fantasmas; }
     String getEtapaTeste() {
         return this.etapa.name();
     }
