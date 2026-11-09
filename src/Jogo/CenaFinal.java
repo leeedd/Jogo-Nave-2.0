@@ -57,7 +57,10 @@ public final class CenaFinal {
     private static int centroOzzy;
 
     // Linha do tempo, calculada a partir da altura dos creditos.
-    private static final double FIM_CHEFES = INICIO_CREDITOS + (Config.ALTURA - TOPO_ROLAGEM + ROLO_CHEFES.getHeight()) / VELOCIDADE;
+    /** Letreiro: titulo no topo do rolo, as bandas a cada PASSO e o fecho, que para no meio da tela. */
+    private static final int OFF_CHEFES = 200, PASSO_LETREIRO = 190, OFF_FECHO = OFF_CHEFES + CHEFES.length * PASSO_LETREIRO + 90;
+    private static final double PARADA_LETREIRO = Config.ALTURA / 2.0 - 90 + OFF_FECHO;
+    private static final double FIM_CHEFES = INICIO_CREDITOS + PARADA_LETREIRO / VELOCIDADE + 4.0;
     private static final double INICIO_LENDAS = FIM_CHEFES + TRANSICAO;
     private static final double INICIO_ROLO_LENDAS = INICIO_LENDAS + 5.5;
     private static final double OZZY_NO_CENTRO = INICIO_ROLO_LENDAS + (Config.ALTURA - Config.ALTURA / 2.0 + centroOzzy) / VELOCIDADE;
@@ -122,7 +125,7 @@ public final class CenaFinal {
 
     /** Banda no palco: o show escolhido abre; durante o rolo, sobe a banda de cada credito. */
     int bandaNoPalco() {
-        double rolado = (tempo - INICIO_CREDITOS) * VELOCIDADE - 395;
+        double rolado = (tempo - INICIO_CREDITOS) * VELOCIDADE - (Config.ALTURA / 2 + OFF_CHEFES - 40);
         // show unico: a banda escolhida toca do comeco ao fim
         if (pouso.banda() != CenaPouso.FESTIVAL && pouso.banda() != CenaPouso.COMUM) return Math.max(0, pouso.banda());
         // zeramento comum e festival completo: abre a Lula e cada banda sobe junto com a legenda dela
@@ -154,44 +157,43 @@ public final class CenaFinal {
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 25));
         g.setColor(new Color(253, 214, 120));
         sombreado(g, "AS LENDAS SOBEM AO PALCO!", w, 40);
-        // Cada banda toca enquanto a legenda dela aparece embaixo, como numa transmissao de show.
-        double rolado = (tempo - INICIO_CREDITOS) * VELOCIDADE - 395, passo = 190;
-        int i = (int) Math.floor(rolado / passo);
-        if (i < 0) {
-            double f = Math.min(1, (tempo - INICIO_CREDITOS) / .6);
-            rodape(g, w, h, f);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24)); g.setColor(new Color(255, 210, 94)); sombreado(g, "METAL SPACE - LEGENDS OF METAL", w, 505);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); g.setColor(Color.WHITE); sombreado(g, "UMA HOMENAGEM AO HEAVY METAL", w, 540);
-        } else if (i < CHEFES.length) {
-            double dentro = (rolado - i * passo) / VELOCIDADE, dur = passo / VELOCIDADE;
-            float f = (float) Math.max(0, Math.min(1, Math.min(dentro / .35, (dur - dentro) / .35)));
-            rodape(g, w, h, 1);
-            Graphics2D c = (Graphics2D) g.create(); c.setComposite(AlphaComposite.SrcOver.derive(f));
-            Object[] it = CHEFES[i];
-            int lado = 104, x = 60, y = 462;
+        // Letreiro subindo: titulo, cada banda (a banda dela toca no palco) e o fecho, que para no meio.
+        double s = Math.min(PARADA_LETREIRO, (tempo - INICIO_CREDITOS) * VELOCIDADE);
+        Graphics2D c = (Graphics2D) g.create(); c.clipRect(0, 62, w, h - 62);
+        int y0 = (int) (h - s);
+        if (y0 > -120 && y0 < h) {
+            faixa(c, w, y0 - 10, 90);
+            c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24)); c.setColor(new Color(255, 210, 94)); sombreado(c, "METAL SPACE - LEGENDS OF METAL", w, y0 + 26);
+            c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); c.setColor(Color.WHITE); sombreado(c, "UMA HOMENAGEM AO HEAVY METAL", w, y0 + 60);
+        }
+        for (int k = 0; k < CHEFES.length; k++) {
+            int y = (int) (h - s + OFF_CHEFES + k * PASSO_LETREIRO);
+            if (y < -150 || y > h) continue;
+            Object[] it = CHEFES[k];
+            int lado = 104, x = 60;
+            faixa(c, w, y - 12, lado + 24);
             retrato(c, (Integer) it[0], x, y, lado);
             int tx = x + lado + 30;
             c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26)); c.setColor(new Color(255, 210, 94)); c.drawString((String) it[1], tx, y + 26);
             c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 17)); c.setColor(new Color(110, 222, 245)); c.drawString((String) it[2], tx, y + 52);
             c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15)); c.setColor(new Color(232, 232, 232));
             c.drawString((String) it[3], tx, y + 80); c.drawString((String) it[4], tx, y + 100);
-            c.dispose();
-        } else {
-            // encerramento: as linhas acendem uma a uma sobre o palco escurecido
-            double dentro = (rolado - CHEFES.length * passo) / VELOCIDADE;
-            g.setColor(new Color(0, 0, 10, (int) Math.min(170, dentro * 120))); g.fillRect(0, 0, w, h);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 21));
-            for (int k = 0; k < ENCERRAMENTO_CREDITOS.length; k++) {
-                double f = Math.max(0, Math.min(1, (dentro - .5 - k * .6) / .5));
-                if (f <= 0) continue;
-                Graphics2D c = (Graphics2D) g.create(); c.setComposite(AlphaComposite.SrcOver.derive((float) f));
-                c.setColor(k == 0 ? new Color(255, 210, 94) : Color.WHITE);
-                sombreado(c, ENCERRAMENTO_CREDITOS[k], w, 200 + k * 44); c.dispose();
-            }
         }
+        int yf = (int) (h - s + OFF_FECHO);
+        if (yf < h + 40) {
+            faixa(c, w, yf - 34, ENCERRAMENTO_CREDITOS.length * 44 + 20);
+            c.setFont(new Font(Font.MONOSPACED, Font.BOLD, 21));
+            for (int k = 0; k < ENCERRAMENTO_CREDITOS.length; k++) { c.setColor(k == 0 ? new Color(255, 210, 94) : Color.WHITE); sombreado(c, ENCERRAMENTO_CREDITOS[k], w, yf + k * 44); }
+        }
+        c.dispose();
         escurecer(g, w, h, (tempo - (FIM_CHEFES - TRANSICAO)) / TRANSICAO);
     }
 
+    /** Faixa escura atras de cada bloco do letreiro, para ler sobre o palco. */
+    private static void faixa(Graphics2D g, int w, int y, int altura) {
+        g.setColor(new Color(0, 0, 12, 170)); g.fillRoundRect(30, y, w - 60, altura, 14, 14);
+        g.setColor(new Color(255, 210, 94, 70)); g.drawRoundRect(30, y, w - 60, altura, 14, 14);
+    }
     /** Faixa escura no pe da tela, onde entra a legenda de cada banda. */
     private static void rodape(Graphics2D g, int w, int h, double f) {
         for (int k = 0; k < 40; k++) {
