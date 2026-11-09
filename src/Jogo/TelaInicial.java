@@ -411,13 +411,19 @@ extends JPanel {
     public static void abrir() {
         JFrame jFrame = new JFrame("METAL SPACE - Legends of Metal | 0.9.8C ALPHA ENXAME");
         jFrame.setDefaultCloseOperation(3);
-        TelaInicial telaInicial = new TelaInicial(jFrame);
-        jFrame.setContentPane(telaInicial);
+        // abertura (placa e logo acendendo) antes do menu; ENTER pula
+        AberturaJogo abertura = new AberturaJogo(() -> SwingUtilities.invokeLater(() -> {
+            TelaInicial telaInicial = new TelaInicial(jFrame);
+            jFrame.setContentPane(telaInicial);
+            jFrame.revalidate(); jFrame.repaint();
+            telaInicial.requestFocusInWindow();
+        }));
+        jFrame.setContentPane(abertura);
         jFrame.pack();
         jFrame.setResizable(false);
         jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
-        SwingUtilities.invokeLater(telaInicial::requestFocusInWindow);
+        SwingUtilities.invokeLater(abertura::comecar);
     }
 
     private static enum Pagina {
