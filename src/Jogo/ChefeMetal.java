@@ -31,6 +31,10 @@ public final class ChefeMetal {
     private final int ultimaForma;
     private String cenaPendente;
     private final Trem trem;
+    /** James: ato I e a mao do marionetista com o boneco; quebra = boneco desmontando antes do James aparecer. */
+    private final MarionetePuppets mar;
+    private double quebra; private String aviso;
+    private static final double QUEBRA = 2.6;
 
 
     public ChefeMetal(int artista, Dificuldade dificuldade) {
@@ -43,6 +47,7 @@ public final class ChefeMetal {
         this.vida = vidaPorForma;
         this.ultimaForma = artista == 1 ? 3 : 2;
         this.trem = artista == 1 ? new Trem() : null;
+        this.mar = artista == 5 && MarionetePuppets.temArte() ? new MarionetePuppets() : null;
     }
     /** Cutscene pedida pela luta (lida uma unica vez pela Fase). */
     String consumirCena() { String c = cenaPendente; cenaPendente = null; return c; }
@@ -56,6 +61,8 @@ public final class ChefeMetal {
         flash = Math.max(0, flash - dt);
         gestoDisparo = Math.max(0, gestoDisparo - dt);
         if (trem != null && forma == 1) { trem.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = trem.entrada(); return; }
+        if (mar != null && forma == 1) { mar.vida(vida / (double) vidaPorForma); mar.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = mar.entrada(); if (!mar.investindo()) ataqueFisicoConsumido = false; return; }
+        if (quebra > 0) { quebra = Math.max(0, quebra - dt); entrada = 1; x = Config.LARGURA - largura - 28; y = Config.HUD + 47; return; }
         entrada = Math.min(1.0, entrada + dt / 1.35);
         double suavizar = 1 - Math.pow(1 - entrada, 3);
         double baseX = (Config.LARGURA + 40) * (1 - suavizar)
@@ -226,7 +233,8 @@ public final class ChefeMetal {
 
     /** A primeira derrota transforma o artista; so a segunda encerra a batalha. */
     public boolean receberDano(int dano) {
-        if (vida <= 0 || entrada < 1 || transformando > 0) return false;
+        if (vida <= 0 || entrada < 1 || transformando > 0 || quebra > 0) return false;
+        if (mar != null && forma == 1) { if (mar.consumirBloqueio()) return false; mar.ferido(); }
         vida = Math.max(0, vida - Math.max(0, dano));
         flash = .16;
         if (vida != 0) return false;
@@ -237,14 +245,19 @@ public final class ChefeMetal {
             intervalo = 1.7;
             // o morcego vira o Principe das Trevas numa cutscene propria
             if (trem != null && forma == 2) trem.parar();
+            if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O JAMES!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (artista == 1 && forma == 3) { cenaPendente = CenaChefe.TRANSFORMACAO; transformando = .3; }
             return false;
         }
         return true;
     }
 
+    String consumirAviso() { String a = aviso; aviso = null; return a; }
+    /** Tiro do jogador: no ato I da marionete o boneco segura os tiros. */
+    boolean colide(Rectangle r) { if (mar != null && forma == 1) return mar.colide(r); if (quebra > 0) return false; return r.intersects(getBounds()); }
     /** Ozzy so causa dano no mergulho, nao durante o aviso. */
     public boolean consumirColisaoCorporal(Rectangle areaNave) {
+        if (mar != null && forma == 1) { if (mar.investindo() && !ataqueFisicoConsumido && mar.boneco().intersects(areaNave)) { ataqueFisicoConsumido = true; return true; } return false; }
         if (artista != 1 || forma != 2 || investida <= 0 || ataqueFisicoConsumido ||
                 transformando > 0) return false;
         if (getBounds().intersects(areaNave)) {
@@ -268,6 +281,14 @@ public final class ChefeMetal {
                     ? -(1 - Math.max(0, intervalo) / .38) : 0;
         // Transformacao dissolve as duas formas; nenhuma bolha cobre o personagem.
         if (trem != null && forma == 1) { g.dispose(); trem.desenhar(tela, flash); return; }
+        if (mar != null && forma == 1) { g.dispose(); mar.desenhar(tela, 1f); return; }
+        if (quebra > 0) {
+            // o boneco desmonta no lugar onde o James aparece, e ele vai surgindo no meio das lascas
+            double p = 1 - quebra / QUEBRA; Graphics2D q = (Graphics2D) tela.create(); mar.desenharQuebra(q, p, x + largura * .55, y - 10, altura + 30); q.dispose();
+            float a = (float) Math.max(0, Math.min(1, (p - .35) / .45));
+            if (a > 0) { g.setComposite(AlphaComposite.SrcOver.derive(a)); Sprites16Bits.desenhar(g, artista, 2, largura, altura, tempo, 0); }
+            g.dispose(); return;
+        }
         if (transformando > 0) {
             float transicao = (float)Math.max(0, Math.min(1, 1 - transformando / 1.45));
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1-transicao));
@@ -317,13 +338,14 @@ public final class ChefeMetal {
 
     public Rectangle getBounds() {
         if (trem != null && forma == 1) return trem.getBounds();
+        if (mar != null && forma == 1) return mar.bounds();
         return new Rectangle((int)x + 42, (int)y + 30, largura - 87, altura - 74);
     }
     public boolean estaVivo() { return vida > 0; }
     public int getVida() { return vida; }
     public int getVidaMaxima() { return vidaPorForma; }
-    public int getX() { return trem != null && forma == 1 ? trem.getBounds().x : (int)x; }
-    public int getY() { return trem != null && forma == 1 ? trem.getBounds().y : (int)y; }
+    public int getX() { return (trem != null || mar != null) && forma == 1 ? getBounds().x : (int)x; }
+    public int getY() { return (trem != null || mar != null) && forma == 1 ? getBounds().y : (int)y; }
     public int getForma() { return forma; }
     public double getEntrada() { return entrada; }
     public String getNome() {
@@ -332,7 +354,7 @@ public final class ChefeMetal {
             case 2: return "ROB HALFORD - PAINKILLER";
             case 3: return "BRUCE - EDDIE VOADOR";
             case 4: return "LEMMY - BOMBER";
-            case 5: return "JAMES HETFIELD - RIFF MASTER";
+            case 5: return mar != null && forma == 1 ? "MASTER OF PUPPETS - O MARIONETISTA" : "JAMES HETFIELD - RIFF MASTER";
             case 6: return "TOM ARAYA - RAINING FIRE";
             case 7: return "CHUCK BILLY - TESTAMENT";
             default: throw new IllegalStateException("Artista invalido");

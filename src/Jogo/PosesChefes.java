@@ -13,7 +13,7 @@ final class PosesChefes {
   try{BufferedImage a=ImageIO.read(u);
    if(a.getWidth()>=a.getHeight()*3){
     // Prancha com 4 celulas iguais: repouso, preparo, golpe (com o efeito) e bate-cabeca.
-    int c=a.getWidth()/4;NOVA[id]=new BufferedImage[4];for(int q=0;q<4;q++)NOVA[id][q]=a.getSubimage(q*c,0,c,a.getHeight());
+    int c=a.getWidth()/4;NOVA[id]=new BufferedImage[4];for(int q=0;q<4;q++)NOVA[id][q]=a.getSubimage(q*c,0,c,a.getHeight());if(id==5)NOVA[id][3]=NOVA[id][0]; // James: o bate-cabeca vinha de cabelo comprido, destoando dos outros quadros
    }else{
     // Imagem unica: quatro quadros do mesmo tamanho gerados por inclinacao.
     NOVA[id]=new BufferedImage[]{pose(a,0,1,1),pose(a,.05,1,1),pose(a,-.07,1.03,1.03),pose(a,0,1,.985)};

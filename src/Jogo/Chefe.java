@@ -420,7 +420,7 @@ public final class Chefe {
     public int getY() { return artista != null ? artista.getY() : hell != null ? hell.getY() : fim != null ? fim.getY() : (int) y; }
     public String getNome() { return artista != null ? artista.getNome() : hell != null ? hell.getNome() : fim != null ? fim.getNome() : "LULA DO ABISMO"; }
     /** Acerto de um tiro: no Hellraiser cada corpo da dupla responde por si. */
-    boolean colide(Rectangle r) { return hell != null ? hell.colide(r) : fim != null ? fim.colide(r) : r.intersects(getBounds()); }
+    boolean colide(Rectangle r) { return hell != null ? hell.colide(r) : fim != null ? fim.colide(r) : artista != null ? artista.colide(r) : r.intersects(getBounds()); }
     /** Encosto da nave no corpo do chefe. */
     boolean tocaNave(Rectangle r) { return hell != null ? hell.tocaNave(r) : fim != null ? fim.tocaNave(r) : r.intersects(getBounds()); }
     /** Cutscene pedida no meio da luta (Ozzy virando Principe, dragao). */
@@ -428,7 +428,7 @@ public final class Chefe {
     /** Ponto para onde o gancho da van esta arrastando a nave (null se ninguem esta puxando). */
     double[] puxaoNave() { return hell != null ? hell.puxaoNave() : fim != null ? fim.puxaoNave() : null; }
     /** Aviso de meio de luta (dente arrancado, Deezleboss invocado, Dio revelado). */
-    String consumirAviso() { return fim != null ? fim.consumirAviso() : null; }
+    String consumirAviso() { return fim != null ? fim.consumirAviso() : artista != null ? artista.consumirAviso() : null; }
     int getAtoFinalTeste() { return fim == null ? 0 : fim.ato(); }
     int getDentesTeste() { return fim == null ? 0 : fim.dentes(); }
     int consumirDanoGancho() { return hell != null ? hell.consumirDanoGancho() : fim != null ? fim.consumirDanoGancho() : 0; }
