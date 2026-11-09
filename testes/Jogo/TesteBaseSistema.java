@@ -19,7 +19,7 @@ public class TesteBaseSistema {
         if (f.viajando() || (boolean) TesteInvasao093.get(f, "naBase")) throw new AssertionError("deveria estar de volta ao combate");
         // missoes de cada universo
         java.util.List<Contrato> l = Contrato.ofertas(2, 1, false, new java.util.Random(1), false);
-        if (!l.get(0).titulo.equals("RUN TO THE HILLS")) throw new AssertionError("missao do universo do Maiden: " + l.get(0).titulo);
+        if (!l.get(0).titulo.equals("ABORDAGEM")) throw new AssertionError("missao do universo do Vortice Negro: " + l.get(0).titulo);
         System.out.println("TesteBaseSistema OK");
     }
 }

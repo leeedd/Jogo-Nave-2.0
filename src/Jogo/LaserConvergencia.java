@@ -12,8 +12,8 @@ import java.util.Random;
  */
 final class LaserConvergencia {
     static final double DURACAO = 1.6;
-    static final String[] NOMES = {"MARE ABISSAL", "HELL PATROL", "THE TROOPER", "ACE OF SPADES",
-            "MASTER OF PUPPETS", "RAINING BLOOD", "NATIVE BLOOD", "CRAZY TRAIN"};
+    static final String[] NOMES = {"MARE ABISSAL", "PATRULHA CROMADA", "CARGA DO CORSARIO", "CARTA DE SUCATA",
+            "FIOS DO MARIONETISTA", "CHUVA RUBRA", "OLHO DO FURACAO", "EXPRESSO DAS TREVAS"};
     static final String[] EFEITO_CHEFE = {"Congela o chefe", "Dano dobrado no chefe", "Corta todos os tiros", "Quatro feixes",
             "Paralisa o chefe", "Queima o chefe", "Aguia de trovao", "Rouba vida: +3 casco"};
     /** Dano no chefe/mini-chefe por tipo (-1 = laser base). */

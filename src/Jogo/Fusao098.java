@@ -2,7 +2,7 @@ package Jogo;
 import java.awt.*;
 /** Um pulso por ativacao; recarga e dano permanecem responsabilidade da fase. */
 final class Fusao098 {
- static final String[] NOMES={"CHOQUE TERMICO","MARE ABISSAL","LANCA PAINKILLER","EGIDE DE EDDIE","COMETA LEMMY","CORRENTE DE RIFF","GRITO DEVASTADOR","PACTO TESTAMENT","ECO PARANOID"};
+ static final String[] NOMES={"CHOQUE TERMICO","MARE ABISSAL","LANCA CROMADA","EGIDE DO CORSARIO","COMETA DE SUCATA","CORRENTE DE RIFF","GRITO DEVASTADOR","PACTO DA TORMENTA","ECO SOMBRIO"};
  static final String[] EFEITOS={"Area + queimadura","Area ampla + congelamento","Feixe perfurante frontal","Area curta + escudo 5s","Area + impulso por 6s","Ate 3 alvos em cadeia","Cone frontal amplo","Escudo 8s + limpa tiros","Onda em toda a tela"};
  static final int[] DANO={14,16,38,10,18,20,24,8,18};
  static final double[] RECARGA={30,32,36,28,26,30,32,35,50};

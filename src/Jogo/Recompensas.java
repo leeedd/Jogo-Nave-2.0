@@ -33,13 +33,13 @@ public final class Recompensas {
     public static String nome(int chefe) {
         switch (chefe) {
             case 8: return "PEROLA ABISSAL";
-            case 2: return "EMBLEMA PAINKILLER";
-            case 3: return "INSIGNIA EDDIE";
-            case 4: return "CHAPEU DO LEMMY";
-            case 5: return "PALHETA DO JAMES";
-            case 6: return "MICROFONE DO TOM";
-            case 7: return "MEDALHA TESTAMENT";
-            case 1: return "OCULOS DO OZZY";
+            case 2: return "EMBLEMA CROMADO";
+            case 3: return "INSIGNIA DO CORSARIO";
+            case 4: return "OCULOS DE SUCATA";
+            case 5: return "PALHETA DE HEXAR";
+            case 6: return "COROA DE MORGATH";
+            case 7: return "ESFERA DA TORMENTA";
+            case 1: return "ANEL DE MALACHAR";
             default: throw new IllegalArgumentException("chefe invalido: " + chefe);
         }
     }
@@ -56,20 +56,10 @@ public final class Recompensas {
             default: throw new IllegalArgumentException("chefe invalido: " + chefe);
         }
     }
+    /** Musica de cada chefe: musicas/chefe_N.wav se o jogador tiver; senao a trilha do jogo. */
     public static String trilhaDoChefe(int chefe) {
-        switch (chefe) {
-            case 8: return "HammerFall";
-            case 2: return "Painkiller";
-            case 3: return "FearOfTheDark";
-            case 4: return "Bomber";
-            case 5: return "MasterOfPuppets";
-            case 6: return "RainingBlood";
-            case 7: return "OverTheWall";
-            case 1: return "Paranoid";
-            case 9: return "Hellraiser";
-            case 10: return "PickOfDestiny";
-            default: throw new IllegalArgumentException("chefe invalido: " + chefe);
-        }
+        if (chefe < 1 || chefe > 10) throw new IllegalArgumentException("chefe invalido: " + chefe);
+        return chefe == 9 ? "chefe_van" : chefe == 10 ? "chefe_final" : "chefe_" + chefe;
     }
     public static String trilhaDoSetor(int chefesDerrotados) {
         int[] ordem = {8, 2, 3, 4, 5, 6, 7, 1};

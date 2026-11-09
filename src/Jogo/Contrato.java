@@ -130,13 +130,13 @@ final class Contrato {
      *  Ordem: limpeza, sem dano no chefe, chefe rapido, vaporizar, garimpo. */
     static final String[][] MISSOES = {
         {"MAR DE TINTA", "SEM TENTACULOS", "MARE ALTA", "FUNDO DO POCO", "PEROLA NEGRA"},
-        {"BREAKING THE LAW", "METAL GODS", "PAINKILLER", "ELECTRIC EYE", "BRITISH STEEL"},
-        {"RUN TO THE HILLS", "THE TROOPER", "ACES HIGH", "POWERSLAVE", "THE NUMBER"},
-        {"OVERKILL", "KILLED BY DEATH", "ACE OF SPADES", "BOMBER", "IRON FIST"},
-        {"SEEK AND DESTROY", "UNFORGIVEN", "FUEL", "CREEPING DEATH", "MASTER"},
-        {"ANGEL OF DEATH", "SOUTH OF HEAVEN", "RAINING BLOOD", "HELL AWAITS", "SEASONS"},
-        {"OVER THE WALL", "PRACTICE", "INTO THE PIT", "THE NEW ORDER", "DISCIPLES"},
-        {"WAR PIGS", "PARANOID", "IRON MAN", "CHILDREN OF THE GRAVE", "SABBATH"}};
+        {"LEI DO CROMO", "DEUSES DE ACO", "ESPORA ELETRICA", "OLHO VERMELHO", "ACO DE FORNALHA"},
+        {"ABORDAGEM", "SALVA DE CANHOES", "VENTO SOLAR", "ESCRAVOS DO VACUO", "MARE DE ESTRELAS"},
+        {"PISTAO QUENTE", "MORTE NA ESTRADA", "CARTA MARCADA", "BOMBA DE GRAXA", "PUNHO DE FERRUGEM"},
+        {"COLMEIA EM CHAMAS", "FIOS CORTADOS", "NUVEM DE ESPOROS", "QUATRO BRACOS", "OVO DE ORION"},
+        {"TUMULO ABERTO", "OSSOS DE OBSIDIANA", "FOGO DO SUBSOLO", "COROA DE OSSOS", "CINZAS ETERNAS"},
+        {"OLHO DO FURACAO", "PARA-RAIOS", "TROVAO ROLANTE", "NUVEM CARREGADA", "PEDRA DE RAIO"},
+        {"NOITE SEM FIM", "ASAS DE BREU", "SANGUE DE LUA", "CRIPTA REAL", "ECLIPSE TOTAL"}};
     static String missao(int setor, int k) { return MISSOES[Math.max(0, Math.min(7, setor))][k]; }
     static List<Contrato> ofertas(int setor, int chefes, boolean reator, Random r, boolean campoAFrente) {
         List<Contrato> l = new ArrayList<>();

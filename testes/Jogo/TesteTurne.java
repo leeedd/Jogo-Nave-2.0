@@ -5,7 +5,7 @@ public class TesteTurne{static void ok(boolean b,String m){if(!b)throw new Asser
  static Object call(Object o,String n)throws Exception{Method m=o.getClass().getDeclaredMethod(n);m.setAccessible(true);return m.invoke(o);}
  @SuppressWarnings("unchecked") public static void main(String[] a)throws Exception{
   int[] esperado={3,5,6,3,4,4,4,5};for(int s=0;s<8;s++)ok(Turne.planetas(s)==esperado[s],"setor "+(s+1)+" tem "+esperado[s]+" planetas");
-  ok("KIRK HAMMETT".equals(Turne.integrante(4,0))&&"ROBERT TRUJILLO".equals(Turne.integrante(4,2)),"Metallica: Kirk primeiro, Trujillo por ultimo");
+  ok("VEX".equals(Turne.integrante(4,0))&&"ORUK".equals(Turne.integrante(4,2)),"Cinzas de Orion: Vex primeiro, Oruk por ultimo");
   for(int s=0;s<8;s++){int ant=-1;for(int p=0;p<Turne.planetas(s);p++){ok(Turne.risco(s,p)>=ant,"risco nao cai no setor "+(s+1)+" planeta "+(p+1));ant=Turne.risco(s,p);}
    ok(Turne.risco(s,Turne.planetas(s)-1)>=Turne.risco(s,0),"planeta do chefe e o mais perigoso");}
   ok(Turne.anel(4,3)&&!Turne.anel(0,0),"risco alto ganha anel");
@@ -37,7 +37,7 @@ e.getNave().teleportar(100,480);Asteroide perto=new Asteroide(120,495,12,1).lanc
   Asteroide q=new Asteroide(500,100,10,1).lancar(200,-300);for(int i=0;i<30;i++)q.mexer(1/60.0);ok(q.getY()>=92,"estilhaco ricocheteia no teto");
   Contrato g=new Contrato(Contrato.Tipo.MINERACAO,2,1,1,-1,"GARIMPO");g.minerio();ok(!g.cumprido,"falta minerio");g.minerio();ok(g.cumprido,"garimpo cumprido");
   ok(Contrato.ofertas(4,4,false,new java.util.Random(1),true).stream().anyMatch(x->x.tipo==Contrato.Tipo.MINERACAO),"quadro oferece garimpo com campo a frente");
-  ok(Turne.instrumento("LARS ULRICH")=='D'&&Turne.instrumento("ROBERT TRUJILLO")=='B'&&Turne.instrumento("KIRK HAMMETT")=='G'&&Turne.instrumento("NICKO MCBRAIN")=='D',"cada integrante tem o seu instrumento");
+  ok(Turne.instrumento("BRAKKA")=='D'&&Turne.instrumento("ORUK")=='B'&&Turne.instrumento("VEX")=='G'&&Turne.instrumento("GORM")=='D',"cada integrante tem o seu instrumento");
   // fortaleza: depois do Hellraiser, cada banda reunida, todas as 8, e so entao o final
   Fase z=TesteInvasao093.fase(80);TesteInvasao093.set(z,"partidaTeste",true);TesteInvasao093.set(z,"chefesDerrotados",8);TesteInvasao093.set(z,"hellraiserVencido",true);
   Method ir=Fase.class.getDeclaredMethod("iniciarReuniao",int.class);ir.setAccessible(true);ir.invoke(z,0);

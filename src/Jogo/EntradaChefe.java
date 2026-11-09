@@ -12,13 +12,13 @@ import java.awt.image.BufferedImage;
 public final class EntradaChefe {
     public static final double DURACAO = 3.8;
     private static final String[] NOMES = {
-        "", "OZZY OSBOURNE", "ROB HALFORD", "BRUCE DICKINSON", "LEMMY KILMISTER",
-        "JAMES HETFIELD", "TOM ARAYA", "CHUCK BILLY", "LULA DO ABISMO"
+        "", "MALACHAR", "VALDRAK", "ALMIRANTE KORVUS", "GRIMBO",
+        "HEXAR", "MORGATH", "KANOA", "LULA DO ABISMO"
     };
     private static final String[] SUBTITULOS = {
-        "", "PRINCIPE DAS TREVAS", "PAINKILLER - MOTO ESPACIAL", "EDDIE VEM A SUA PROCURA",
-        "BOMBER - ARMA DE GRAVES", "RIFFS DE TROVAO", "SLAYER - CHUVA DE FOGO",
-        "TESTAMENT - CRISTAIS DO CAOS", "OS TENTACULOS DESPERTARAM"
+        "", "O REI DAS SOMBRAS", "LEGIAO CROMADA - MOTO DE CROMO", "VORTICE NEGRO - O CORSARIO DO VACUO",
+        "FERRUGEM ATOMICA - CANHAO DE GRAVES", "CINZAS DE ORION - O MARIONETISTA", "NECROPOLIS - CHUVA DE FOGO",
+        "FURIA DA TORMENTA - VOZ DO TROVAO", "OS TENTACULOS DESPERTARAM"
     };
     private static final Color[] CORES = {
         Color.WHITE, new Color(204, 87, 236), new Color(255, 139, 53), new Color(101, 220, 246),
@@ -148,11 +148,11 @@ public final class EntradaChefe {
         g.setColor(cor);
         g.fillRect(0, Config.HUD + 15, W, 4);
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
-        String titulo = id == 6 ? "SLAYER  /  TOM ARAYA" : NOMES[id];
+        String titulo = id == 6 ? "NECROPOLIS  /  MORGATH" : NOMES[id];
         g.drawString(titulo, 26, Config.HUD + 60);
         g.setColor(Color.WHITE);
         g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
-        g.drawString(id == 6 ? "PILOTO IDENTIFICADO: TOM ARAYA" : SUBTITULOS[id], 28, Config.HUD + 91);
+        g.drawString(id == 6 ? "PILOTO IDENTIFICADO: MORGATH" : SUBTITULOS[id], 28, Config.HUD + 91);
         g.setColor(new Color(cor.getRed(), cor.getGreen(), cor.getBlue(), (int)(125 + 100 * pulso)));
         g.fillRect(0, H - 40, (int)(W * Math.min(1, tempo / DURACAO)), 6);
         g.setColor(Color.WHITE);

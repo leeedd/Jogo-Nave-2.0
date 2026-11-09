@@ -41,7 +41,7 @@ final class MapaEstelar {
  private boolean dobra,foraRota,arrastando,arrastou;
  /** Modo de escolha do proximo setor: setores vencidos ficam bloqueados. */
  private boolean escolha;private int vencidos;
- static final String[] CHEFES={"LULA DO ABISMO","ROB HALFORD","BRUCE DICKINSON","LEMMY KILMISTER","JAMES HETFIELD","TOM ARAYA","CHUCK BILLY","OZZY OSBOURNE"};
+ static final String[] CHEFES={"LULA DO ABISMO","VALDRAK","ALMIRANTE KORVUS","GRIMBO","HEXAR","MORGATH","KANOA","MALACHAR"};
  void iniciarEscolha(int setoresVencidos,int atualSetor){escolha=true;vencidos=setoresVencidos;atual=atualSetor;selecionado=atualSetor;escolherProximo(1);visaoGalactica();}
  boolean vencido(int i){return (vencidos&(1<<i))!=0;}
  void escolherProximo(int passo){for(int n=1;n<=8;n++){int i=Math.floorMod(selecionado+passo*n,8);if(!vencido(i)){selecionado=i;planeta=-1;alvoX=SISTEMAS[i][0]*.35;alvoY=SISTEMAS[i][1]*.35;return;}}}

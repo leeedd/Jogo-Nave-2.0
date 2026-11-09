@@ -11,7 +11,7 @@ public final class MusicaJogo {
  /** Nome do arquivo na pasta musicas: "MasterOfPuppets" vira "master_of_puppets". */
  static String arquivo(String nome){return nome.replaceAll("([a-z0-9])([A-Z])","$1_$2").toLowerCase();}
  /** Musica de cada show do festival (arquivo musicas/NOME.wav, colocado pelo jogador). Indice 8 = festival completo. */
- static final String[] SHOWS={"crias_do_abismo","painkiller","the_trooper","ace_of_spades","master_of_puppets","raining_blood","parabellum","crazy_train","festival_completo"};
+ static final String[] SHOWS={"show_0","show_1","show_2","show_3","show_4","show_5","show_6","show_7","show_8"};
  /** Toca a musica do show escolhido no final; sem o arquivo, segue a trilha do jogo. */
  /** Gostinho do show escolhido: os primeiros 8 s da musica. */
  static void previaShow(int banda){if(banda>=0&&banda<SHOWS.length)SomJogo.previaMusica(SHOWS[banda],10);}

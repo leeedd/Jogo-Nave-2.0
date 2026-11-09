@@ -15,8 +15,8 @@ public final class TesteMarionete {
   if(!tiroMao.intersects(b)){ok(c.colide(tiroMao),"mao e o alvo");c.receberDano(20);ok(c.getVida()<vida,"mao leva dano");}
   for(int i=0;i<300&&c.getFormaMetalTeste()==1;i++){c.colide(new Rectangle(h.x+h.width/2,h.y+5,4,4));Object mm=TesteInvasao093.get(c,"artista");TesteInvasao093.set(TesteInvasao093.get(mm,"mar"),"acertouBoneco",false);c.receberDano(30);}
   ok(c.getFormaMetalTeste()==2,"mao destruida, vem o James");
-  String av=c.consumirAviso();ok(av!=null&&av.contains("JAMES"),"aviso do boneco desfeito");
+  String av=c.consumirAviso();ok(av!=null&&av.contains("HEXAR"),"aviso do boneco desfeito");
   ok(!c.colide(new Rectangle(700,300,40,40))||true,"durante a quebra nao colide");
   for(int i=0;i<200;i++)c.atualizar(1/60.0,110,300,Dificuldade.VETERANO,t);
-  ok(c.getNome().contains("JAMES HETFIELD"),"ato II e o James");
+  ok(c.getNome().contains("HEXAR"),"ato II e o Hexar");
   System.out.println("OK marionete");System.exit(0);}}

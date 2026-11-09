@@ -28,8 +28,8 @@ final class CenaChefe {
     }
     static CenaChefe criar(String nome) {
         switch (nome) {
-            case TRANSFORMACAO: return new CenaChefe(nome, 6, new String[]{"O MORCEGO CAI...", "", "", "A NOITE SE PARTE", "", "O PRINCIPE DAS TREVAS!"}, 6 * PAINEL + .6);
-            case DRAGAO: return new CenaChefe(nome, 6, new String[]{"AINDA NAO ACABOU...", "", "", "", "", "OZZY, O DRAGAO!"}, 6 * PAINEL + .6);
+            case TRANSFORMACAO: return new CenaChefe(nome, 6, new String[]{"O MORCEGO CAI...", "", "", "A NOITE SE PARTE", "", "O REI DAS SOMBRAS!"}, 6 * PAINEL + .6);
+            case DRAGAO: return new CenaChefe(nome, 6, new String[]{"AINDA NAO ACABOU...", "", "", "", "", "MALACHAR, O DRAGAO!"}, 6 * PAINEL + .6);
             case VAN: return new CenaChefe(nome, 4, null, 6.2);
             default: return null;
         }
@@ -85,11 +85,11 @@ final class CenaChefe {
             int q = tempo > 4.2 ? 1 : (int) (tempo * 8) % 2 == 0 ? 0 : 1;
             g.drawImage(arte, (int) x, y, (int) x + w, y + h, q * fw, 0, q * fw + fw, fh, null);
         }
-        if (tempo > .8 && tempo < 4.4) legenda(g, tempo < 2.6 ? "OZZY E LEMMY PEGARAM A ESTRADA..." : "E VIERAM BUSCAR VOCE.", 120, 18, Color.WHITE);
+        if (tempo > .8 && tempo < 4.4) legenda(g, tempo < 2.6 ? "MALACHAR E GRIMBO PEGARAM A ESTRADA..." : "E VIERAM BUSCAR VOCE.", 120, 18, Color.WHITE);
         if (tempo > 4.4) {
             float a = (float) Math.min(1, (tempo - 4.4) / .4);
             Graphics2D t = (Graphics2D) g.create(); t.setComposite(AlphaComposite.SrcOver.derive(a));
-            legenda(t, "HELLRAISER", H / 2 - 40, 54, new Color(255, 120, 40)); t.dispose();
+            legenda(t, "VAN DO INFERNO", H / 2 - 40, 54, new Color(255, 120, 40)); t.dispose();
         }
     }
 

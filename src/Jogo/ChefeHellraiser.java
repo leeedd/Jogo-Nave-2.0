@@ -313,7 +313,7 @@ final class ChefeHellraiser {
     boolean estaVivo() { return ato != DRAGAO || vida > 0; }
     int getVida() { return ato == DUO ? vidaOzzy + vidaLemmy : vida; }
     int getVidaMaxima() { return ato == VAN ? vidaVan : ato == DUO ? vidaDuo * 2 : vidaDragao; }
-    String getNome() { return ato == VAN ? "HELLRAISER - A VAN DO INFERNO" : ato == DUO ? "OZZY + LEMMY - HELLRAISER" : "OZZY - O DRAGAO"; }
+    String getNome() { return ato == VAN ? "A VAN DO INFERNO" : ato == DUO ? "MALACHAR + GRIMBO - VAN DO INFERNO" : "MALACHAR - O DRAGAO"; }
     Rectangle getBounds() {
         if (ato == VAN) return new Rectangle((int) (vx + 150 * E), (int) (vy + 110 * E), (int) (320 * E), (int) (215 * E));
         if (ato == DUO) {
@@ -457,7 +457,7 @@ final class ChefeHellraiser {
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14)); g.setColor(Color.WHITE);
         String atoTxt = ato == VAN ? "  [ATO I]" : ato == DUO ? "  [ATO II]" : "  [ATO III]";
         if (ato == DUO) {
-            g.drawString("OZZY" + atoTxt, 217, TOPO + 24); g.drawString("LEMMY", 487, TOPO + 24);
+            g.drawString("MALACHAR" + atoTxt, 217, TOPO + 24); g.drawString("GRIMBO", 487, TOPO + 24);
             barra(g, 218, 256, vidaOzzy, vidaDuo, new Color(179, 68, 219));
             barra(g, 488, 256, vidaLemmy, vidaDuo, new Color(255, 154, 65));
             return;

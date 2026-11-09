@@ -66,7 +66,7 @@ implements ActionListener {
     private static final int[] FINAIS_SETORES = new int[]{56, 120, 192, 272, 360, 456, 560, 672};
     private static final int TOTAL_SETORES = FINAIS_SETORES.length;
     private static final int[] ORDEM_CHEFOES = new int[]{8, 2, 3, 4, 5, 6, 7, 1};
-    private static final String[] NOMES_SETORES = new String[]{"LULA DO ABISMO", "JUDAS PRIEST", "IRON MAIDEN", "MOTORHEAD", "METALLICA", "SLAYER", "TESTAMENT", "OZZY OSBOURNE"};
+    private static final String[] NOMES_SETORES = new String[]{"LULA DO ABISMO", "LEGIAO CROMADA", "VORTICE NEGRO", "FERRUGEM ATOMICA", "CINZAS DE ORION", "NECROPOLIS", "FURIA DA TORMENTA", "ECLIPSE PROFANO"};
     private static final int TAMANHO_ESQUADRAO = 5;
     private static final int MODO_X = 818;
     private static final int MODO_Y = 49;
@@ -190,10 +190,10 @@ implements ActionListener {
         nave.definirVida(nave.getVidaMaxima());
         gravarRetomada(); if (retomada != null) retomada[14] = 3;
         iniciarChefao(FINAL);
-        mostrarAviso("O SHOW FINAL: TENACIOUS D!");
-        if (!partidaTeste) radio.urgente("O Tenacious D subiu no palco. Dizem que eles tem os dentes do demonio...");
+        mostrarAviso("O SHOW FINAL: OS DESTEMIDOS!");
+        if (!partidaTeste) radio.urgente("Os Destemidos subiram no palco. Dizem que eles guardam a Palheta Maldita...");
     }
-    static final String[] BANDAS = {"CRIAS DO ABISMO", "JUDAS PRIEST", "IRON MAIDEN", "MOTORHEAD", "METALLICA", "SLAYER", "TESTAMENT", "BLACK SABBATH"};
+    static final String[] BANDAS = {"CRIAS DO ABISMO", "LEGIAO CROMADA", "VORTICE NEGRO", "FERRUGEM ATOMICA", "CINZAS DE ORION", "NECROPOLIS", "FURIA DA TORMENTA", "ECLIPSE PROFANO"};
     private void iniciarReuniao(int b) {
         itens.clear(); capsulas.clear(); alien.clear(); asteroides.clear(); tirosInimigos.clear(); tirosChefes.clear(); tirosElementais.clear(); nave.getMisseis().clear();
         reuniao = true; emHellraiser = false; chefe = null; cenaChefe = null; base = null; bandaReuniao = b; esperaReuniao = 0;
@@ -1431,7 +1431,7 @@ implements ActionListener {
             } else if (this.etapa == Etapa.BATALHA_CHEFE && this.chefe != null) {
                 tempoBatalhaChefe+=d;int tirosAntes=tirosChefes.size();this.chefe.atualizar(d, alvoX(), alvoY(), this.dificuldade, this.tirosChefes);if(tirosChefes.size()>tirosAntes)SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO);
                 String pedido=chefe.consumirCena();if(pedido!=null)abrirCenaChefe(pedido);
-                String avisoChefe=chefe.consumirAviso();if(avisoChefe!=null){mostrarAviso(avisoChefe);tirosChefes.clear();if(chefe.getAtoFinalTeste()==ChefeFinal.DIO)MusicaJogo.trocarSeDisponivel("HolyDiver");}
+                String avisoChefe=chefe.consumirAviso();if(avisoChefe!=null){mostrarAviso(avisoChefe);tirosChefes.clear();if(chefe.getAtoFinalTeste()==ChefeFinal.DIO)MusicaJogo.trocarSeDisponivel("chefe_final_2");}
                 // empurrao das caixas de som e puxao do gancho da van
                 if(empurraoNave>0){nave.teleportar(nave.getX()-empurraoNave*d,nave.getY());empurraoNave=Math.max(0,empurraoNave-1300*d);}
                 double[] puxao=chefe!=null?chefe.puxaoNave():null;
@@ -1540,7 +1540,7 @@ implements ActionListener {
         if(chefesDerrotados==TOTAL_SETORES&&!hellraiserVencido){iniciarHellraiser();return;}
         if(chefesDerrotados==TOTAL_SETORES&&!reuniaoVencida){iniciarReuniao(0);return;}
         if(chefesDerrotados==TOTAL_SETORES&&!finalVencido){iniciarFinal();return;}
-        if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual, ProgressoJogo.passesFestival());cenaFinal.nivelNave(nave.getNivel());MusicaJogo.trocarSeDisponivel("GoGoPowerRangers");return;}
+        if(chefesDerrotados==TOTAL_SETORES){emJogo=false;venceu=true;etapa=Etapa.CREDITOS;cenaFinal=new CenaFinal(modeloVisual, ProgressoJogo.passesFestival());cenaFinal.nivelNave(nave.getNivel());MusicaJogo.trocarSeDisponivel("creditos");return;}
         this.itens.clear(); capsulas.clear();
         this.tempoAviso = 0.0;
         // Ordem livre: o jogador escolhe no Mapa Estelar o proximo setor ainda nao vencido.
@@ -1934,7 +1934,7 @@ implements ActionListener {
         gravarRetomada(); if (retomada != null) retomada[14] = 1;
         iniciarChefao(HELLRAISER);
         abrirCenaChefe(CenaChefe.VAN);
-        mostrarAviso("SETOR FINAL: HELLRAISER");
+        mostrarAviso("SETOR FINAL: VAN DO INFERNO");
     }
     private void iniciarChefao(int n) {SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA);
         this.etapa = Etapa.BATALHA_CHEFE;
@@ -2365,7 +2365,7 @@ implements ActionListener {
         this.fundoEspacial.reiniciar();
         this.ultimoQuadroNanos = System.nanoTime();
         this.inicializaInimigos();
-        MusicaJogo.trocarSeDisponivel("HammerFall");
+        MusicaJogo.trocarSeDisponivel("chefe_8");
         this.requestFocusInWindow();
     }
 

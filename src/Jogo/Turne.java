@@ -13,17 +13,17 @@ final class Turne {
     /** Integrantes por setor, na ordem do mapa (0 Abismo ... 7 Citadela). */
     static final String[][] INTEGRANTES = {
         {"ENGUIA DAS PROFUNDEZAS", "CRIA DA LULA"},
-        {"GLENN TIPTON", "RICHIE FAULKNER", "IAN HILL", "SCOTT TRAVIS"},
-        {"STEVE HARRIS", "DAVE MURRAY", "ADRIAN SMITH", "JANICK GERS", "NICKO MCBRAIN"},
-        {"PHIL CAMPBELL", "MIKKEY DEE"},
-        {"KIRK HAMMETT", "LARS ULRICH", "ROBERT TRUJILLO"},
-        {"KERRY KING", "GARY HOLT", "DAVE LOMBARDO"},
-        {"ERIC PETERSON", "ALEX SKOLNICK", "STEVE DI GIORGIO"},
-        {"TONY IOMMI", "GEEZER BUTLER", "BILL WARD", "ZAKK WYLDE"}};
+        {"KRELL", "SORVIK", "BRONT", "TAKKA"},
+        {"DRAVEN", "ZEPH", "MARDOK", "ILYAS", "GORM"},
+        {"RASK", "DOZER"},
+        {"VEX", "BRAKKA", "ORUK"},
+        {"SKARN", "VELKA", "THUL"},
+        {"IREN", "SOLUS", "DAKAR"},
+        {"OSSIAN", "BRUN", "TESK", "RAVEN"}};
     /** Instrumento de cada integrante (mesma ordem de INTEGRANTES): G guitarra, B baixo, D bateria, C criatura. */
     static final String[] INSTRUMENTOS = {"CC", "GGBD", "BGGGD", "GD", "GDB", "GGD", "GGB", "GBDG"};
     /** Integrantes cuja arte traz o quadro 4 caido (derrotado) em vez do bate-cabeca. */
-    static boolean quadroQueda(String nome) { return nome.equals("GLENN TIPTON") || nome.equals("ROB HALFORD"); }
+    static boolean quadroQueda(String nome) { return nome.equals("KRELL") || nome.equals("VALDRAK"); }
     static char instrumento(String nome) {
         for (int s = 0; s < 8; s++) for (int p = 0; p < INTEGRANTES[s].length; p++) if (INTEGRANTES[s][p].equals(nome)) return INSTRUMENTOS[s].charAt(p);
         return idVocalista(nome) > 0 ? 'V' : 'C';
@@ -44,7 +44,7 @@ final class Turne {
         {"RAJADA ENERGIA 80 240 110", "LEQUE7 NOTA 110 255 140", "ZIGUE ONDA 80 230 120"},
         {"CHUVA ENERGIA 150 70 220", "RAJADA ONDA 150 90 255", "PAREDE PRATO 220 190 120", "ANEL ENERGIA 255 210 60"}};
     /** Vocalistas (os chefes do setor), que entram junto com a banda reunida na fortaleza. Abismo nao tem: a Lula e o chefe. */
-    static final String[] VOCALISTAS = {"", "ROB HALFORD", "BRUCE DICKINSON", "LEMMY KILMISTER", "JAMES HETFIELD", "TOM ARAYA", "CHUCK BILLY", "OZZY OSBOURNE"};
+    static final String[] VOCALISTAS = {"", "VALDRAK", "ALMIRANTE KORVUS", "GRIMBO", "HEXAR", "MORGATH", "KANOA", "MALACHAR"};
     /** Id do chefe de cada setor (mesma ordem da Fase: 8 Lula, 2 Rob, 3 Bruce, 4 Lemmy, 5 James, 6 Tom, 7 Chuck, 1 Ozzy). */
     static final int[] ID_CHEFE = {8, 2, 3, 4, 5, 6, 7, 1};
     static final String[] ATAQUES_VOCAL = {"", "CHUVA ENERGIA 255 120 30", "CRUZ NOTA 90 230 220", "PAREDE AS 255 150 60", "RAIO2 ENERGIA 80 160 255", "CHUVA NOTA 240 60 70", "ANEL NOTA 100 240 130", "ESPIRAL ENERGIA 190 90 240"};

@@ -23,30 +23,25 @@ public final class CenaFinal {
     private static final Image REVELACAO = Assets.imagem("megazord_cabeca_099.png");
     /** Letreiro HEAVY METAL NEVER DIES em pixel art (caveira com chifres e correntes) embaixo da foto. */
     private static final BufferedImage LEMA = lerLema();
+    private static final BufferedImage DESTEMIDOS = primeiroQuadro("jack_violao.png");
+    private static BufferedImage primeiroQuadro(String n) { java.net.URL u = CenaFinal.class.getResource("/ImagemIcon/" + n); if (u == null) return null; try { BufferedImage a = javax.imageio.ImageIO.read(u); return a.getSubimage(0, 0, a.getWidth() / 4, a.getHeight()); } catch (java.io.IOException e) { return null; } }
     private static BufferedImage lerLema() { java.net.URL u = CenaFinal.class.getResource("/ImagemIcon/heavy_metal_never_dies_final.png"); if (u == null) return null; try { return javax.imageio.ImageIO.read(u); } catch (java.io.IOException e) { return null; } }
     private static final BufferedImage FOTO_EQUIPE = escalar(pixelar(nitida(Assets.imagem("flavio_wenger.jpg"), 150), 12), 2);
     private static final BufferedImage CABECA_NO_ESCURO = cabecaNoEscuro(REVELACAO);
 
     /** id do sprite (Sprites16Bits, forma 2), nome, banda, contribuicao em duas linhas. */
     private static final Object[][] CHEFES = {
-        {2, "ROB HALFORD", "JUDAS PRIEST", "O METAL GOD. CONSAGROU O VISUAL DE COURO", "E TACHAS E OS AGUDOS QUE VIRARAM MARCA DO METAL."},
-        {3, "BRUCE DICKINSON", "IRON MAIDEN", "A 'SIRENE ANTIAEREA'. LIDEROU A NOVA ONDA DO", "METAL BRITANICO COM THE NUMBER OF THE BEAST."},
-        {4, "LEMMY KILMISTER", "MOTORHEAD", "UNIU A VELOCIDADE DO PUNK AO PESO DO METAL.", "ACE OF SPADES ABRIU CAMINHO PARA O THRASH."},
-        {5, "JAMES HETFIELD", "METALLICA", "RIFFS DE PALHETADA PRECISA QUE DEFINIRAM", "O THRASH. MASTER OF PUPPETS VIROU CLASSICO."},
-        {6, "TOM ARAYA", "SLAYER", "BAIXO E VOZ DO THRASH MAIS EXTREMO. REIGN IN", "BLOOD INSPIROU O DEATH E O BLACK METAL."},
-        {7, "CHUCK BILLY", "TESTAMENT", "VOZ PODEROSA DO THRASH DA BAY AREA. DESDE", "THE LEGACY, EM 1987, MANTEM O THRASH VIVO."},
-        {1, "OZZY OSBOURNE", "BLACK SABBATH", "O PRINCIPE DAS TREVAS. COM O BLACK SABBATH,", "AJUDOU A CRIAR O HEAVY METAL EM 1970."},
-        {-5, "TENACIOUS D", "AGRADECIMENTO ESPECIAL / DEEZLEBOSS", "TRIBUTE E THE PICK OF DESTINY CELEBRARAM O", "ROCK COM HUMOR, RIFFS E MUITA REVERENCIA."}
+        {2, "VALDRAK", "LEGIAO CROMADA", "CIBORGUE DE CROMO DA FORNALHA. SEU CHICOTE", "DE ENERGIA CORTA NAVES AO MEIO."},
+        {3, "ALMIRANTE KORVUS", "VORTICE NEGRO", "PIRATA CEFALOPODE. SEU GRITO AGUDO RACHA", "O VIDRO DAS CABINES A ANOS-LUZ."},
+        {4, "GRIMBO", "FERRUGEM ATOMICA", "TROLL DE SUCATA. FAZ DO BAIXO UM CANHAO", "E DO RONCO DO MOTOR UMA MUSICA."},
+        {5, "HEXAR", "CINZAS DE ORION", "INSETOIDE DE QUATRO BRACOS. PUXAVA OS FIOS", "DE UM BONECO ATE O BONECO QUEBRAR."},
+        {6, "MORGATH", "NECROPOLIS", "REI MORTO-VIVO DE OBSIDIANA. TRAZ O FOGO", "DO SUBSOLO EM CADA REFRAO."},
+        {7, "KANOA", "FURIA DA TORMENTA", "COLOSSO DE ROCHA E RAIO. QUANDO CANTA,", "O CEU RESPONDE COM TROVOES."},
+        {1, "MALACHAR", "ECLIPSE PROFANO", "O REI DAS SOMBRAS. VIROU DRAGAO PARA NAO", "PERDER O TRONO DA NOITE."},
+        {-5, "OS DESTEMIDOS", "BARDO E MONGE / BELZEBU", "A DUPLA DE VIOLAO QUE GUARDAVA A PALHETA", "MALDITA. QUASE ACABOU COM O UNIVERSO."}
     };
-    /** Lendas que partiram; id negativo = retrato de RetratosLendas. O ultimo fecha a homenagem. */
-    private static final Object[][] LENDAS = {
-        {-3, "CLIFF BURTON", "METALLICA", "1962 - 1986", "O BAIXO DE MASTER OF PUPPETS. TROUXE MELODIA", "E HARMONIA AO THRASH, COMO EM ORION."},
-        {-4, "RONNIE JAMES DIO", "RAINBOW / BLACK SABBATH / DIO", "1942 - 2010", "UMA DAS MAIORES VOZES DO METAL. ESPALHOU", "OS CHIFRES ERGUIDOS PELOS PALCOS DO MUNDO."},
-        {4, "LEMMY KILMISTER", "MOTORHEAD", "1945 - 2015", "VIVEU DO JEITO QUE TOCAVA: ALTO, RAPIDO E", "SEM CONCESSOES. BORN TO LOSE, LIVE TO WIN."},
-        {-1, "CHESTER BENNINGTON", "LINKIN PARK", "1976 - 2017", "A VOZ DE HYBRID THEORY. SEU GRITO E SUA DOR", "FALARAM POR UMA GERACAO INTEIRA."},
-        {-2, "JOEY JORDISON", "SLIPKNOT", "1975 - 2021", "BATERISTA FUNDADOR DO SLIPKNOT. VELOCIDADE E", "TECNICA QUE INSPIRARAM INCONTAVEIS BATERISTAS."},
-        {1, "OZZY OSBOURNE", "BLACK SABBATH", "1948 - 2025", "O PRINCIPE DAS TREVAS. ONDE TUDO COMECOU.", "OBRIGADO, OZZY."}
-    };
+    /** A homenagem e uma dedicatoria em texto, sem nomes nem retratos de pessoas reais. */
+    private static final Object[][] LENDAS = {};
     private static final String[] ENCERRAMENTO_CREDITOS = {
         "A JORNADA COMECOU COM A LULA DO ABISMO", "", "DESENVOLVIDO POR FLAVIO PRADO", "JOGO ORIGINAL - 2019",
         "", "DE FAS DE METAL, PARA FAS DE METAL"
@@ -63,8 +58,8 @@ public final class CenaFinal {
     private static final double FIM_CHEFES = INICIO_CREDITOS + PARADA_LETREIRO / VELOCIDADE + 4.0;
     private static final double INICIO_LENDAS = FIM_CHEFES + TRANSICAO;
     private static final double INICIO_ROLO_LENDAS = INICIO_LENDAS + 5.5;
-    private static final double OZZY_NO_CENTRO = INICIO_ROLO_LENDAS + (Config.ALTURA - Config.ALTURA / 2.0 + centroOzzy) / VELOCIDADE;
-    private static final double FIM_LENDAS = OZZY_NO_CENTRO + 5.0;
+    private static final double OZZY_NO_CENTRO = INICIO_ROLO_LENDAS;
+    private static final double FIM_LENDAS = INICIO_LENDAS + 8.0;
     private static final double INICIO_SILHUETA = FIM_LENDAS + TRANSICAO + 1.0;
     private static final double CORTE_CABECA = INICIO_SILHUETA + 5.5;
     private static final double[][] RELAMPAGOS = {{CORTE_CABECA + 1.7, CORTE_CABECA + 1.86}, {CORTE_CABECA + 2.22, CORTE_CABECA + 2.44}};
@@ -210,25 +205,19 @@ public final class CenaFinal {
     }
 
     private void desenharLendas(Graphics2D g, int w, int h) {
-        // O palco fica em preto e branco: homenagem a quem partiu.
+        // Dedicatoria: o palco em preto e branco e uma mensagem a todos que fizeram (e fazem) o metal.
         PalcoCreditos.fundo(g, w, h, true);
         g.setColor(new Color(0, 0, 0, 200));
         g.fillRect(0, 0, w, h);
-        if (tempo < INICIO_ROLO_LENDAS) {
-            double t = tempo - INICIO_LENDAS;
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30));
-            g.setColor(new Color(230, 230, 230));
-            centralizar(g, "ELES NOS DEIXARAM,", w, 270);
-            centralizar(g, "MAS SUA OBRA PERMANECE VIVA", w, 320);
-            escurecer(g, w, h, Math.max(1 - t / TRANSICAO, (t - 4.0) / TRANSICAO));
-        } else {
-            double rolagem = Math.min(tempo, OZZY_NO_CENTRO) - INICIO_ROLO_LENDAS;
-            rolar(g, ROLO_LENDAS, (int) (h - rolagem * VELOCIDADE), w, h);
-            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22));
-            g.setColor(new Color(205, 205, 205));
-            centralizar(g, "LENDAS ETERNAS", w, 58);
-        }
-        escurecer(g, w, h, (tempo - (FIM_LENDAS - TRANSICAO)) / TRANSICAO);
+        double t = tempo - INICIO_LENDAS;
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30));
+        g.setColor(new Color(230, 230, 230));
+        centralizar(g, "DEDICADO A TODOS QUE FIZERAM", w, 250);
+        centralizar(g, "E FAZEM O HEAVY METAL", w, 300);
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 20));
+        g.setColor(new Color(255, 210, 94));
+        centralizar(g, "AOS QUE PARTIRAM: SUA OBRA PERMANECE VIVA.", w, 370);
+        escurecer(g, w, h, Math.max(1 - t / TRANSICAO, (tempo - (FIM_LENDAS - TRANSICAO)) / TRANSICAO));
     }
 
     private static void rolar(Graphics2D g, BufferedImage rolo, int y, int w, int h) {
@@ -317,7 +306,8 @@ public final class CenaFinal {
     /** Retrato em moldura do HUD: sprite do chefe, retrato desenhado, ou uma vela quando nao ha nenhum. */
     private static void retrato(Graphics2D g, int id, int x, int y, int lado) {
         HudMetal.painel(g, x - 8, y - 8, lado + 16, lado + 16);
-        BufferedImage s = id < 0 ? RetratosLendas.obter(-id) : RetratosLendas.chefe(id);
+        // personagens do jogo: a propria arte das lutas (Os Destemidos: o Bardo de violao)
+        BufferedImage s = id == -5 ? DESTEMIDOS : null;
         boolean sprite = s == null && id > 0;
         if (sprite) s = Sprites16Bits.carregar(id, 2);
         if (s != null) {

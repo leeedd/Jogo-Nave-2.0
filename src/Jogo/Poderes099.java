@@ -3,7 +3,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 final class Poderes099 {
- static final String[] NOMES={"TENTACULOS ABISSAIS","PAINKILLER","ESPADA DO EDDIE","AS DE ESPADAS","RIDE THE LIGHTNING","HELL AWAITS","ESPIRITOS ANCESTRAIS","PRINCE OF DARKNESS"};
+ static final String[] NOMES={"TENTACULOS ABISSAIS","LANCA DE CROMO","ESPADA DO CORSARIO","CARTA DE SUCATA","CORRENTE DE RAIOS","ORBES INFERNAIS","FURIA DA TORMENTA","REVOADA SOMBRIA"};
  static final String[] DICAS={"Agarram e arremessam o inimigo contra os outros","Moto aliada investe e bloqueia tiros","Tres cortes que destroem tiros","Carta vai e volta; pegue de volta p/ recuperar energia","Raio salta entre inimigos e paralisa","Caveiras de fogo giram e explodem para fora","3 aguias-isca que explodem; C troca de lugar","Vira morcegos: intocavel e fere"};
  static final int[] CUSTO={25,40,30,25,40,35,30,30};
  static final double[] RECARGA={11,18,8,7,12,16,14,14},DURACAO={2.2,10,2.0,4.0,1.2,3.4,6,2.5};

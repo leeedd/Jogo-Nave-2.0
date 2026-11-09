@@ -340,10 +340,10 @@ final class ChefeFinal {
         if (vida > 0) return false;
         if (ato == HOLY) return true;
         SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE);
-        if (ato == JACK) { dentes = 1; aviso = "JACK CAIU! METADE DA PALHETA DO DESTINO"; proximo(KYLE, vidaKyle, 2.2); }
-        else if (ato == KYLE) { dentes = 2; aviso = "A PALHETA DO DESTINO SE JUNTOU! A DUPLA INVOCA O DEEZLEBOSS!"; proximo(DEEZLE, vidaDeezle, INVOCACAO); }
-        else if (ato == DEEZLE) { aviso = "O DEMONIO SE REVELA: RONNIE JAMES DIO!"; proximo(DIO, vidaDio, 3.0); }
-        else { aviso = "DIO VIRA O DEMONIO DO HOLY DIVER!"; proximo(HOLY, vidaHoly, 3.2); }
+        if (ato == JACK) { dentes = 1; aviso = "JACK CAIU! METADE DA PALHETA MALDITA"; proximo(KYLE, vidaKyle, 2.2); }
+        else if (ato == KYLE) { dentes = 2; aviso = "A PALHETA MALDITA SE JUNTOU! A DUPLA INVOCA O BELZEBU!"; proximo(DEEZLE, vidaDeezle, INVOCACAO); }
+        else if (ato == DEEZLE) { aviso = "O DEMONIO SE REVELA: ZAREF, O MAGO DOS PRISMAS!"; proximo(DIO, vidaDio, 3.0); }
+        else { aviso = "ZAREF VIRA O DEMONIO DAS CORRENTES!"; proximo(HOLY, vidaHoly, 3.2); }
         return false;
     }
     private void proximo(int novo, int v, double pausa) {
@@ -358,7 +358,7 @@ final class ChefeFinal {
     boolean estaVivo() { return ato != HOLY || vida > 0; }
     int getVida() { return vida; }
     int getVidaMaxima() { return ato == JACK ? vidaJack : ato == KYLE ? vidaKyle : ato == DEEZLE ? vidaDeezle : ato == DIO ? vidaDio : vidaHoly; }
-    String getNome() { return ato == JACK ? "JACK BLACK - TENACIOUS D" : ato == KYLE ? "KYLE GASS - TENACIOUS D" : ato == DEEZLE ? "DEEZLEBOSS" : ato == DIO ? "RONNIE JAMES DIO" : "O DEMONIO DO HOLY DIVER"; }
+    String getNome() { return ato == JACK ? "BARDO - OS DESTEMIDOS" : ato == KYLE ? "MONGE - OS DESTEMIDOS" : ato == DEEZLE ? "BELZEBU" : ato == DIO ? "ZAREF, O MAGO DOS PRISMAS" : "O DEMONIO DAS CORRENTES"; }
     Rectangle getBounds() {
         int t = TAM[ato];
         if (ato == DEEZLE || ato == HOLY) return new Rectangle((int) (x + t * .22), (int) (y + t * .12), (int) (t * .56), (int) (t * .78));
@@ -484,9 +484,9 @@ final class ChefeFinal {
             if (fim > 0) palheta(g, 2, mx - 38, my, 76, (float) fim);
         }
         // legendas da cena
-        String txt = t < 1.2 ? "AS DUAS METADES..." : t < 2.4 ? "A PALHETA DO DESTINO!" : t < 3.6 ? "O PORTAL SE ABRE..." : t < 6.2 ? "DEEZLEBOSS!" : "";
-        if (!txt.isEmpty()) { g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, txt.equals("DEEZLEBOSS!") ? 34 : 22)); int w = g.getFontMetrics().stringWidth(txt);
-            g.setColor(new Color(0, 0, 0, 180)); g.drawString(txt, (W - w) / 2 + 2, H - 40 + 2); g.setColor(txt.equals("DEEZLEBOSS!") ? new Color(255, 90, 60) : new Color(170, 255, 180)); g.drawString(txt, (W - w) / 2, H - 40); }
+        String txt = t < 1.2 ? "AS DUAS METADES..." : t < 2.4 ? "A PALHETA MALDITA!" : t < 3.6 ? "O PORTAL SE ABRE..." : t < 6.2 ? "BELZEBU!" : "";
+        if (!txt.isEmpty()) { g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, txt.equals("BELZEBU!") ? 34 : 22)); int w = g.getFontMetrics().stringWidth(txt);
+            g.setColor(new Color(0, 0, 0, 180)); g.drawString(txt, (W - w) / 2 + 2, H - 40 + 2); g.setColor(txt.equals("BELZEBU!") ? new Color(255, 90, 60) : new Color(170, 255, 180)); g.drawString(txt, (W - w) / 2, H - 40); }
     }
     private static void brilho(Graphics2D g, double cx, double cy, double r) {
         for (int k = 3; k >= 1; k--) { int rr = (int) (r * k / 3); g.setColor(new Color(90, 255, 120, 40 + (3 - k) * 30)); g.fillOval((int) cx - rr, (int) cy - rr, rr * 2, rr * 2); }
@@ -541,7 +541,7 @@ final class ChefeFinal {
             g.setColor(new Color(170, 40, 255, (int) (60 + 60 * Math.sin(tempo * 25))));
             g.fillRect(0, (int) (demonioY + TAM[HOLY] * .25), W, (int) (TAM[HOLY] * .5));
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18)); g.setColor(new Color(230, 180, 255));
-            g.drawString("<<< HOLY DIVER", W - 200, (int) (demonioY + TAM[HOLY] * .5));
+            g.drawString("<<< MERGULHO", W - 200, (int) (demonioY + TAM[HOLY] * .5));
         }
         if (avisoChicote > 0) {
             Graphics2D a = (Graphics2D) g.create(); a.setColor(new Color(255, 60, 60, (int) (70 + 60 * Math.sin(tempo * 30))));

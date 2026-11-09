@@ -245,7 +245,7 @@ public final class ChefeMetal {
             intervalo = 1.7;
             // o morcego vira o Principe das Trevas numa cutscene propria
             if (trem != null && forma == 2) trem.parar();
-            if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O JAMES!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
+            if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O HEXAR!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (artista == 1 && forma == 3) { cenaPendente = CenaChefe.TRANSFORMACAO; transformando = .3; }
             return false;
         }
@@ -350,13 +350,13 @@ public final class ChefeMetal {
     public double getEntrada() { return entrada; }
     public String getNome() {
         switch (artista) {
-            case 1: return forma == 1 ? "OZZY - CRAZY TRAIN" : forma == 2 ? "OZZY - MORCEGO DA NOITE" : "OZZY - PRINCIPE DAS TREVAS";
-            case 2: return "ROB HALFORD - PAINKILLER";
-            case 3: return "BRUCE - EDDIE VOADOR";
-            case 4: return "LEMMY - BOMBER";
-            case 5: return mar != null && forma == 1 ? "MASTER OF PUPPETS - O MARIONETISTA" : "JAMES HETFIELD - RIFF MASTER";
-            case 6: return "TOM ARAYA - RAINING FIRE";
-            case 7: return "CHUCK BILLY - TESTAMENT";
+            case 1: return forma == 1 ? "MALACHAR - EXPRESSO DAS TREVAS" : forma == 2 ? "MALACHAR - ASA NOTURNA" : "MALACHAR - REI DAS SOMBRAS";
+            case 2: return "VALDRAK - MOTO DE CROMO";
+            case 3: return "KORVUS - CORSARIO DO VACUO";
+            case 4: return "GRIMBO - CANHAO DE GRAVES";
+            case 5: return mar != null && forma == 1 ? "CINZAS DE ORION - O MARIONETISTA" : "HEXAR - RIFF DE QUATRO BRACOS";
+            case 6: return "MORGATH - CHUVA DE FOGO";
+            case 7: return "KANOA - VOZ DO TROVAO";
             default: throw new IllegalStateException("Artista invalido");
         }
     }
