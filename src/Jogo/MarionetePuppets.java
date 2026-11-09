@@ -21,7 +21,7 @@ final class MarionetePuppets {
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD;
     private static final int MAO_T = 230, BON_T = 300;
 
-    private double tempo, entrada, hx = W + 40, hy, bOff = 150, bDx, recarga = 1.8, comando, guarda, espera, flash, faisca;
+    private double tempo, entrada, hx = W + 40, hy, bOff = 150, bDx, recarga = 1.8, comando, guarda, espera, flash, faisca, gx;
     private int golpes, comandoTipo = -1;
     private boolean acertouBoneco;
     private double vidaFrac = 1;
@@ -31,7 +31,7 @@ final class MarionetePuppets {
 
     private double baseX() { return W - MAO_T / 2.0 - 70; }
     private double bonecoY() { return hy + bOff; }
-    private double bonecoX() { return hx + bDx; }
+    private double bonecoX() { return hx + bDx + gx; }
     Rectangle mao() { return new Rectangle((int) hx - 88, (int) hy + 40, 176, 170); }
     Rectangle boneco() { return new Rectangle((int) bonecoX() - 70, (int) bonecoY() + 50, 140, BON_T - 70); }
     Rectangle bounds() { return mao().union(boneco()); }
@@ -47,8 +47,10 @@ final class MarionetePuppets {
         // escudo reativo: quando a mao leva tiro, o boneco sobe na frente dela por um instante e depois desce
         if (guarda > 0) { guarda = Math.max(0, guarda - dt); if (guarda == 0) espera = 2.4; }
         else espera = Math.max(0, espera - dt);
-        double alvoOff = guarda > 0 ? -10 : 150;
-        bOff += (alvoOff - bOff) * Math.min(1, dt * (guarda > 0 ? 12 : 4));
+        // protegendo: o boneco vai para a FRENTE da mao (entre a nave e ela), na altura dela, sem cobri-la
+        double vel = Math.min(1, dt * (guarda > 0 ? 12 : 4));
+        bOff += ((guarda > 0 ? -40 : 150) - bOff) * vel;
+        gx += ((guarda > 0 ? -235 : 0) - gx) * vel;
         if (entrada < 1) return;
         // comandos da mao
         if (comando > 0) {
