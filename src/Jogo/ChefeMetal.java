@@ -63,8 +63,8 @@ public final class ChefeMetal {
         this.vidaPorForma = (int) Math.round((artista == 1 ? 345 : artista == 2 ? 190 : artista == 3 ? 215 : 180 + artista * 12)
                 * dificuldade.resistenciaChefe * (artista == 1 ? .85 : 1));
         this.vida = vidaPorForma;
-        this.ultimaForma = artista == 1 ? 3 : 2;
-        this.trem = artista == 1 ? new Trem() : null;
+        this.ultimaForma = 2; // o Malachar perdeu o trem: morcego no ato I, maestro no ato II
+        this.trem = null; // Trem (Expresso do Eclipse) aposentado
         this.mar = artista == 5 && MarionetePuppets.temArte() ? new MarionetePuppets() : null;
         this.moto = artista == 2 && MotoValdrak.temArte() ? new MotoValdrak() : null;
         this.cento = artista == 4 && CentopeiaKrovax.temArte() ? new CentopeiaKrovax() : null;
@@ -73,7 +73,7 @@ public final class ChefeMetal {
     /** Cutscene pedida pela luta (lida uma unica vez pela Fase). */
     String consumirCena() { String c = cenaPendente; cenaPendente = null; return c; }
     /** Forma desenhada pelos sprites: no Ozzy o ato I e o trem, entao morcego = 1 e principe = 2. */
-    private int formaSprite() { return artista == 1 ? Math.max(1, forma - 1) : forma; }
+    private int formaSprite() { return forma; }
 
     public void atualizar(double dt, int naveX, int naveY, Dificuldade dificuldade,
                           List<TiroChefe> tiros) {
@@ -126,7 +126,7 @@ public final class ChefeMetal {
             transformando = Math.max(0, transformando - dt);
             return;
         }
-        if (artista == 1 && forma == 2) {
+        if (artista == 1 && forma == 1) {
             if (investida > 0) {
                 investida = Math.max(0, investida - dt);
                 // O monstro corre ate perto do jogador e volta ao posto original.
@@ -161,8 +161,6 @@ public final class ChefeMetal {
         switch (artista) {
             case 1: // Ozzy: morcegos ondulantes -> ondas sonoras concentradas.
                 if (forma == 1) {
-                    trem.disparar(naveX, naveY, tiros);
-                } else if (forma == 2) {
                     for (int i = -3; i <= 3; i++)
                         tiro(tiros, ox, oy + i * 12, Math.PI + i * .115, 220, false,
                                 TiroChefe.Movimento.ONDA);
@@ -370,7 +368,7 @@ public final class ChefeMetal {
             if (cento != null && forma == 2) { transformando = 0; cento.furia(); aviso = "KROVAX ENFURECEU!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (moto != null && forma == 2) { quebra = quebraTotal = MONTAGEM; transformando = 0; aviso = "A MOTO SE TRANSFORMA: VALDRAK!"; SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); }
             if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O HEXAR!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
-            if (artista == 1 && forma == 3) aviso = "O MORCEGO CAI... MALACHAR, O MAESTRO DO ECLIPSE!"; // sem cutscene: o morcego se funde no Malachar dentro da luta
+            if (artista == 1 && forma == 2) aviso = "O MORCEGO CAI... MALACHAR, O MAESTRO DO ECLIPSE!"; // sem cutscene: o morcego se funde no Malachar dentro da luta
             return false;
         }
         return true;
@@ -576,7 +574,7 @@ public final class ChefeMetal {
     public double getEntrada() { return entrada; }
     public String getNome() {
         switch (artista) {
-            case 1: return forma == 1 ? "MALACHAR - EXPRESSO DO ECLIPSE" : forma == 2 ? "MALACHAR - ASA DO ECLIPSE" : "MALACHAR - MAESTRO DO ECLIPSE";
+            case 1: return forma == 1 ? "MALACHAR - ASA DO ECLIPSE" : "MALACHAR - MAESTRO DO ECLIPSE";
             case 2: return moto != null && forma == 1 ? "VALDRAK - MOTO DE CROMO" : "VALDRAK - CHICOTE DE PLASMA";
             case 3: return bob != null && forma == 1 ? "TUTAN-BOB - O FARAO DAS ATADURAS" : "KORVUS - CORSARIO DO VACUO";
             case 4: return forma == 1 ? "KROVAX - A CENTOPEIA DE SUCATA" : "KROVAX - FURIA DE FERRUGEM";
