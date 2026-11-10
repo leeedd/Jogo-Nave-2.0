@@ -27,7 +27,7 @@ final class MusicaChip {
 
     /** Monta a trilha do nome (universo_S_V ou chefe_N). */
     static float[] gerar(String nome) {
-        if (nome.equals("abertura")) return gerar(2, ABERTURA); // power epico, convite pra aventura
+        if (nome.equals("abertura")) return abertura();
         if (nome.startsWith("chefe_")) { int c = Integer.parseInt(nome.substring(6)); int[] ordem = {8, 2, 3, 4, 5, 6, 7, 1}; for (int s = 0; s < 8; s++) if (ordem[s] == c) return gerar(s, CHEFE); }
         String[] p = nome.split("_"); return gerar(Integer.parseInt(p[1]), Integer.parseInt(p[2]));
     }
@@ -114,6 +114,53 @@ final class MusicaChip {
             }
         }
         return m.fechar((int) (total * comp * TAXA));
+    }
+
+
+    /**
+     * Abertura: thrash melodico epico, composto para o jogo. Sobe devagar com acordes e rufar de tons,
+     * entra o meio-tempo pesado com as duas guitarras harmonizadas em tercas e explode em thrash
+     * rapido com a mesma melodia, fechando num acorde longo. Em mi menor (com o si maior epico).
+     */
+    static float[] abertura() {
+        Random r = new Random(2019);
+        double[][] frases = { // nota midi, duracao em tempos
+            {76, 1, 78, .5, 79, .5, 81, 1, 79, .5, 78, .5, 76, 1, 75, .5, 76, .5, 78, 2},
+            {79, 1, 81, .5, 83, .5, 84, 1.5, 83, .5, 81, 1, 79, .5, 78, .5, 79, 1, 83, 1},
+            {84, 1, 83, .5, 81, .5, 79, 1, 81, .5, 83, .5, 88, 2, 86, 1, 83, 1},
+            {81, 1, 79, .5, 78, .5, 76, 1, 75, 1, 76, 4}};
+        int[][] acordes = {{40, 47, 52}, {36, 43, 48}, {38, 45, 50}, {35, 42, 47}, {40, 47, 52}, {36, 43, 48}, {33, 40, 45}, {35, 42, 47}};
+        int[] esc = {64, 66, 67, 69, 71, 72, 74};
+        double intro = 7.2, b1 = 60 / 118.0, b2 = 60 / 192.0, fim = 3.2;
+        double t1 = intro, t2 = t1 + 32 * b1, total = t2 + 32 * b2 + fim;
+        Mix m = new Mix((int) (total * TAXA) + TAXA, r);
+        // 1) subida: acordes longos crescendo, rufar de tons cada vez mais rapido, prato no fim
+        for (int c = 0; c < 4; c++) { int[] a = acordes[c * 2 % 8]; double t0 = c * intro / 4;
+            for (int n : a) m.nota("sq", n + 12, t0, intro / 4, .5, .03 + c * .012, .6);
+            m.nota("sq", a[0], t0, intro / 4, .5, .06, 0); }
+        for (double t = 0, passo = .5; t < intro - .1; t += passo, passo = Math.max(.08, passo * .9)) m.tom(t, 45 + (int) (t / intro * 10), .1 + .15 * t / intro);
+        m.ruido(intro - .02, 1.6, 2.5, .2); m.bumbo(intro - .02, .45);
+        // 2) meio-tempo pesado e 3) thrash rapido: mesma melodia, guitarras em tercas
+        for (int parte = 0; parte < 2; parte++) {
+            double b = parte == 0 ? b1 : b2, t0 = parte == 0 ? t1 : t2;
+            for (int c = 0; c < 8; c++) { int[] a = acordes[c]; double tc = t0 + c * 4 * b;
+                for (int k = 0; k < (parte == 0 ? 8 : 16); k++) { double d = parte == 0 ? b / 2 : b / 4, tk = tc + k * d;
+                    m.nota("sq", a[0], tk, d * .7, parte == 0 ? .5 : .25, .08, 0); m.nota("sq", a[1], tk, d * .7, .5, .04, 0);
+                    m.nota("sq", a[0] - 12, tk, d * .85, .5, .08, 0); }
+                for (int k = 0; k < 4; k++) { double tk = tc + k * b;
+                    if (parte == 0) { m.bumbo(tk, .4); if (k == 1 || k == 3) m.bumbo(tk + b / 2, .3); if (k == 2) m.caixa(tk, .26); m.chimbal(tk + b / 2, .05); if (k == 0 && c % 2 == 0) m.ruido(tk, .9, 4, .07); }
+                    else { m.bumbo(tk, .33); m.caixa(tk + b / 2, .2); m.chimbal(tk, .04); m.chimbal(tk + b / 2, .04); if (k == 0 && c % 2 == 0) m.ruido(tk, .7, 5, .08); } }
+            }
+            double t = t0;
+            for (double[] f : frases) for (int i = 0; i < f.length; i += 2) { int n = (int) f[i]; double d = f[i + 1] * b;
+                int g = 0; for (int k = 0; k < 7; k++) if (Math.abs(esc[k] - (n % 12 + 60 + (n >= 72 ? 0 : 0))) == 0 || esc[k] % 12 == n % 12) g = k;
+                int terca = esc[(g + 5) % 7] % 12 + (n / 12) * 12; if (terca >= n) terca -= 12; // terca abaixo, dentro da escala
+                m.nota("sq", n, t, d * .95, .25, .07, 2.5); m.nota("tri", n, t, d * .95, 0, .06, 2.5); m.nota("sq", terca, t, d * .95, .25, .05, 2.5); t += d; }
+        }
+        // fecho: acorde de mi longo com prato
+        double tf = t2 + 32 * b2; for (int n : new int[]{40, 47, 52, 59, 64}) m.nota("sq", n, tf, fim, .5, .05, .8);
+        m.ruido(tf, 2.5, 1.6, .2); m.bumbo(tf, .45);
+        return m.fechar((int) (total * TAXA));
     }
 
     private static final class Mix {
