@@ -27,7 +27,8 @@ final class EnxameMalachar {
     private final int[] estado = new int[N], vida = new int[N]; // estado: 0 nuvem, 1 aviso, 2 mergulho, 3 caido (volta pela borda)
     private int rei, golpes, ultimoAtingido = -1;
     private double cx = W - 230, cy = 300, tempo, entrada, recarga = 1.4, trocaRei = 3, esperaContato, guincho, flashRei, vidaFrac = 1, juntar = -1;
-    private boolean bloqueou;
+    private boolean bloqueou, fim;
+    private double escondido, jorro, mx, my; // enxurrada do ato II: o Maestro se esconde na multidao
     private final java.util.Random sorte = new java.util.Random(11);
 
     EnxameMalachar() {
@@ -42,6 +43,25 @@ final class EnxameMalachar {
     void vida(double f) { vidaFrac = f; }
     /** Comeca a juntar os morcegos num ponto (transicao para o Maestro). */
     void juntar(double alvoX, double alvoY) { juntar = 0; cx = alvoX; cy = alvoY; }
+    /** Ato II: o Maestro se desfaz numa enxurrada e o rei se disfarca de morcego comum no meio dela. */
+    void esconder(double ox, double oy) {
+        mx = ox; my = oy; juntar = -1; entrada = 1; escondido = 7; recarga = .5; jorro = 0; fim = false; cx = ox; cy = oy;
+        for (int i = 0; i < N; i++) { estado[i] = 0; vida[i] = 3; bx[i] = ox; by[i] = oy; }
+        rei = sorte.nextInt(N); SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE);
+    }
+    boolean escondido() { return escondido > 0; }
+    /** Acertaram o rei disfarcado: o Maestro volta na hora. */
+    void revelar() { if (escondido > 0) { escondido = 0; juntar(mx, my); fim = true; } }
+    /** true uma vez quando a enxurrada acaba (o chefe faz a volta do Maestro). */
+    boolean consumirFim() { boolean f = fim; fim = false; return f; }
+    /** Ato II: o Maestro rege e os morcegos saem em formacao. */
+    void revoada(int tipo, double ox, double oy, double nx, double ny, List<TiroChefe> tiros) {
+        if (tipo == 0) for (int i = -4; i <= 4; i++) { double a = Math.PI + i * .13; tiros.add(new TiroChefe(ox, oy, Math.cos(a) * 330, Math.sin(a) * 330, false, TiroChefe.MORCEGO_OZZY, TiroChefe.Movimento.ONDA)); }
+        else if (tipo == 1) for (int k = 0; k < 6; k++) for (int lado = -1; lado <= 1; lado += 2) { // pinca: duas filas, de cima e de baixo, fecham na nave
+            double sx = W + 30 + k * 45, sy = lado < 0 ? TOPO + 10 : H - 10, a = Math.atan2(ny - sy, nx - sx);
+            tiros.add(new TiroChefe(sx, sy, Math.cos(a) * 380, Math.sin(a) * 380, false, TiroChefe.MORCEGO_OZZY, TiroChefe.Movimento.RETO)); }
+        else { double giro = tempo * 1.7; for (int i = 0; i < 12; i++) { double a = giro + i * Math.PI / 6; tiros.add(new TiroChefe(ox, oy, Math.cos(a) * 240, Math.sin(a) * 240, false, TiroChefe.MORCEGO_OZZY, TiroChefe.Movimento.ONDA)); } }
+    }
 
     private double slotX(int i) { return cx + Math.cos(ang[i]) * raio[i]; }
     private double slotY(int i) { return cy + Math.sin(ang[i]) * raio[i] * .72; }
@@ -54,9 +74,18 @@ final class EnxameMalachar {
             for (int i = 0; i < N; i++) { double k = Math.min(1, dt * (3 + juntar * 8)); bx[i] += (cx - bx[i]) * k; by[i] += (cy - by[i]) * k; ang[i] += dt * 6; }
             return;
         }
+        if (escondido > 0) { // enxurrada: a nuvem varre a tela de um lado a outro e jorra morcegos
+            escondido -= dt; jorro -= dt;
+            if (jorro <= 0) { jorro = .09; tiros.add(new TiroChefe(W + 30, TOPO + 20 + sorte.nextInt(H - TOPO - 40), -480 - sorte.nextInt(160), 0, false, TiroChefe.MORCEGO_OZZY, TiroChefe.Movimento.ONDA)); }
+            if (escondido <= 0) { // ninguem achou o rei: grito final e o Maestro volta
+                for (int i = 0; i < 16; i++) { double a = i * Math.PI / 8; tiros.add(new TiroChefe(bx[rei], by[rei], Math.cos(a) * 300, Math.sin(a) * 300, true, TiroChefe.ENERGIA, TiroChefe.Movimento.RETO).comCor(new Color(190, 90, 255))); }
+                escondido = 0; juntar(mx, my); fim = true; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); return;
+            }
+            cx = W * .5 + Math.sin(tempo * .9) * (W * .32);
+        }
         entrada = Math.min(1, entrada + dt / 1.4);
         // o centro da nuvem passeia pela metade direita e acompanha a nave devagar
-        cx += (W - 250 + Math.sin(tempo * .55) * 110 - cx) * Math.min(1, dt * 1.2);
+        if (escondido <= 0) cx += (W - 250 + Math.sin(tempo * .55) * 110 - cx) * Math.min(1, dt * 1.2);
         cy += (Math.max(TOPO + 150, Math.min(H - 150, ny)) - cy) * Math.min(1, dt * .9);
         for (int i = 0; i < N; i++) {
             flash[i] = Math.max(0, flash[i] - dt);
@@ -92,7 +121,7 @@ final class EnxameMalachar {
         }
     }
 
-    private Rectangle caixa(int i) { int s = i == rei ? RW : CW; return new Rectangle((int) bx[i] - s / 2 + 6, (int) by[i] - s / 3, s - 12, s * 2 / 3); }
+    private Rectangle caixa(int i) { int s = i == rei && escondido <= 0 ? RW : CW; return new Rectangle((int) bx[i] - s / 2 + 6, (int) by[i] - s / 3, s - 12, s * 2 / 3); }
     /** O alvo do chefe e o rei. */
     Rectangle bounds() { return caixa(rei); }
 
@@ -122,16 +151,17 @@ final class EnxameMalachar {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         if (alfa < 1) g.setComposite(AlphaComposite.SrcOver.derive(Math.max(0, alfa)));
         for (int i = 0; i < N; i++) {
-            if (i == rei || estado[i] == 3) continue;
+            if (i == rei && escondido <= 0 || estado[i] == 3) continue;
             double bate = .7 + .3 * Math.abs(Math.sin(tempo * 16 + i));
             int w = CW, h = (int) (CW * COMUM.getHeight() / (double) COMUM.getWidth() * bate), x = (int) bx[i], y = (int) by[i];
             boolean praDireita = estado[i] == 2 && vx[i] > 0;
             if (praDireita) g.drawImage(COMUM, x + w / 2, y - h / 2, -w, h, null); else g.drawImage(COMUM, x - w / 2, y - h / 2, w, h, null);
             if (estado[i] == 1 && (int) (tempo * 20) % 2 == 0) { g.setColor(new Color(255, 40, 40)); g.fillRect(x - 7, y - 4, 4, 4); g.fillRect(x + 3, y - 4, 4, 4); } // olhos piscando antes do mergulho
             if (flash[i] > 0) { g.setColor(new Color(255, 255, 255, 170)); g.fillRect(x - 8, y - 6, 16, 12); }
+            if (i == rei) { g.setColor(new Color(255, 210, 70)); g.fillRect(x - 6, y - h / 2 - 4, 3, 5); g.fillRect(x - 1, y - h / 2 - 6, 3, 7); g.fillRect(x + 4, y - h / 2 - 4, 3, 5); g.fillRect(x - 6, y - h / 2, 13, 2); } // disfarcado: so a coroinha entrega
         }
         BufferedImage[] q = PosesChefes.morcegoMalachar();
-        if (q != null) {
+        if (q != null && escondido <= 0) {
             BufferedImage f = q[(int) (tempo * 9) % 4];
             int w = RW + (guincho > 0 ? 10 : 0), h = w * f.getHeight() / f.getWidth(), x = (int) bx[rei], y = (int) by[rei];
             if (juntar < 0) { g.setColor(new Color(170, 225, 255)); // faiscas de pixel em volta do rei

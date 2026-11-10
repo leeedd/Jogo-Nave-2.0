@@ -32,6 +32,7 @@ public final class ChefeMetal {
     private String cenaPendente;
     private final Trem trem;
     private final EnxameMalachar enx;
+    private double enxurrada = 9;
     /** James: ato I e a mao do marionetista com o boneco; quebra = boneco desmontando antes do James aparecer. */
     private final MarionetePuppets mar;
     /** Valdrak: ato I e a moto-robo; na quebra ela se transforma no Valdrak. */
@@ -89,6 +90,11 @@ public final class ChefeMetal {
         if (tempoQuadroValdrak > 0 && (tempoQuadroValdrak = Math.max(0, tempoQuadroValdrak - dt)) == 0 && chicote <= 0 && chicoteAviso <= 0) quadroValdrak = -1;
         if (trem != null && forma == 1) { trem.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = trem.entrada(); return; }
         if (enx != null && (forma == 1 || transformando > 0)) { enx.vida(vida / (double) vidaPorForma); enx.atualizar(dt, naveX, naveY, dificuldade, tiros); if (forma == 1) { entrada = enx.entrada(); return; } }
+        if (enx != null && forma == 2 && transformando <= 0) { // ato II: de tempos em tempos vira enxurrada e se esconde
+            if (enx.escondido()) { enx.atualizar(dt, naveX, naveY, dificuldade, tiros); if (enx.consumirFim()) transformando = 1.45; return; }
+            if (enx.consumirFim()) transformando = 1.45;
+            else if ((enxurrada -= dt) <= 0) { enxurrada = 13; enx.esconder(x + largura * .5, y + altura * .5); aviso = "O MAESTRO SE ESCONDE NA REVOADA! ACHE O MORCEGO DE COROA!"; return; }
+        }
         if (mar != null && forma == 1) { mar.vida(vida / (double) vidaPorForma); mar.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = mar.entrada(); if (!mar.investindo()) ataqueFisicoConsumido = false; return; }
         if (cento != null) { if (transformando > 0) transformando = Math.max(0, transformando - dt); cento.atualizar(dt, naveX, naveY, dificuldade, tiros, vida / (double) vidaPorForma); entrada = cento.entrada(); return; }
         if (bob != null && forma == 1) { bob.vida(vida / (double) vidaPorForma); bob.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = bob.entrada(); return; }
@@ -167,6 +173,8 @@ public final class ChefeMetal {
                     for (int i = -3; i <= 3; i++)
                         tiro(tiros, ox, oy + i * 12, Math.PI + i * .115, 220, false,
                                 TiroChefe.Movimento.ONDA);
+                } else if (enx != null) {
+                    enx.revoada(rajadas % 3, ox, oy, naveX + 22, naveY + 18, tiros);
                 } else {
                     // revoada: um anel de morcegos abre em volta do Principe a cada terceira rajada
                     if (rajadas % 3 == 2)
@@ -357,6 +365,7 @@ public final class ChefeMetal {
         if (bob != null && forma == 1) { bob.ferido(); dano = bob.envergonhado() ? dano * 2 : Math.max(1, dano * 45 / 100); } // o Bob e duro, menos quando esta pelado
         if (cento != null) { if (cento.consumirBloqueio()) return false; cento.ferido(); }
         if (enx != null && forma == 1) { if (enx.consumirBloqueio()) return false; enx.ferido(); }
+        if (enx != null && forma == 2 && enx.escondido()) { if (enx.consumirBloqueio()) return false; enx.revelar(); dano *= 3; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); } // achou o rei: o Maestro volta tomando dano triplo
         if (artista == 3 && forma == 2 && korEstado == 5) { korRebater++; flash = .1; return false; }
         vida = Math.max(0, vida - Math.max(0, dano));
         flash = .16;
@@ -381,7 +390,7 @@ public final class ChefeMetal {
 
     String consumirAviso() { String a = aviso; aviso = null; return a; }
     /** Tiro do jogador: no ato I da marionete o boneco segura os tiros. */
-    boolean colide(Rectangle r) { if (enx != null && forma == 1) return enx.colide(r); if (bob != null && forma == 1) return r.intersects(bob.bounds()); if (cento != null) return cento.colide(r); if (mar != null && forma == 1) return mar.colide(r); if (moto != null && forma == 1) return r.intersects(moto.bounds()); if (quebra > 0) return false; return r.intersects(getBounds()); }
+    boolean colide(Rectangle r) { if (enx != null && (forma == 1 || enx.escondido())) return enx.colide(r); if (bob != null && forma == 1) return r.intersects(bob.bounds()); if (cento != null) return cento.colide(r); if (mar != null && forma == 1) return mar.colide(r); if (moto != null && forma == 1) return r.intersects(moto.bounds()); if (quebra > 0) return false; return r.intersects(getBounds()); }
     /** Ozzy so causa dano no mergulho, nao durante o aviso. */
     public boolean consumirColisaoCorporal(Rectangle areaNave) {
         if (artista == 2 && forma == 2 && chicote > 0 && !chicoteAcertou) {
@@ -390,7 +399,7 @@ public final class ChefeMetal {
             if (ao > 0 && ao < CHICOTE_ALCANCE && Math.abs(ax * uy - ay * ux) < 24) { chicoteAcertou = true; return true; }
         }
         if (bob != null && forma == 1) return bob.contato(areaNave);
-        if (enx != null && forma == 1) return enx.contato(areaNave);
+        if (enx != null && (forma == 1 || enx.escondido())) return enx.contato(areaNave);
         if (cento != null) return cento.contato(areaNave);
         if (artista == 3 && forma == 2 && korEstado == 2 && !korAcertou && getBounds().intersects(areaNave)) { korAcertou = true; return true; }
         if (moto != null && forma == 1) return moto.consumirColisao(areaNave);
@@ -418,7 +427,7 @@ public final class ChefeMetal {
                     ? -(1 - Math.max(0, intervalo) / .38) : 0;
         // Transformacao dissolve as duas formas; nenhuma bolha cobre o personagem.
         if (trem != null && forma == 1) { g.dispose(); trem.desenhar(tela, flash); return; }
-        if (enx != null && forma == 1) { g.dispose(); enx.desenhar(tela, 1f); return; }
+        if (enx != null && (forma == 1 || enx.escondido())) { g.dispose(); enx.desenhar(tela, 1f); return; }
         if (mar != null && forma == 1) { g.dispose(); mar.desenhar(tela, 1f); return; }
         if (cento != null) { g.dispose(); cento.desenhar(tela); return; }
         if (bob != null && forma == 1) { g.dispose(); bob.desenhar(tela); return; }
@@ -567,7 +576,7 @@ public final class ChefeMetal {
 
     public Rectangle getBounds() {
         if (trem != null && forma == 1) return trem.getBounds();
-        if (enx != null && forma == 1) return enx.bounds();
+        if (enx != null && (forma == 1 || enx.escondido())) return enx.bounds();
         if (mar != null && forma == 1) return mar.bounds();
         if (moto != null && forma == 1) return moto.bounds();
         if (cento != null) return cento.bounds();
