@@ -11,7 +11,7 @@ import java.util.Random;
 final class MusicaChip {
     static final int TAXA = 44100, TEMA = 50, CHEFE = 99;
     // por universo: bpm, tom (midi da tonica), escala, tempos por compasso
-    private static final int[] BPM = {66, 170, 150, 112, 200, 190, 132, 100, 220};
+    private static final int[] BPM = {66, 170, 150, 112, 200, 124, 132, 100, 220};
     private static final int[] TOM = {38, 40, 45, 40, 40, 37, 50, 38, 42};
     private static final int[] TEMPOS = {4, 4, 4, 4, 4, 4, 6, 4, 4};
     private static final int[][] ESCALA = {
@@ -81,11 +81,18 @@ final class MusicaChip {
                     for (int k = 0; k < tempos; k++) { m.bumbo(t0 + k * batida, banda ? .4 : .2); if (banda && k % 2 == 1) m.metal(t0 + k * batida, .16); if (banda) m.chimbal(t0 + k * batida + batida / 2, .05); }
                     if (c % 2 == 0) m.acorde(new int[]{raiz + 13, raiz + 19}, t0, batida, .125, .06, false);
                     break; }
-                case 5: { // death: tremolo grave e blast beat
+                case 5: { // death: groove arrastado e grave (escola da Florida); na segunda metade acelera pro blast
                     double d = batida / 4;
-                    for (int k = 0; k < tempos * 4; k++) m.nota("sq", (banda ? raiz : raiz + 12) + (k % 16 >= 12 ? 1 : 0), t0 + k * d, d * .8, .5, banda ? .07 : .05, 0);
-                    if (banda) for (int k = 0; k < tempos * 4; k++) { if (segunda) { if (k % 2 == 0) m.bumbo(t0 + k * d, .28); else m.caixa(t0 + k * d, .12); } else { m.bumbo(t0 + k * d, .25); if (k % 4 == 2) m.caixa(t0 + k * d, .2); } if (k % 2 == 0) m.chimbal(t0 + k * d, .035); }
-                    if (banda) m.nota("sq", raiz - 12, t0, comp * .98, .5, .1, 0);
+                    if (!segunda) { // riff em meio-tempo: palhetada abafada, cromatismo descendo, pausas pesadas
+                        int[] riff = {0, 0, -1, 0, 1, 0, -1, -1, 0, 0, -1, 3, 2, 1, 0, -1};
+                        for (int k = 0; k < tempos * 4; k++) { int x = riff[k % 16]; if (x < 0 && k % 16 != 2) continue; int n = raiz + (x < 0 ? 0 : x);
+                            m.nota("sq", n, t0 + k * d, d * (x < 0 ? .4 : .85), .5, banda ? .09 : .05, 0); m.nota("saw", n - 12, t0 + k * d, d * .85, 0, banda ? .07 : .03, 0); }
+                        if (banda) for (int k = 0; k < tempos; k++) { m.bumbo(t0 + k * batida, .4); if (k == 1) m.bumbo(t0 + k * batida + batida / 2, .35); if (k == 2) m.caixa(t0 + k * batida, .26); m.chimbal(t0 + k * batida + batida / 2, .04); }
+                    } else { // blast: tremolo grave e caixa/bumbo alternando em semicolcheias
+                        for (int k = 0; k < tempos * 4; k++) m.nota("sq", raiz + (k % 16 >= 12 ? 1 : 0), t0 + k * d / 1.5, d / 1.5 * .8, .5, .07, 0);
+                        for (int k = 0; k < tempos * 6; k++) { if (k % 2 == 0) m.bumbo(t0 + k * d / 1.5, .28); else m.caixa(t0 + k * d / 1.5, .12); if (k % 2 == 0) m.chimbal(t0 + k * d / 1.5, .035); }
+                        m.nota("sq", raiz - 12, t0, comp * .98, .5, .1, 0);
+                    }
                     break; }
                 case 6: { // folk: compasso 6/8, flauta, drone e tambor tribal
                     m.nota("tri", raiz - 12, t0, comp, 0, .12, 0); m.nota("sq", quinta, t0, comp, .5, .025, 0);
