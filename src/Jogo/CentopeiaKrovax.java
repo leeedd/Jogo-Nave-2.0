@@ -136,7 +136,7 @@ final class CentopeiaKrovax {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         // da cauda para a cabeca, para cada parte cobrir a de tras
         int ultimo = SEGMENTOS;
-        double[] pc = posSeg(ultimo); peca(g, CAUDA, pc[0], pc[1], angSeg(ultimo), .4, 0, 1f);
+        double[] pc = posSeg(ultimo); peca(g, CAUDA, pc[0], pc[1], angSeg(ultimo), .22, 0, 1f, true); // o ferrao fica para tras
         for (int i = SEGMENTOS - 1; i >= 0; i--) {
             double[] p = posSeg(i); double a = angSeg(i);
             if (vidaSeg[i] <= 0) { // segmento destruido: carcaca escura e fumaca
@@ -153,13 +153,15 @@ final class CentopeiaKrovax {
         g.dispose();
     }
     /** Desenha a peca centrada em (x, y), girada para a direcao do corpo (a arte aponta para a esquerda). */
-    private static void peca(Graphics2D tela, BufferedImage img, double x, double y, double a, double ancoraX, double flash, float alfa) {
+    private static void peca(Graphics2D tela, BufferedImage img, double x, double y, double a, double ancoraX, double flash, float alfa) { peca(tela, img, x, y, a, ancoraX, flash, alfa, false); }
+    private static void peca(Graphics2D tela, BufferedImage img, double x, double y, double a, double ancoraX, double flash, float alfa, boolean espelhar) {
         if (img == null) return;
         Graphics2D g = (Graphics2D) tela.create();
         int w = (int) (img.getWidth() * ESC), h = (int) (img.getHeight() * ESC);
         g.translate(x, y); g.rotate(a - Math.PI);
         boolean deCabeca = Math.cos(a - Math.PI) < 0;           // indo para a direita: espelha na vertical para nao ficar de ponta-cabeca
         if (deCabeca) g.scale(1, -1);
+        if (espelhar) g.scale(-1, 1);
         g.drawImage(img, (int) (-w * ancoraX), -h / 2, w, h, null);
         if (flash > 0) { g.setComposite(AlphaComposite.SrcOver.derive((float) Math.min(.8, flash * 6))); g.drawImage(clara(img), (int) (-w * ancoraX), -h / 2, w, h, null); }
         g.dispose();
