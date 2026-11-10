@@ -67,20 +67,20 @@ final class FaraoBob {
         if (recarga > 0 || tiros.size() > 55) return;
         int g = golpes++ % 4;
         if (g == 0) { giro = 4.2; double a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); tvx = Math.cos(a) * 380; tvy = Math.sin(a) * 380; }
-        else if (g == 1) { // raio dos olhos: dois feixes vermelhos em X
+        else if (g == 2) { // raio dos olhos: dois feixes vermelhos em X
             olhos = .5; double ex = x + 135, ey = y + 62;
             for (int i = -1; i <= 1; i += 2) { double a = Math.atan2(ny - ey, nx - ex) + i * .22;
                 for (int k = 0; k < 5; k++) tiros.add(new TiroChefe(ex, ey, Math.cos(a) * (380 + k * 30), Math.sin(a) * (380 + k * 30), k == 0, TiroChefe.ENERGIA, TiroChefe.Movimento.RETO).comCor(new Color(255, 40, 40))); }
-        } else if (g == 2) { // piramide: blocos caem do teto numa piramide, com um buraco perto da nave
+        } else if (g == 3) { // piramide: blocos caem do teto numa piramide, com um buraco perto da nave
             ergue = .8; int buraco = (int) Math.max(1, Math.min(7, (nx - 40) / 110));
             for (int c = 0; c < 8; c++) { if (Math.abs(c - buraco) < 1) continue; double bx = 60 + c * 110;
                 tiros.add(new TiroChefe(bx, TOPO - 20 - Math.abs(c - 3.5) * 40, -10, 120, true, TiroChefe.BLOCO, TiroChefe.Movimento.ARCO)); }
-        } else { // exercito: aponta e a tropa atravessa a tela da direita para a esquerda
-            ergue = 1.0; int tipo = golpes / 4 % 4;
-            if (tipo == 0) for (int i = 0; i < 4; i++) tiros.add(new TiroChefe(W + 40 + i * 70, TOPO + 60 + i * 110, -170, 0, true, TiroChefe.SOLDADO, TiroChefe.Movimento.RETO));
-            else if (tipo == 1) tiros.add(new TiroChefe(W + 120, ny, -420, 0, true, TiroChefe.CARRUAGEM, TiroChefe.Movimento.RETO));
-            else if (tipo == 2) tiros.add(new TiroChefe(W + 150, H - 120, -150, 0, true, TiroChefe.ESFINGE, TiroChefe.Movimento.RETO));
-            else { tiros.add(new TiroChefe(W + 100, TOPO + 120, -110, 0, true, TiroChefe.RAINHA, TiroChefe.Movimento.RETO));
+        } else if (g == 1) { // exercito: aponta e a tropa atravessa a tela da direita para a esquerda
+            ergue = 1.2; int tipo = golpes / 4 % 3;
+            for (int i = 0; i < 5; i++) tiros.add(new TiroChefe(W + 40 + i * 60, TOPO + 50 + i * 95, -190, 0, true, TiroChefe.SOLDADO, TiroChefe.Movimento.RETO));
+            if (tipo == 0) tiros.add(new TiroChefe(W + 260, ny, -430, 0, true, TiroChefe.CARRUAGEM, TiroChefe.Movimento.RETO));
+            else if (tipo == 1) tiros.add(new TiroChefe(W + 220, H - 110, -160, 0, true, TiroChefe.ESFINGE, TiroChefe.Movimento.RETO));
+            else { tiros.add(new TiroChefe(W + 120, TOPO + 120, -110, 0, true, TiroChefe.RAINHA, TiroChefe.Movimento.RETO));
                 for (int i = -1; i <= 1; i++) tiros.add(new TiroChefe(W - 40, TOPO + 140, -300, i * 90, false, TiroChefe.ENERGIA, TiroChefe.Movimento.ONDA).comCor(new Color(120, 220, 90))); }
         }
         recarga = vidaFrac < .5 ? 1.25 : 1.7;

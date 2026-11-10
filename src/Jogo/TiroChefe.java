@@ -42,7 +42,7 @@ public final class TiroChefe {
         tempo += dt;
         if (estilo == RASTRO && tempo > 1.4) visivel = false;
         if (estilo == PISTA_FOGO && tempo > PISTA_DURA) visivel = false;
-        int margem = estilo == VAGAO ? 130 : 40;
+        int margem = estilo == VAGAO ? 130 : estilo >= SOLDADO && estilo <= RAINHA ? 420 : 40;
         if (x < -margem || x > Config.LARGURA + margem || y < Config.HUD - margem || y > Config.ALTURA + margem)
             visivel = false;
     }
