@@ -107,6 +107,14 @@ final class FaraoBob {
                 g.setColor(new Color(232, 215, 175, 190)); g.drawArc(px + (w - rw) / 2, ry - 10, rw, 22, (int) Math.toDegrees(fase) % 360, 200); }
         } else if (tonto > 0) { g.drawImage(ARTE, px, py, px + w, py + ALT, 0, 0, fw, fh, null);
             g.setColor(new Color(255, 235, 110)); for (int k = 0; k < 3; k++) { double a = tempo * 6 + k * 2.1; g.fillOval(px + w / 2 + (int) (Math.cos(a) * 40) - 5, py + 6 + (int) (Math.sin(a) * 10), 10, 10); }
+            // olhos girando de tontura: espirais vermelhas no lugar dos olhos
+            double e = ALT / (double) fh; int[][] olhosArte = {{168, 174}, {204, 176}};
+            g.setStroke(new java.awt.BasicStroke(2));
+            for (int[] o : olhosArte) { int cx = px + (int) (o[0] * e), cy = py + (int) (o[1] * e);
+                g.setColor(new Color(40, 20, 20)); g.fillOval(cx - 9, cy - 9, 18, 18);
+                g.setColor(new Color(255, 70, 50)); double a0 = tempo * 14;
+                for (int k = 0; k < 14; k++) { double a = a0 + k * .55, r = 1 + k * .55; int x1 = cx + (int) (Math.cos(a) * r), y1 = cy + (int) (Math.sin(a) * r);
+                    double a2 = a + .55, r2 = r + .55; g.drawLine(x1, y1, cx + (int) (Math.cos(a2) * r2), cy + (int) (Math.sin(a2) * r2)); } }
         } else g.drawImage(ARTE, px, py, px + w, py + ALT, q * fw, 0, q * fw + fw, fh, null);
         if (flash > 0) { g.setColor(new Color(255, 230, 170, (int) (flash / .16 * 230))); for (int k = 0; k < 6; k++) { double a = k * Math.PI / 3; int r = 12 + (int) ((.16 - flash) * 160); g.fillRect(px + w / 2 + (int) (Math.cos(a) * r), py + ALT / 2 + (int) (Math.sin(a) * r), 4, 4); } }
         if (olhos > 0) { g.setColor(new Color(255, 60, 40, 200)); g.fillOval((int) x + 125, (int) y + 52, 22, 18); }
