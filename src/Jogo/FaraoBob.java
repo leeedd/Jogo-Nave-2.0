@@ -44,8 +44,10 @@ final class FaraoBob {
         if (vergonha > 0) { vergonha = Math.max(0, vergonha - dt); if (vergonha == 0) { corrida = 1.2; desenrolo = 0; } return; }
         if (corrida > 0) { corrida = Math.max(0, corrida - dt); x = baseX + Math.sin(corrida * 6) * 40; return; }
         desenrolo = vidaFrac > .66 ? 0 : vidaFrac > .3 ? 1 : 2;
-        x += (baseX + Math.sin(tempo * .7) * 30 - x) * Math.min(1, dt * 2);
-        y += (Math.max(TOPO, Math.min(H - ALT, ny - ALT * .5)) - y) * Math.min(1, dt * (giro > 0 ? 2.2 : .8));
+        if (giro <= 0) { // fora do tornado volta para o posto; no tornado so a velocidade manda
+            x += (baseX + Math.sin(tempo * .7) * 30 - x) * Math.min(1, dt * 2);
+            y += (Math.max(TOPO, Math.min(H - ALT, ny - ALT * .5)) - y) * Math.min(1, dt * .8);
+        }
         if (tonto > 0) { x += (baseX - x) * Math.min(1, dt * 2); return; }
         if (giro > 0) { // tornado: quica pela tela toda, cada batida mais rapido, e solta ataduras
             giro = Math.max(0, giro - dt);
@@ -54,9 +56,10 @@ final class FaraoBob {
             if (x < -60) { x = -60; tvx = Math.abs(tvx); bateu = true; } else if (x > W - 240) { x = W - 240; tvx = -Math.abs(tvx); bateu = true; }
             if (y < TOPO - 30) { y = TOPO - 30; tvy = Math.abs(tvy); bateu = true; } else if (y > H - ALT + 20) { y = H - ALT + 20; tvy = -Math.abs(tvy); bateu = true; }
             if (bateu) {
-                double v = Math.min(980, Math.hypot(tvx, tvy) * 1.18), a = Math.atan2(tvy, tvx) + (sorte.nextDouble() - .5) * .9;
-                if (sorte.nextDouble() < .4) a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); // as vezes vem direto na nave
-                tvx = Math.cos(a) * v; tvy = Math.sin(a) * v; SomJogo.tocar(SomJogo.Efeito.IMPACTO);
+                double v = Math.min(1250, Math.hypot(tvx, tvy) * 1.2), a = Math.atan2(tvy, tvx) + (sorte.nextDouble() - .5) * .9;
+                if (sorte.nextDouble() < .3) a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); // as vezes vem direto na nave
+                tvx = Math.cos(a) * v; tvy = Math.sin(a) * v;
+                if (Math.abs(tvx) < v * .7) { tvx = Math.signum(tvx == 0 ? 1 : tvx) * v * .7; tvy = Math.signum(tvy) * v * .71; } // mais de lado a lado que de cima a baixo SomJogo.tocar(SomJogo.Efeito.IMPACTO);
             }
             if (giro == 0) tonto = 1.2;
             if ((int) (giro * 12) != (int) ((giro + dt) * 12)) { double a = tempo * 7, cx = x + 150, cy = y + ALT * .5;
@@ -66,7 +69,7 @@ final class FaraoBob {
         recarga -= dt * dif.cadenciaInimigos * (vidaFrac < .5 ? 1.3 : 1);
         if (recarga > 0 || tiros.size() > 55) return;
         int g = golpes++ % 4;
-        if (g == 0) { giro = 4.2; double a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); tvx = Math.cos(a) * 380; tvy = Math.sin(a) * 380; }
+        if (g == 0) { giro = 4.6; double a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); tvx = Math.cos(a) * 620; tvy = Math.sin(a) * 620; }
         else if (g == 2) { // raio dos olhos: dois feixes vermelhos em X
             olhos = .5; double ex = x + 135, ey = y + 62;
             for (int i = -1; i <= 1; i += 2) { double a = Math.atan2(ny - ey, nx - ex) + i * .22;
