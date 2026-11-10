@@ -40,6 +40,9 @@ public final class ChefeMetal {
     private double quebra; private String aviso;
     /** Kanoa (ato II): golpe da vez (0 voz, 1 machado, 2 lanca, 3 arco), mostrado no quadro proprio da arte. */
     private int golpeKanoa = -1, ataquesKanoa; private double tempoGolpeKanoa;
+    /** Korvus (ato II): duelista. estado 0 guarda, 1 preparando, 2 estocada, 3 voltando, 4 corte, 5 aparando. */
+    private int korEstado, korGolpes, korSeguidas, korRebater; private double korT, korRecarga = 1.4, korDx, korDy, korX0, korY0, korAlvoX, korAlvoY;
+    private boolean korAcertou;
     private static final double QUEBRA = 2.6, MONTAGEM = 4.4;
     private double quebraTotal = QUEBRA;
     /** Valdrak (ato II): chicotada que varre a tela, laco de plasma e faiscas dos cabos. */
@@ -94,6 +97,7 @@ public final class ChefeMetal {
         x = baseX + Math.sin(tempo * (.75 + artista * .08)) * horizontal[artista];
         y = Config.HUD + 47 + Math.sin(tempo * (1.05 + artista * .09)) * vertical[artista];
         if (entrada < 1) return;
+        if (artista == 3 && forma == 2 && PosesChefes.temNovaArte(3)) { if (transformando > 0) { transformando = Math.max(0, transformando - dt); return; } korvus(dt, naveX, naveY, dificuldade, tiros); return; }
         proximaManobra -= dt * dificuldade.cadenciaInimigos;
         if (proximaManobra <= 0 && manobraAtiva <= 0) {
             manobraAtiva = 1.45; // Preparacao, avanco e retorno.
@@ -253,6 +257,52 @@ public final class ChefeMetal {
                 tiros.add(new TiroChefe(nx - 220 + i * 70, Config.HUD + 4, -50, 230 + (i % 3) * 40, false, TiroChefe.BOLA_FOGO, TiroChefe.Movimento.ARCO));
         }
     }
+    /** Korvus: estocadas relampago na nave (com brilho de aviso), corte em X e a guarda que rebate os tiros. */
+    private void korvus(double dt, int naveX, int naveY, Dificuldade dif, List<TiroChefe> tiros) {
+        boolean furia = vida < vidaPorForma * .4; double nx = naveX + 22, ny = naveY + 18;
+        while (korRebater > 0) { korRebater--; double ox = x + 90, oy = y + altura * .45, a = Math.atan2(ny - oy, nx - ox);
+            tiros.add(new TiroChefe(ox, oy, Math.cos(a) * 520, Math.sin(a) * 520, true, TiroChefe.LANCA, TiroChefe.Movimento.RETO)); }
+        korT -= dt;
+        switch (korEstado) {
+            case 0: // guarda: patrulha (x, y ja calculados) e escolhe o proximo golpe
+                korDx += (0 - korDx) * Math.min(1, dt * 4); korDy += (0 - korDy) * Math.min(1, dt * 4);
+                korRecarga -= dt * dif.cadenciaInimigos * (furia ? 1.4 : 1);
+                if (korRecarga <= 0) {
+                    int g = korGolpes++ % 3;
+                    if (g == 0) { korEstado = 1; korT = furia ? .38 : .5; korSeguidas = furia ? 3 : 1; travarAlvo(nx, ny); }
+                    else if (g == 1) { korEstado = 4; korT = .55; }
+                    else { korEstado = 5; korT = 1.3; }
+                }
+                break;
+            case 1: // preparando: o sabre brilha e a linha mostra o caminho
+                if (korT <= 0) { korEstado = 2; korT = .2; korX0 = korDx; korY0 = korDy; korAcertou = false; SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO); }
+                break;
+            case 2: { // estocada: avanca em linha reta ate o ponto travado
+                double p = 1 - Math.max(0, korT) / .2; p = p * p * (3 - 2 * p);
+                korDx = korX0 + (korAlvoX - korX0) * p; korDy = korY0 + (korAlvoY - korY0) * p;
+                if (korT <= 0) { korEstado = 3; korT = .45; }
+                break; }
+            case 3: // voltando; na furia emenda outra estocada de outro angulo
+                if (korSeguidas > 1 && korT < .3) { korSeguidas--; korEstado = 1; korT = .3; travarAlvo(nx, ny); break; }
+                korDx += (0 - korDx) * Math.min(1, dt * 6); korDy += (0 - korDy) * Math.min(1, dt * 6);
+                if (korT <= 0) { korEstado = 0; korRecarga = furia ? .9 : 1.4; }
+                break;
+            case 4: // corte em X: dois cortes de luz cruzados na direcao da nave
+                if (korT <= .3 && korT + dt > .3) { double ox = x + 70, oy = y + altura * .45, a = Math.atan2(ny - oy, nx - ox);
+                    for (int i = -1; i <= 1; i += 2) tiros.add(new TiroChefe(ox, oy + i * 40, Math.cos(a - i * .18) * 420, Math.sin(a - i * .18) * 420, true, TiroChefe.CORTE, TiroChefe.Movimento.RETO));
+                    if (furia) tiros.add(new TiroChefe(ox, oy, Math.cos(a) * 470, Math.sin(a) * 470, true, TiroChefe.CORTE, TiroChefe.Movimento.RETO)); }
+                if (korT <= 0) { korEstado = 0; korRecarga = furia ? .8 : 1.3; }
+                break;
+            case 5: // guarda alta: tiros nele sao rebatidos de volta
+                if (korT <= 0) { korEstado = 0; korRecarga = 1.0; }
+                break;
+        }
+        x += korDx; y += korDy;
+    }
+    private void travarAlvo(double nx, double ny) {
+        double bx = Config.LARGURA - largura - 28; // posicao de guarda aproximada
+        korAlvoX = Math.max(-largura * .4, nx - 70 - bx); korAlvoY = Math.max(-Config.HUD, Math.min(Config.ALTURA - altura, ny - altura * .45) - (Config.HUD + 47));
+    }
     private void golpeKanoa(int naveX, int naveY, List<TiroChefe> tiros) {
         int k = ataquesKanoa++ % 4; golpeKanoa = k; tempoGolpeKanoa = .6;
         boolean furia = vida < vidaPorForma * .4;
@@ -300,6 +350,7 @@ public final class ChefeMetal {
         if (mar != null && forma == 1) { if (mar.consumirBloqueio()) return false; mar.ferido(); }
         if (moto != null && forma == 1) moto.ferido();
         if (cento != null) { if (cento.consumirBloqueio()) return false; cento.ferido(); }
+        if (artista == 3 && forma == 2 && korEstado == 5) { korRebater++; flash = .1; return false; }
         vida = Math.max(0, vida - Math.max(0, dano));
         flash = .16;
         if (vida != 0) return false;
@@ -330,6 +381,7 @@ public final class ChefeMetal {
             if (ao > 0 && ao < CHICOTE_ALCANCE && Math.abs(ax * uy - ay * ux) < 24) { chicoteAcertou = true; return true; }
         }
         if (cento != null) return cento.contato(areaNave);
+        if (artista == 3 && forma == 2 && korEstado == 2 && !korAcertou && getBounds().intersects(areaNave)) { korAcertou = true; return true; }
         if (moto != null && forma == 1) return moto.consumirColisao(areaNave);
         if (mar != null && forma == 1) { if (mar.investindo() && !ataqueFisicoConsumido && mar.boneco().intersects(areaNave)) { ataqueFisicoConsumido = true; return true; } return false; }
         if (artista != 1 || forma != 2 || investida <= 0 || ataqueFisicoConsumido ||
@@ -376,7 +428,20 @@ public final class ChefeMetal {
             else Sprites16Bits.desenhar(g, artista, formaSprite() - 1, largura, altura, tempo, 0);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, transicao));
         }
-        if (artista == 2 && forma == 2 && PosesChefes.temNovaArte(2)) {
+        if (artista == 3 && forma == 2 && PosesChefes.temNovaArte(3)) {
+            int qk = korEstado == 1 ? 1 : korEstado == 2 || korEstado == 3 && korT > .3 ? 2 : korEstado == 4 ? 3 : korEstado == 5 ? 1 : 0;
+            Sprites16Bits.desenharQuadro(g, 3, 2, largura, altura, tempo, qk);
+            Graphics2D k = (Graphics2D) tela.create();
+            if (korEstado == 1) { // brilho na lamina e linha do caminho
+                double bx = Config.LARGURA - largura - 28 + korAlvoX, by = Config.HUD + 47 + korAlvoY;
+                k.setColor(new Color(160, 220, 255, (int) (120 + 100 * Math.sin(tempo * 40)))); k.setStroke(new java.awt.BasicStroke(3));
+                k.drawLine((int) x + 60, (int) (y + altura * .45), (int) bx + 60, (int) (by + altura * .45));
+                k.setColor(new Color(240, 250, 255, 220)); k.fillOval((int) x + 40, (int) (y + altura * .42) - 10, 20, 20);
+            }
+            if (korEstado == 2) for (int t = 1; t <= 4; t++) { k.setColor(new Color(150, 210, 255, 140 - t * 30)); k.fillRect((int) x + 90 + t * 40, (int) (y + altura * .3), 60, altura / 3); }
+            if (korEstado == 5) { k.setColor(new Color(150, 220, 255, (int) (90 + 60 * Math.sin(tempo * 20)))); k.setStroke(new java.awt.BasicStroke(5)); k.drawArc((int) x + 30, (int) y + 40, 160, altura - 80, 110, 140); }
+            k.dispose();
+        } else if (artista == 2 && forma == 2 && PosesChefes.temNovaArte(2)) {
             int qv = chicote > 0 ? 2 : chicoteAviso > 0 ? 1 : quadroValdrak >= 0 ? quadroValdrak : 0;
             Sprites16Bits.desenharQuadro(g, 2, 2, largura, altura, tempo, qv);
             Graphics2D cg = (Graphics2D) tela.create(); desenharChicote(cg); cg.dispose();
