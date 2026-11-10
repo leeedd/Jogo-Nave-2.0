@@ -92,30 +92,36 @@ final class FaraoBob {
     /** Encosto no tornado: machuca, com uma pausa curta entre um dano e outro. */
     boolean contato(Rectangle nave) { if (giro <= 0 || esperaContato > 0 || !bounds().intersects(nave)) return false; esperaContato = .7; return true; }
 
+    private static final int P = 4; // tamanho do pixel do tornado
+    private static final Color[] TOR = {new Color(92, 58, 34), new Color(168, 138, 92), new Color(226, 206, 160), new Color(255, 246, 214)};
     void desenhar(Graphics2D tela) {
         if (ARTE == null) return;
         Graphics2D g = (Graphics2D) tela.create();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         int q = vergonha > 0 ? 4 : corrida > 0 ? 5 : giro > 0 ? 1 : desenrolo == 0 ? 0 : desenrolo == 1 ? 2 : 3;
         int fw = ARTE.getWidth() / 6, fh = ARTE.getHeight(), w = fw * ALT / fh, px = (int) x + (300 - w) / 2, py = (int) y;
-        if (giro > 0) { // funil de tornado: aneis de ataduras e poeira, largo em cima e fino embaixo, com o Bob girando dentro
-            int cx = px + w / 2, topo = py - 10, base = py + ALT + 10, n = 14;
-            g.setStroke(new java.awt.BasicStroke(6));
-            for (int k = 0; k < n; k++) { // metade de tras dos aneis
-                double f = k / (double) (n - 1); int ry = (int) (topo + (base - topo) * f), rw = (int) (w * 1.5 * (1 - f) + 26), rh = 14 + (int) (10 * (1 - f));
-                int sway = (int) (Math.sin(tempo * 9 + f * 4) * 14 * f);
-                g.setColor(new Color(170, 150, 115, 150)); g.drawArc(cx - rw / 2 + sway, ry - rh / 2, rw, rh, 0, 180);
+        if (giro > 0) { // funil de tornado em pixel art: aneis de atadura em pixel grosso (P), paleta curta, sem suavizar
+            int cx = px + w / 2, topo = py - 10, base = py + ALT + 14, n = 9, bw = (int) (w * 1.7) + 80, bx = cx - bw / 2;
+            BufferedImage tras = new BufferedImage(bw / P, (base - topo + 30) / P, BufferedImage.TYPE_INT_ARGB), frente = new BufferedImage(tras.getWidth(), tras.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            Graphics2D gt = tras.createGraphics(), gf = frente.createGraphics();
+            for (int k = 0; k < n; k++) {
+                double f = k / (double) (n - 1); int ry = (int) ((base - topo) * f) / P + 4, rw = (int) ((w * 1.5 * (1 - f) + 30) / P), rh = (int) ((26 + 30 * (1 - f)) / P);
+                int c = tras.getWidth() / 2 + (int) (Math.sin(tempo * 9 + f * 4) * 14 * f / P), ini = (int) ((tempo * 900 + k * 40) % 360);
+                gt.setColor(TOR[0]); gt.drawArc(c - rw / 2, ry - rh / 2 + 1, rw, rh, 0, 180); gt.setColor(TOR[1]); gt.drawArc(c - rw / 2, ry - rh / 2, rw, rh, 0, 180);
+                gf.setColor(TOR[0]); gf.drawArc(c - rw / 2, ry - rh / 2 + 1, rw, rh, 180, 180);
+                gf.setColor(TOR[2]); gf.drawArc(c - rw / 2, ry - rh / 2, rw, rh, 180, 180);
+                gf.setColor(TOR[3]); gf.drawArc(c - rw / 2, ry - rh / 2, rw, rh, 180 + ini % 180, 50); // brilho correndo no anel
+                if (k % 3 == 1) { int fx = c + (int) (Math.cos(tempo * 11 + k) * rw / 2), fy = ry + (int) (Math.sin(tempo * 11 + k) * rh / 2); gf.setColor(TOR[2]); gf.fillRect(fx, fy, 3, 1); gf.fillRect(fx + 2, fy + 1, 2, 1); }
             }
+            java.util.Random r = new java.util.Random((long) (tempo * 15));
+            for (int k = 0; k < 18; k++) { gf.setColor(TOR[r.nextInt(3)]); gf.fillRect(tras.getWidth() / 2 - 14 + r.nextInt(28), tras.getHeight() - 10 + r.nextInt(8), 1 + r.nextInt(2), 1); } // areia na ponta
+            gt.dispose(); gf.dispose();
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g.drawImage(tras, bx, topo - 4, tras.getWidth() * P, tras.getHeight() * P, null);
             boolean vira = (int) (tempo * 22) % 2 == 0; double sq = .55 + .2 * Math.abs(Math.cos(tempo * 34));
             int ww = (int) (w * sq), hh = (int) (ALT * .8), xx = cx - ww / 2, yy = py + 10;
             if (vira) g.drawImage(ARTE, xx + ww, yy, xx, yy + hh, q * fw, 0, q * fw + fw, fh, null); else g.drawImage(ARTE, xx, yy, xx + ww, yy + hh, q * fw, 0, q * fw + fw, fh, null);
-            for (int k = 0; k < n; k++) { // metade da frente dos aneis, girando
-                double f = k / (double) (n - 1); int ry = (int) (topo + (base - topo) * f), rw = (int) (w * 1.5 * (1 - f) + 26), rh = 14 + (int) (10 * (1 - f));
-                int sway = (int) (Math.sin(tempo * 9 + f * 4) * 14 * f), ini = 180 + (int) ((tempo * 900 + k * 40) % 120);
-                g.setColor(new Color(235, 220, 180, 210)); g.drawArc(cx - rw / 2 + sway, ry - rh / 2, rw, rh, ini, 120);
-            }
-            java.util.Random r = new java.util.Random((long) (tempo * 20)); g.setColor(new Color(210, 185, 140, 170));
-            for (int k = 0; k < 14; k++) g.fillOval(cx - 40 + r.nextInt(80), base - 10 + r.nextInt(20), 6, 6); // poeira na ponta
+            g.drawImage(frente, bx, topo - 4, frente.getWidth() * P, frente.getHeight() * P, null);
         } else if (tonto > 0) { g.drawImage(ARTE, px, py, px + w, py + ALT, 0, 0, fw, fh, null);
             g.setColor(new Color(255, 235, 110)); for (int k = 0; k < 3; k++) { double a = tempo * 6 + k * 2.1; g.fillOval(px + w / 2 + (int) (Math.cos(a) * 40) - 5, py + 6 + (int) (Math.sin(a) * 10), 10, 10); }
             // olhos girando de tontura: espirais vermelhas no lugar dos olhos
