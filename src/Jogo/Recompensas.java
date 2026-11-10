@@ -61,6 +61,8 @@ public final class Recompensas {
         if (chefe < 1 || chefe > 10) throw new IllegalArgumentException("chefe invalido: " + chefe);
         return chefe == 9 ? "chefe_van" : chefe == 10 ? "chefe_final" : "chefe_" + chefe;
     }
+    /** Trilha 16-bit de cada planeta do sistema (MusicaChip: subgenero do universo, variacao do planeta). */
+    public static String trilhaDoPlaneta(int setor, int planeta) { return "universo_" + setor + "_" + planeta; }
     public static String trilhaDoSetor(int chefesDerrotados) {
         int[] ordem = {8, 2, 3, 4, 5, 6, 7, 1};
         int indice = Math.max(0, Math.min(ordem.length - 1, chefesDerrotados));

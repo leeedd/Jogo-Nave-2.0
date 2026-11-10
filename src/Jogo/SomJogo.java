@@ -44,7 +44,8 @@ public final class SomJogo {
   Thread t=new Thread(()->{try{java.io.File f=new java.io.File("musicas",arquivo+".wav");
    URL propria=SomJogo.class.getResource("/Audio098/"+arquivo+".wav"); // trilha original do jogo (16-bit), se existir
    URL u=f.isFile()?f.toURI().toURL():propria!=null?propria:SomJogo.class.getResource("/Audio098/trilha_metal.wav");
-   float[] a=carregar(u,50331648);if(arquivo.equals(musicaPedida))MOTOR.musica(a);}catch(Exception e){diagnostico="MUSICA "+arquivo+": "+e.getMessage();}},"MetalSpace-Musica");
+   float[] a=!f.isFile()&&propria==null&&MusicaChip.reconhece(arquivo)?MusicaChip.gerar(arquivo):carregar(u,50331648); // sem arquivo: trilha 16-bit gerada na hora
+   if(arquivo.equals(musicaPedida))MOTOR.musica(a);}catch(Exception e){diagnostico="MUSICA "+arquivo+": "+e.getMessage();}},"MetalSpace-Musica");
   t.setDaemon(true);t.start();}
  public static void pausar(boolean p){if(pausado!=p){pausado=p;MOTOR.pausar(p);if(p)FILA.clear();}}
  public static void limpar(){FILA.clear();MOTOR.limpar();}

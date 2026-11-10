@@ -198,7 +198,7 @@ implements ActionListener {
         itens.clear(); capsulas.clear(); alien.clear(); asteroides.clear(); tirosInimigos.clear(); tirosChefes.clear(); tirosElementais.clear(); nave.getMisseis().clear();
         reuniao = true; emHellraiser = false; chefe = null; cenaChefe = null; base = null; bandaReuniao = b; esperaReuniao = 0;
         etapa = Etapa.COMBATE; setorAtual = Turne.setor(b); planetaAtual = Turne.integrantes(setorAtual);
-        fundoEspacial.definirProgresso(0, setorAtual); MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(setorAtual));
+        fundoEspacial.definirProgresso(0, setorAtual); MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoPlaneta(setorAtual, planetaAtual));
         miniChefe = MiniChefe.banda(setorAtual);
         gravarRetomada(); if (retomada != null) { retomada[14] = 2; retomada[24] = b; }
         mostrarAviso("FORTALEZA " + (b + 1) + "/8: " + BANDAS[b] + " REUNIDA!");
@@ -534,7 +534,7 @@ implements ActionListener {
         nave.definirVida((int) r[6]);
         retomada = r; alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
         iniciarRitmoSetor(); fundoEspacial.definirProgresso(0, setorAtual);
-        MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(setorAtual));
+        MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoPlaneta(setorAtual, planetaAtual));
         base = null; esperaProximoEsquadrao = 2.5; nave.tornarIntangivel(2);
         mostrarAviso("DE VOLTA A BASE ALIADA"); ultimoQuadroNanos = System.nanoTime();
         if (comandoSalvo != null) comando = comandoSalvo.copia(); // o inimigo nao esquece o que aprendeu
@@ -1135,7 +1135,7 @@ implements ActionListener {
         chefesDerrotados = setorTeste - 1; setorAtual = setorTeste - 1; setoresVencidos = (1 << (setorTeste - 1)) - 1; escolhendoSetor = false;
         eliminados = chefesDerrotados == 0 ? 0 : FINAIS_SETORES[chefesDerrotados - 1];
         alien.clear(); tirosInimigos.clear(); itens.clear(); asteroides.clear();
-        lancadosNoSetor = 0; numeroEsquadrao = 0; miniChefeEnfrentado = false; planetaAtual = 0;
+        lancadosNoSetor = 0; numeroEsquadrao = 0; miniChefeEnfrentado = false; planetaAtual = 0; MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoPlaneta(setorAtual, planetaAtual));
         esperaProximoEsquadrao = 0; avisoMini = -1;
         for (int i=0;i<Nave.MAX_EVOLUCAO;i++) nave.melhorar();
         nave.coletarArmaSecundaria(); Missel.setTipoTiro(0);
@@ -1567,7 +1567,7 @@ implements ActionListener {
         this.fundoEspacial.definirProgresso(0, this.setorAtual);
         this.cenaNave = null;
         this.etapa = Etapa.COMBATE;
-        MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(this.setorAtual));
+        MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoPlaneta(this.setorAtual, this.planetaAtual));
         this.iniciarRitmoSetor();
         this.lancadosNoSetor = 0;
         this.numeroEsquadrao = 0;
@@ -1909,7 +1909,7 @@ implements ActionListener {
             esperaReuniao = 4; mostrarAviso(BANDAS[bandaReuniao - 1] + " DERROTADA! PROXIMA: " + BANDAS[bandaReuniao]);
         } else if (!intercepcao && etapa == Etapa.COMBATE && planetaAtual < Turne.integrantes(setorAtual)) {
             // integrante derrotado: o show dele foi cancelado e a turne segue para o proximo planeta
-            String quem = Turne.integrante(setorAtual, planetaAtual); planetaAtual++; miniChefeEnfrentado = false;
+            String quem = Turne.integrante(setorAtual, planetaAtual); planetaAtual++; miniChefeEnfrentado = false; if (planetaAtual < Turne.integrantes(setorAtual)) MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoPlaneta(setorAtual, planetaAtual));
             if (contrato != null) { contrato.integranteDerrotado(tempoIntegrante); resolverContrato(); }
             mostrarAviso(quem + " CANCELADO! PLANETA " + (planetaAtual + 1) + "/" + Turne.planetas(setorAtual) + (Turne.anel(setorAtual, planetaAtual) ? ": CAMPO DE METEOROS!" : ""));
             if (!partidaTeste) radio.falar(quem + " caiu. A turne ta desmoronando, segurem esse cacador!");
