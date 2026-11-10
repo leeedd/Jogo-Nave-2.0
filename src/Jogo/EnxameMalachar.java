@@ -18,7 +18,10 @@ import java.util.List;
  * Arte: tiro_morcego_ozzy.png (morcego comum) e malachar_morcego.png (rei, 4 quadros).
  */
 final class EnxameMalachar {
-    private static final BufferedImage COMUM = ler("tiro_morcego_ozzy.png");
+    private static final BufferedImage COMUM = ler("tiro_morcego_ozzy.png"), ESTACAO = ler("estacao_eclipse.png"), TREM = ler("ozzy_trem.png");
+    /** Apresentacao: estacao, o trem encosta, o Malachar desce e se desfaz em morcegos. */
+    private static final double APR = 5.4, DESFAZ = 3.6, MX = 560, MY = 330;
+    private double apr;
     static boolean temArte() { return COMUM != null && PosesChefes.morcegoMalachar() != null; }
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD, N = 16, CW = 52, RW = 96;
 
@@ -69,6 +72,7 @@ final class EnxameMalachar {
     void atualizar(double dt, int naveX, int naveY, Dificuldade dif, List<TiroChefe> tiros) {
         tempo += dt; esperaContato = Math.max(0, esperaContato - dt); guincho = Math.max(0, guincho - dt); flashRei = Math.max(0, flashRei - dt);
         double nx = naveX + 22, ny = naveY + 18, furia = vidaFrac < .5 ? 1.35 : 1;
+        if (apr < APR) { apr += dt; if (apr < DESFAZ) { for (int i = 0; i < N; i++) { bx[i] = MX; by[i] = MY; } return; } if (apr < DESFAZ + .05) SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
         if (juntar >= 0) { // todos voam para o mesmo ponto
             juntar = Math.min(1, juntar + dt / 1.3);
             for (int i = 0; i < N; i++) { double k = Math.min(1, dt * (3 + juntar * 8)); bx[i] += (cx - bx[i]) * k; by[i] += (cy - by[i]) * k; ang[i] += dt * 6; }
@@ -83,7 +87,7 @@ final class EnxameMalachar {
             }
             cx = W * .5 + Math.sin(tempo * .9) * (W * .32);
         }
-        entrada = Math.min(1, entrada + dt / 1.4);
+        entrada = apr < APR ? Math.min(.9, entrada + dt / 1.4) : Math.min(1, entrada + dt / 1.4);
         // o centro da nuvem passeia pela metade direita e acompanha a nave devagar
         if (escondido <= 0) cx += (W - 250 + Math.sin(tempo * .55) * 110 - cx) * Math.min(1, dt * 1.2);
         cy += (Math.max(TOPO + 150, Math.min(H - 150, ny)) - cy) * Math.min(1, dt * .9);
@@ -127,7 +131,7 @@ final class EnxameMalachar {
 
     /** Tiro do jogador: o rei recebe o dano; um morcego comum segura o tiro. */
     boolean colide(Rectangle r) {
-        if (juntar >= 0) return false;
+        if (juntar >= 0 || apr < APR) return false;
         if (r.intersects(caixa(rei))) return true;
         for (int i = 0; i < N; i++) if (i != rei && estado[i] != 3 && r.intersects(caixa(i))) { bloqueou = true; ultimoAtingido = i; return true; }
         return false;
@@ -140,7 +144,7 @@ final class EnxameMalachar {
     void ferido() { flashRei = .16; }
     /** Encosto: morcego mergulhando ou a propria nuvem machuca, com pausa entre um dano e outro. */
     boolean contato(Rectangle nave) {
-        if (esperaContato > 0 || juntar >= 0) return false;
+        if (esperaContato > 0 || juntar >= 0 || apr < APR) return false;
         for (int i = 0; i < N; i++) if (estado[i] != 3 && nave.intersects(caixa(i))) { esperaContato = .8; if (estado[i] == 2) { estado[i] = 3; volta[i] = .8; } return true; }
         return false;
     }
@@ -149,6 +153,7 @@ final class EnxameMalachar {
         if (COMUM == null) return;
         Graphics2D g = (Graphics2D) tela.create();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        if (apr < APR) { apresentacao(g); if (apr < DESFAZ) { g.dispose(); return; } }
         if (alfa < 1) g.setComposite(AlphaComposite.SrcOver.derive(Math.max(0, alfa)));
         for (int i = 0; i < N; i++) {
             if (i == rei && escondido <= 0 || estado[i] == 3) continue;
@@ -171,6 +176,25 @@ final class EnxameMalachar {
             if (flashRei > 0) { g.setComposite(AlphaComposite.SrcOver.derive((float) Math.min(1, flashRei * 4) * .5f * Math.max(0, alfa))); g.drawImage(f, x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4, null); }
         }
         g.dispose();
+    }
+
+    private void apresentacao(Graphics2D g) {
+        float a = (float) Math.max(0, Math.min(1, Math.min(apr / .8, (APR - apr) / .8)));
+        g.setComposite(AlphaComposite.SrcOver.derive(a));
+        if (ESTACAO != null) g.drawImage(ESTACAO, 0, 0, W, H, null);
+        if (TREM != null) { // o trem chega pela direita e para na plataforma
+            int fw = TREM.getWidth() / 3, fh = TREM.getHeight(), tw = 660, th = tw * fh / fw;
+            double p = Math.min(1, Math.max(0, (apr - .4) / 2.2)); p = 1 - Math.pow(1 - p, 3);
+            int tx = (int) (W + 20 - (W + 20 - 120) * p), ty = 452 - th, q = p < 1 ? (int) (apr * 8) % 3 : 2;
+            g.drawImage(TREM, tx, ty, tx + tw, ty + th, q * fw, 0, q * fw + fw, fh, null);
+        }
+        BufferedImage m = PosesChefes.obter(1, 2, 0);
+        if (m != null && apr > 2.4 && apr < DESFAZ + .5) { // desce do vagao ate a plataforma; depois vira morcegos
+            double d = Math.min(1, (apr - 2.4) / .9); int mh = 250, mw = mh * m.getWidth() / m.getHeight(), my = (int) (MY - mh / 2 - 60 + 60 * d);
+            float am = (float) (Math.min(1, d * 2) * (apr > DESFAZ ? Math.max(0, 1 - (apr - DESFAZ) / .5) : 1) * a);
+            g.setComposite(AlphaComposite.SrcOver.derive(am)); g.drawImage(m, (int) MX - mw / 2, my, mw, mh, null);
+        }
+        g.setComposite(AlphaComposite.SrcOver);
     }
 
     private static BufferedImage ler(String n) {
