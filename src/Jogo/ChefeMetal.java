@@ -37,6 +37,8 @@ public final class ChefeMetal {
     private final MotoValdrak moto;
     /** Krovax: a centopeia de sucata (substitui o chefe 4). */
     private final CentopeiaKrovax cento;
+    /** Korvus: o ato I e o Tutan-Bob, o farao das ataduras. */
+    private final FaraoBob bob;
     private double quebra; private String aviso;
     /** Kanoa (ato II): golpe da vez (0 voz, 1 machado, 2 lanca, 3 arco), mostrado no quadro proprio da arte. */
     private int golpeKanoa = -1, ataquesKanoa; private double tempoGolpeKanoa;
@@ -66,6 +68,7 @@ public final class ChefeMetal {
         this.mar = artista == 5 && MarionetePuppets.temArte() ? new MarionetePuppets() : null;
         this.moto = artista == 2 && MotoValdrak.temArte() ? new MotoValdrak() : null;
         this.cento = artista == 4 && CentopeiaKrovax.temArte() ? new CentopeiaKrovax() : null;
+        this.bob = artista == 3 && FaraoBob.temArte() ? new FaraoBob() : null;
     }
     /** Cutscene pedida pela luta (lida uma unica vez pela Fase). */
     String consumirCena() { String c = cenaPendente; cenaPendente = null; return c; }
@@ -85,6 +88,7 @@ public final class ChefeMetal {
         if (trem != null && forma == 1) { trem.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = trem.entrada(); return; }
         if (mar != null && forma == 1) { mar.vida(vida / (double) vidaPorForma); mar.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = mar.entrada(); if (!mar.investindo()) ataqueFisicoConsumido = false; return; }
         if (cento != null) { if (transformando > 0) transformando = Math.max(0, transformando - dt); cento.atualizar(dt, naveX, naveY, dificuldade, tiros, vida / (double) vidaPorForma); entrada = cento.entrada(); return; }
+        if (bob != null && forma == 1) { bob.vida(vida / (double) vidaPorForma); bob.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = bob.entrada(); return; }
         if (moto != null && forma == 1) { moto.atualizar(dt, naveX, naveY, dificuldade, tiros, vida < vidaPorForma * .4); entrada = moto.entrada(); return; }
         if (quebra > 0) { quebra = Math.max(0, quebra - dt); entrada = 1; x = Config.LARGURA - largura - 28; y = Config.HUD + 47; return; }
         entrada = Math.min(1.0, entrada + dt / 1.35);
@@ -349,6 +353,7 @@ public final class ChefeMetal {
         if (vida <= 0 || entrada < 1 || transformando > 0 || quebra > 0) return false;
         if (mar != null && forma == 1) { if (mar.consumirBloqueio()) return false; mar.ferido(); }
         if (moto != null && forma == 1) moto.ferido();
+        if (bob != null && forma == 1) { bob.ferido(); dano = bob.envergonhado() ? dano * 2 : Math.max(1, dano * 45 / 100); } // o Bob e duro, menos quando esta pelado
         if (cento != null) { if (cento.consumirBloqueio()) return false; cento.ferido(); }
         if (artista == 3 && forma == 2 && korEstado == 5) { korRebater++; flash = .1; return false; }
         vida = Math.max(0, vida - Math.max(0, dano));
@@ -361,6 +366,7 @@ public final class ChefeMetal {
             intervalo = 1.7;
             // o morcego vira o Principe das Trevas numa cutscene propria
             if (trem != null && forma == 2) trem.parar();
+            if (bob != null && forma == 2) { transformando = 1.0; aviso = "TUTAN-BOB FUGIU! O ALMIRANTE KORVUS ASSUME O CONVES!"; }
             if (cento != null && forma == 2) { transformando = 0; cento.furia(); aviso = "KROVAX ENFURECEU!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (moto != null && forma == 2) { quebra = quebraTotal = MONTAGEM; transformando = 0; aviso = "A MOTO SE TRANSFORMA: VALDRAK!"; SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); }
             if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O HEXAR!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
@@ -372,7 +378,7 @@ public final class ChefeMetal {
 
     String consumirAviso() { String a = aviso; aviso = null; return a; }
     /** Tiro do jogador: no ato I da marionete o boneco segura os tiros. */
-    boolean colide(Rectangle r) { if (cento != null) return cento.colide(r); if (mar != null && forma == 1) return mar.colide(r); if (moto != null && forma == 1) return r.intersects(moto.bounds()); if (quebra > 0) return false; return r.intersects(getBounds()); }
+    boolean colide(Rectangle r) { if (bob != null && forma == 1) return r.intersects(bob.bounds()); if (cento != null) return cento.colide(r); if (mar != null && forma == 1) return mar.colide(r); if (moto != null && forma == 1) return r.intersects(moto.bounds()); if (quebra > 0) return false; return r.intersects(getBounds()); }
     /** Ozzy so causa dano no mergulho, nao durante o aviso. */
     public boolean consumirColisaoCorporal(Rectangle areaNave) {
         if (artista == 2 && forma == 2 && chicote > 0 && !chicoteAcertou) {
@@ -380,6 +386,7 @@ public final class ChefeMetal {
             double ao = ax * ux + ay * uy;
             if (ao > 0 && ao < CHICOTE_ALCANCE && Math.abs(ax * uy - ay * ux) < 24) { chicoteAcertou = true; return true; }
         }
+        if (bob != null && forma == 1) { if (bob.emGiro() && !ataqueFisicoConsumido && bob.bounds().intersects(areaNave)) { ataqueFisicoConsumido = true; return true; } if (!bob.emGiro()) ataqueFisicoConsumido = false; return false; }
         if (cento != null) return cento.contato(areaNave);
         if (artista == 3 && forma == 2 && korEstado == 2 && !korAcertou && getBounds().intersects(areaNave)) { korAcertou = true; return true; }
         if (moto != null && forma == 1) return moto.consumirColisao(areaNave);
@@ -409,6 +416,7 @@ public final class ChefeMetal {
         if (trem != null && forma == 1) { g.dispose(); trem.desenhar(tela, flash); return; }
         if (mar != null && forma == 1) { g.dispose(); mar.desenhar(tela, 1f); return; }
         if (cento != null) { g.dispose(); cento.desenhar(tela); return; }
+        if (bob != null && forma == 1) { g.dispose(); bob.desenhar(tela); return; }
         if (moto != null && forma == 1) { g.dispose(); moto.desenhar(tela, 1f, -1); return; }
         if (quebra > 0) {
             // o boneco desmonta no lugar onde o James aparece, e ele vai surgindo no meio das lascas
@@ -556,20 +564,21 @@ public final class ChefeMetal {
         if (mar != null && forma == 1) return mar.bounds();
         if (moto != null && forma == 1) return moto.bounds();
         if (cento != null) return cento.bounds();
+        if (bob != null && forma == 1) return bob.bounds();
         return new Rectangle((int)x + 42, (int)y + 30, largura - 87, altura - 74);
     }
     public boolean estaVivo() { return vida > 0; }
     public int getVida() { return vida; }
     public int getVidaMaxima() { return vidaPorForma; }
-    public int getX() { return cento != null || (trem != null || mar != null || moto != null) && forma == 1 ? getBounds().x : (int)x; }
-    public int getY() { return cento != null || (trem != null || mar != null || moto != null) && forma == 1 ? getBounds().y : (int)y; }
+    public int getX() { return cento != null || (trem != null || mar != null || moto != null || bob != null) && forma == 1 ? getBounds().x : (int)x; }
+    public int getY() { return cento != null || (trem != null || mar != null || moto != null || bob != null) && forma == 1 ? getBounds().y : (int)y; }
     public int getForma() { return forma; }
     public double getEntrada() { return entrada; }
     public String getNome() {
         switch (artista) {
             case 1: return forma == 1 ? "MALACHAR - EXPRESSO DO ECLIPSE" : forma == 2 ? "MALACHAR - ASA DO ECLIPSE" : "MALACHAR - MAESTRO DO ECLIPSE";
             case 2: return moto != null && forma == 1 ? "VALDRAK - MOTO DE CROMO" : "VALDRAK - CHICOTE DE PLASMA";
-            case 3: return "KORVUS - CORSARIO DO VACUO";
+            case 3: return bob != null && forma == 1 ? "TUTAN-BOB - O FARAO DAS ATADURAS" : "KORVUS - CORSARIO DO VACUO";
             case 4: return forma == 1 ? "KROVAX - A CENTOPEIA DE SUCATA" : "KROVAX - FURIA DE FERRUGEM";
             case 5: return mar != null && forma == 1 ? "CINZAS DE ORION - O MARIONETISTA" : "HEXAR - RIFF DE QUATRO BRACOS";
             case 6: return "MORGATH - CHUVA DE FOGO";

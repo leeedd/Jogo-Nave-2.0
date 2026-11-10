@@ -62,6 +62,8 @@ public final class TiroChefe {
             case RASTRO: desenharRastro(g, px, py); return;
             case PISTA_FOGO: desenharPistaFogo(g, px, py); return;
             case BOLA_FOGO: desenharBolaFogo(g, px, py); return;
+            case ATADURA: desenharAtadura(g, px, py); return;
+            case BLOCO: case SOLDADO: case CARRUAGEM: case ESFINGE: case RAINHA: desenharEgito(g, px, py); return;
             case ONDA_SOM: desenharOndaLemmy(g, px, py); return;
             case PRATO: desenharPrato(g, px, py); return;
             case ENERGIA: desenharEnergia(g, px, py); return;
@@ -277,6 +279,8 @@ public final class TiroChefe {
     double getVxTeste() { return vx; }
     double getVyTeste() { return vy; }
     public Rectangle getBounds() {
+        if (estilo == ATADURA) return new Rectangle((int) x - 14, (int) y - 8, 28, 16);
+        if (estilo >= BLOCO && estilo <= RAINHA) { int[] t = tamEgito(); return new Rectangle((int) x - t[0] * 4 / 10, (int) y - t[1] * 4 / 10, t[0] * 8 / 10, t[1] * 8 / 10); }
         if (estilo == BOLA_FOGO) return new Rectangle((int) x - 10, (int) y - 10, 20, 20);
         if (estilo == PISTA_FOGO) { double f = fogoPista(); return f <= .05 ? new Rectangle(-99, -99, 0, 0) : new Rectangle((int) x - 19, (int) (y - 38 * f), 38, (int) (38 * f) + 6); }
         if (estilo == RAIO_CEU) return new Rectangle((int) x - 9, (int) y - 40, 18, 46);
@@ -399,7 +403,7 @@ public final class TiroChefe {
     }
     /** Pneu em chamas deixa fogo na pista: some sozinho em 1,4 s. */
     /** Pista em chamas da moto do Valdrak: sobe rapido, fica queimando e baixa no fim. */
-    static final int PISTA_FOGO = 35, BOLA_FOGO = 36; private static final double PISTA_DURA = 2.6;
+    static final int PISTA_FOGO = 35, BOLA_FOGO = 36, ATADURA = 37, BLOCO = 38, SOLDADO = 39, CARRUAGEM = 40, ESFINGE = 41, RAINHA = 42; private static final double PISTA_DURA = 2.6;
     private double fogoPista() { return Math.max(0, Math.min(1, Math.min(tempo / .15, (PISTA_DURA - tempo) / .6))); }
     private void desenharPistaFogo(Graphics2D tela, int px, int py) {
         Graphics2D g = (Graphics2D) tela.create(); double f = fogoPista();
@@ -410,6 +414,24 @@ public final class TiroChefe {
             g.setColor(new Color(255, 230, 140, (int) (220 * f))); g.fillPolygon(new int[]{lx - 3, lx, lx + 3}, new int[]{py + 6, py + 6 - h / 2, py + 6}, 3);
         }
         g.setColor(new Color(255, 200, 90, (int) (230 * f))); g.fillRect(px - 19, py + 2, 38, 5);
+        g.dispose();
+    }
+    private int[] tamEgito() { switch (estilo) { case BLOCO: return new int[]{90, 82}; case SOLDADO: return new int[]{62, 102}; case CARRUAGEM: return new int[]{180, 120}; case ESFINGE: return new int[]{170, 155}; default: return new int[]{120, 98}; } }
+    private void desenharEgito(Graphics2D tela, int px, int py) {
+        java.awt.image.BufferedImage img = estilo == BLOCO ? FaraoBob.BLOCO : estilo == SOLDADO ? ((int) (tempo * 5) % 2 == 0 ? FaraoBob.SOLDADO0 : FaraoBob.SOLDADO1)
+                : estilo == CARRUAGEM ? FaraoBob.CARRUAGEM : estilo == ESFINGE ? FaraoBob.ESFINGE : FaraoBob.RAINHA;
+        if (img == null) return; int[] t = tamEgito();
+        Graphics2D g = (Graphics2D) tela.create(); g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        if (estilo == BLOCO) g.rotate(Math.sin(tempo * 3) * .15, px, py);
+        g.drawImage(img, px - t[0] / 2, py - t[1] / 2, t[0], t[1], null); g.dispose();
+    }
+    /** Atadura voando: uma faixa de linho ondulando. */
+    private void desenharAtadura(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create(); g.translate(px, py); g.rotate(Math.atan2(vy, vx));
+        int n = 7; int[] xs = new int[n], ys = new int[n];
+        for (int k = 0; k < n; k++) { xs[k] = -k * 6; ys[k] = (int) (Math.sin(tempo * 18 + k) * 4); }
+        g.setStroke(new java.awt.BasicStroke(7)); g.setColor(new Color(150, 120, 90)); g.drawPolyline(xs, ys, n);
+        g.setStroke(new java.awt.BasicStroke(4)); g.setColor(new Color(232, 215, 175)); g.drawPolyline(xs, ys, n);
         g.dispose();
     }
     /** Bola de fogo com cauda de chamas apontando para tras do movimento. */
