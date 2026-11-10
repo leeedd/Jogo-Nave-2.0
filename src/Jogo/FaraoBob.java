@@ -87,11 +87,18 @@ final class FaraoBob {
 
     /** A tropa chamada pelo dedo do farao atravessa a tela da direita para a esquerda. */
     private void chamarTropa(int tipo, double ny, List<TiroChefe> tiros) {
-        for (int i = 0; i < 5; i++) tiros.add(new TiroChefe(W + 40 + i * 60, TOPO + 50 + i * 95, -190, 0, true, TiroChefe.SOLDADO, TiroChefe.Movimento.RETO));
-        if (tipo == 0) tiros.add(new TiroChefe(W + 260, ny, -430, 0, true, TiroChefe.CARRUAGEM, TiroChefe.Movimento.RETO));
-        else if (tipo == 1) tiros.add(new TiroChefe(W + 220, H - 110, -160, 0, true, TiroChefe.ESFINGE, TiroChefe.Movimento.RETO));
-        else { tiros.add(new TiroChefe(W + 120, TOPO + 120, -110, 0, true, TiroChefe.RAINHA, TiroChefe.Movimento.RETO));
-            for (int i = -1; i <= 1; i++) tiros.add(new TiroChefe(W - 40, TOPO + 140, -300, i * 90, false, TiroChefe.ENERGIA, TiroChefe.Movimento.ONDA).comCor(new Color(120, 220, 90))); }
+        recarga = Math.max(recarga, 3.4); // segura os outros golpes enquanto a tropa passa
+        // enxurrada: 4 levas de soldados, cada uma com um buraco numa altura diferente para a nave passar
+        int buraco = sorte.nextInt(5);
+        for (int leva = 0; leva < 4; leva++) {
+            buraco = (buraco + 1 + sorte.nextInt(3)) % 5;
+            for (int i = 0; i < 5; i++) if (i != buraco) tiros.add(new TiroChefe(W + 40 + leva * 250 + (i % 2) * 24, TOPO + 45 + i * 92, -230, 0, true, TiroChefe.SOLDADO, TiroChefe.Movimento.RETO));
+        }
+        // e os pesos-pesados no meio da tropa, o reforco da vez chega primeiro
+        tiros.add(new TiroChefe(W + (tipo == 0 ? 120 : 520), ny, -470, 0, true, TiroChefe.CARRUAGEM, TiroChefe.Movimento.RETO));
+        tiros.add(new TiroChefe(W + (tipo == 1 ? 200 : 700), H - 110, -200, 0, true, TiroChefe.ESFINGE, TiroChefe.Movimento.RETO));
+        tiros.add(new TiroChefe(W + (tipo == 2 ? 160 : 900), TOPO + 110, -170, 0, true, TiroChefe.RAINHA, TiroChefe.Movimento.RETO));
+        for (int i = -1; i <= 1; i++) tiros.add(new TiroChefe(W - 40, TOPO + 140, -300, i * 90, false, TiroChefe.ENERGIA, TiroChefe.Movimento.ONDA).comCor(new Color(120, 220, 90)));
     }
 
     void ferido() { flash = .16; }
