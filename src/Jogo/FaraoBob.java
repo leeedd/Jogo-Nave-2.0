@@ -56,20 +56,20 @@ final class FaraoBob {
             if (x < -60) { x = -60; tvx = Math.abs(tvx); bateu = true; } else if (x > W - 240) { x = W - 240; tvx = -Math.abs(tvx); bateu = true; }
             if (y < TOPO - 30) { y = TOPO - 30; tvy = Math.abs(tvy); bateu = true; } else if (y > H - ALT + 20) { y = H - ALT + 20; tvy = -Math.abs(tvy); bateu = true; }
             if (bateu) {
-                double v = Math.min(1250, Math.hypot(tvx, tvy) * 1.2), a = Math.atan2(tvy, tvx) + (sorte.nextDouble() - .5) * .9;
+                double v = Math.min(1750, Math.hypot(tvx, tvy) * 1.25), a = Math.atan2(tvy, tvx) + (sorte.nextDouble() - .5) * .9;
                 if (sorte.nextDouble() < .3) a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); // as vezes vem direto na nave
                 tvx = Math.cos(a) * v; tvy = Math.sin(a) * v;
                 if (Math.abs(tvx) < v * .7) { tvx = Math.signum(tvx == 0 ? 1 : tvx) * v * .7; tvy = Math.signum(tvy) * v * .71; } // mais de lado a lado que de cima a baixo SomJogo.tocar(SomJogo.Efeito.IMPACTO);
             }
             if (giro == 0) tonto = 1.2;
-            if ((int) (giro * 12) != (int) ((giro + dt) * 12)) { double a = tempo * 7, cx = x + 150, cy = y + ALT * .5;
+            if ((int) (giro * 12) != (int) ((giro + dt) * 12)) { double a = tempo * 15, cx = x + 150, cy = y + ALT * .5;
                 for (int k = 0; k < 2; k++) { double aa = a + k * Math.PI; tiros.add(new TiroChefe(cx, cy, Math.cos(aa) * 260, Math.sin(aa) * 260, false, TiroChefe.ATADURA, TiroChefe.Movimento.ONDA)); } }
             return;
         }
         recarga -= dt * dif.cadenciaInimigos * (vidaFrac < .5 ? 1.3 : 1);
         if (recarga > 0 || tiros.size() > 55) return;
         int g = golpes++ % 4;
-        if (g == 0) { giro = 4.6; double a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); tvx = Math.cos(a) * 620; tvy = Math.sin(a) * 620; }
+        if (g == 0) { giro = 4.6; double a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); tvx = Math.cos(a) * 950; tvy = Math.sin(a) * 950; }
         else if (g == 2) { // raio dos olhos: dois feixes vermelhos em X
             olhos = .5; double ex = x + 135, ey = y + 62;
             for (int i = -1; i <= 1; i += 2) { double a = Math.atan2(ny - ey, nx - ex) + i * .22;
@@ -109,19 +109,19 @@ final class FaraoBob {
             Graphics2D gt = tras.createGraphics(), gf = frente.createGraphics();
             for (int k = 0; k < n; k++) {
                 double f = k / (double) (n - 1); int ry = (int) ((base - topo) * f) / P + 4, rw = (int) ((w * 1.5 * (1 - f) + 30) / P), rh = (int) ((26 + 30 * (1 - f)) / P);
-                int c = tras.getWidth() / 2 + (int) (Math.sin(tempo * 9 + f * 4) * 14 * f / P), ini = (int) ((tempo * 900 + k * 40) % 360);
+                int c = tras.getWidth() / 2 + (int) (Math.sin(tempo * 16 + f * 4) * 16 * f / P), ini = (int) ((tempo * 2400 + k * 40) % 360);
                 gt.setColor(TOR[0]); gt.drawArc(c - rw / 2, ry - rh / 2 + 1, rw, rh, 0, 180); gt.setColor(TOR[1]); gt.drawArc(c - rw / 2, ry - rh / 2, rw, rh, 0, 180);
                 gf.setColor(TOR[0]); gf.drawArc(c - rw / 2, ry - rh / 2 + 1, rw, rh, 180, 180);
                 gf.setColor(TOR[2]); gf.drawArc(c - rw / 2, ry - rh / 2, rw, rh, 180, 180);
                 gf.setColor(TOR[3]); gf.drawArc(c - rw / 2, ry - rh / 2, rw, rh, 180 + ini % 180, 50); // brilho correndo no anel
-                if (k % 3 == 1) { int fx = c + (int) (Math.cos(tempo * 11 + k) * rw / 2), fy = ry + (int) (Math.sin(tempo * 11 + k) * rh / 2); gf.setColor(TOR[2]); gf.fillRect(fx, fy, 3, 1); gf.fillRect(fx + 2, fy + 1, 2, 1); }
+                if (k % 3 == 1) { int fx = c + (int) (Math.cos(tempo * 26 + k) * rw / 2), fy = ry + (int) (Math.sin(tempo * 26 + k) * rh / 2); gf.setColor(TOR[2]); gf.fillRect(fx, fy, 3, 1); gf.fillRect(fx + 2, fy + 1, 2, 1); }
             }
             java.util.Random r = new java.util.Random((long) (tempo * 15));
             for (int k = 0; k < 18; k++) { gf.setColor(TOR[r.nextInt(3)]); gf.fillRect(tras.getWidth() / 2 - 14 + r.nextInt(28), tras.getHeight() - 10 + r.nextInt(8), 1 + r.nextInt(2), 1); } // areia na ponta
             gt.dispose(); gf.dispose();
             g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
             g.drawImage(tras, bx, topo - 4, tras.getWidth() * P, tras.getHeight() * P, null);
-            boolean vira = (int) (tempo * 22) % 2 == 0; double sq = .55 + .2 * Math.abs(Math.cos(tempo * 34));
+            boolean vira = (int) (tempo * 40) % 2 == 0; double sq = .55 + .2 * Math.abs(Math.cos(tempo * 62));
             int ww = (int) (w * sq), hh = (int) (ALT * .8), xx = cx - ww / 2, yy = py + 10;
             if (vira) g.drawImage(ARTE, xx + ww, yy, xx, yy + hh, q * fw, 0, q * fw + fw, fh, null); else g.drawImage(ARTE, xx, yy, xx + ww, yy + hh, q * fw, 0, q * fw + fw, fh, null);
             g.drawImage(frente, bx, topo - 4, frente.getWidth() * P, frente.getHeight() * P, null);
