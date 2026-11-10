@@ -418,6 +418,7 @@ extends JPanel {
             jFrame.revalidate(); jFrame.repaint();
             telaInicial.requestFocusInWindow();
         }));
+        MusicaJogo.trocarSeDisponivel("abertura"); // musicas/abertura.wav se o jogador tiver; senao a trilha epica original
         jFrame.setContentPane(abertura);
         jFrame.pack();
         jFrame.setResizable(false);
