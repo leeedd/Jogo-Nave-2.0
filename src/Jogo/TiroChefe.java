@@ -52,6 +52,8 @@ public final class TiroChefe {
         int linha = estilo == 2 ? SpritesExtras.ROB : estilo == 3 ? SpritesExtras.BRUCE : estilo == 5 ? SpritesExtras.JAMES : estilo == 6 ? SpritesExtras.TOM : estilo == 7 ? SpritesExtras.CHUCK : -1;
         if (linha >= 0 && SpritesExtras.temTiros()) { SpritesExtras.tiro(g, linha, x, y, vx, vy, pesado ? 82 : 60, tempo); return; }
         switch (estilo) {
+            case FLECHA: case LANCA: case CORTE: desenharArmaTormenta(g, px, py); return;
+            case RAIO_CEU: desenharRaioCeu(g, px, py); return;
             case FUMACA: desenharFumaca(g, px, py); return;
             case VAGAO: desenharVagao(g, px, py); return;
             case FOGO_ROXO: desenharFogoRoxo(g, px, py); return;
@@ -272,12 +274,54 @@ public final class TiroChefe {
     double getVxTeste() { return vx; }
     double getVyTeste() { return vy; }
     public Rectangle getBounds() {
+        if (estilo == RAIO_CEU) return new Rectangle((int) x - 9, (int) y - 40, 18, 46);
+        if (estilo == CORTE) return new Rectangle((int) x - 14, (int) y - 34, 28, 68);
+        if (estilo == LANCA || estilo == FLECHA) { int r = estilo == LANCA ? 12 : 8; return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2); }
         if (estilo == VAGAO) return new Rectangle((int) x - 70, (int) y - 26, 150, 52);
         if (estilo == ONDA_SOM) { int h = alturaOnda() * 3 / 4; return new Rectangle((int) x - 16, (int) y - h / 2, 32, h); }
         int r = estilo == ENERGIA ? 9 : estilo == NOTA ? 9 : estilo == PRATO ? 14 : estilo == AS_ESPADAS ? 14 : estilo == MORCEGO_OZZY ? 13 : estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
         return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2);
     }
     public int dano() { return estilo == ONDA_SOM ? 1 : estilo == VAGAO ? 5 : estilo == FOGO_ROXO ? 3 : pesado ? 3 : 2; }
+
+    // ---- Kanoa (tormenta): flecha, lanca, corte do machado e raio do ceu ----
+    static final int FLECHA = 31, LANCA = 32, CORTE = 33, RAIO_CEU = 34;
+    private static final Color AZUL_RAIO = new Color(140, 210, 255), BRANCO_RAIO = new Color(235, 248, 255);
+    private void desenharArmaTormenta(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create(); g.translate(px, py); g.rotate(Math.atan2(vy, vx));
+        java.util.Random r = new java.util.Random((long) (tempo * 30));
+        if (estilo == CORTE) {
+            // meia-lua do machado: arco de luz grossa, com faiscas na borda
+            g.setStroke(new java.awt.BasicStroke(10)); g.setColor(new Color(90, 170, 255, 120)); g.drawArc(-34, -36, 44, 72, -70, 140);
+            g.setStroke(new java.awt.BasicStroke(5)); g.setColor(AZUL_RAIO); g.drawArc(-30, -34, 40, 68, -65, 130);
+            g.setStroke(new java.awt.BasicStroke(2)); g.setColor(BRANCO_RAIO); g.drawArc(-27, -32, 36, 64, -60, 120);
+            for (int k = 0; k < 4; k++) g.fillRect(4 + r.nextInt(8), -30 + r.nextInt(60), 3, 3);
+        } else {
+            int L = estilo == LANCA ? 54 : 30;
+            // haste de raio em zigue-zague e ponta de cristal
+            int[] xs = new int[6], ys = new int[6];
+            for (int k = 0; k < 6; k++) { xs[k] = -L + k * (L - 8) / 5; ys[k] = k == 0 || k == 5 ? 0 : r.nextInt(7) - 3; }
+            g.setStroke(new java.awt.BasicStroke(estilo == LANCA ? 7 : 5)); g.setColor(new Color(90, 170, 255, 120)); g.drawPolyline(xs, ys, 6);
+            g.setStroke(new java.awt.BasicStroke(estilo == LANCA ? 3 : 2)); g.setColor(BRANCO_RAIO); g.drawPolyline(xs, ys, 6);
+            int c = estilo == LANCA ? 14 : 9;
+            g.setColor(AZUL_RAIO); g.fillPolygon(new int[]{-8, c, -8}, new int[]{-c / 2 - 2, 0, c / 2 + 2}, 3);
+            g.setColor(BRANCO_RAIO); g.fillPolygon(new int[]{-4, c - 4, -4}, new int[]{-c / 4, 0, c / 4}, 3);
+            if (estilo == FLECHA) { g.setColor(AZUL_RAIO); g.drawLine(-L, 0, -L - 6, -6); g.drawLine(-L, 0, -L - 6, 6); }
+        }
+        g.dispose();
+    }
+    private void desenharRaioCeu(Graphics2D tela, int px, int py) {
+        // o raio desce do topo da tela ate a ponta, em zigue-zague
+        Graphics2D g = (Graphics2D) tela.create();
+        java.util.Random r = new java.util.Random((long) (tempo * 25) + px);
+        int n = Math.max(2, (py - Config.HUD) / 28 + 1); int[] xs = new int[n], ys = new int[n];
+        for (int k = 0; k < n; k++) { ys[k] = Config.HUD + (py - Config.HUD) * k / (n - 1); xs[k] = px + (k == n - 1 ? 0 : r.nextInt(17) - 8); }
+        g.setStroke(new java.awt.BasicStroke(9)); g.setColor(new Color(90, 170, 255, 90)); g.drawPolyline(xs, ys, n);
+        g.setStroke(new java.awt.BasicStroke(4)); g.setColor(AZUL_RAIO); g.drawPolyline(xs, ys, n);
+        g.setStroke(new java.awt.BasicStroke(2)); g.setColor(BRANCO_RAIO); g.drawPolyline(xs, ys, n);
+        g.setColor(new Color(235, 248, 255, 200)); g.fillOval(px - 8, py - 8, 16, 16);
+        g.dispose();
+    }
 
     // ---- Ozzy (Crazy Train e dragao) ----
     static final int FUMACA = 20, VAGAO = 21, FOGO_ROXO = 22, BARRIL = 23, RASTRO = 24, ONDA_SOM = 25, AS_ESPADAS = 26, MORCEGO_OZZY = 27, PRATO = 28, ENERGIA = 29, NOTA = 30;

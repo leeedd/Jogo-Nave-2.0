@@ -211,28 +211,24 @@ public final class ChefeMetal {
         }
     }
 
-    private static final java.awt.Color RAIO = new java.awt.Color(140, 210, 255);
-    private void raio(List<TiroChefe> tiros, double x0, double y0, double vx, double vy, boolean pesado, TiroChefe.Movimento m) {
-        tiros.add(new TiroChefe(x0, y0, vx, vy, pesado, TiroChefe.ENERGIA, m).comCor(RAIO));
+    private void arma(List<TiroChefe> tiros, int estilo, double x0, double y0, double a, double v, boolean pesado, TiroChefe.Movimento m) {
+        tiros.add(new TiroChefe(x0, y0, Math.cos(a) * v, Math.sin(a) * v, pesado, estilo, m));
     }
     private void golpeKanoa(int naveX, int naveY, List<TiroChefe> tiros) {
         int k = ataquesKanoa++ % 4; golpeKanoa = k; tempoGolpeKanoa = .6;
         boolean furia = vida < vidaPorForma * .4;
-        double nx = naveX + 22, ny = naveY + 18, ox = x + 70, oy = y + 150;
-        if (k == 0) {        // a voz chama raios do ceu sobre a nave
-            for (int i = -1; i <= 1; i++) raio(tiros, nx + i * 70, Config.HUD + 10, 0, 520, i == 0, TiroChefe.Movimento.ACELERADO);
-            if (furia) for (int i = 0; i < 3; i++) raio(tiros, nx - 200 + i * 200, Config.HUD + 10, 0, 420, false, TiroChefe.Movimento.RETO);
-        } else if (k == 1) { // machado: golpe largo em meia-lua, com um buraco na altura da nave
-            int n = furia ? 11 : 9;
-            for (int i = 0; i < n; i++) { if (i == n / 2) continue; double a = Math.PI + (i - (n - 1) / 2.0) * .16; raio(tiros, ox, oy, Math.cos(a) * 280, Math.sin(a) * 280, true, TiroChefe.Movimento.RETO); }
-        } else if (k == 2) { // lanca: um golpe pesado e rapido na nave, soltando faiscas para os lados
-            double a = Math.atan2(ny - oy, nx - ox);
-            raio(tiros, ox, oy, Math.cos(a) * 560, Math.sin(a) * 560, true, TiroChefe.Movimento.RETO);
-            for (int i = -1; i <= 1; i += 2) raio(tiros, ox, oy, Math.cos(a + i * .5) * 300, Math.sin(a + i * .5) * 300, false, TiroChefe.Movimento.ONDA);
+        double nx = naveX + 22, ny = naveY + 18, ox = x + 70, oy = y + 150, a = Math.atan2(ny - oy, nx - ox);
+        if (k == 0) {        // a voz chama raios do ceu: caem na nave e ao lado dela
+            for (int i = -1; i <= 1; i++) arma(tiros, TiroChefe.RAIO_CEU, nx + i * 90, Config.HUD + 4, Math.PI / 2, 560, i == 0, TiroChefe.Movimento.ACELERADO);
+            if (furia) for (int i = 0; i < 2; i++) arma(tiros, TiroChefe.RAIO_CEU, nx - 230 + i * 460, Config.HUD + 4, Math.PI / 2, 480, false, TiroChefe.Movimento.RETO);
+        } else if (k == 1) { // machado: tres cortes em meia-lua, abertos, com espaco para passar entre eles
+            for (int i = -1; i <= 1; i++) arma(tiros, TiroChefe.CORTE, ox, oy, Math.PI + i * .34, 300, true, TiroChefe.Movimento.RETO);
+            if (furia) for (int i = -1; i <= 1; i += 2) arma(tiros, TiroChefe.CORTE, ox, oy, Math.PI + i * .17, 240, true, TiroChefe.Movimento.RETO);
+        } else if (k == 2) { // lanca: um arremesso pesado e rapido direto na nave
+            arma(tiros, TiroChefe.LANCA, ox, oy, a, 600, true, TiroChefe.Movimento.RETO);
         } else {             // arco: leque de flechas eletricas e, na furia, chuva de flechas
-            double a = Math.atan2(ny - oy, nx - ox);
-            for (int i = -2; i <= 2; i++) raio(tiros, ox, oy, Math.cos(a + i * .11) * 430, Math.sin(a + i * .11) * 430, false, TiroChefe.Movimento.RETO);
-            if (furia) for (int i = 0; i < 6; i++) raio(tiros, nx - 260 + i * 90, Config.HUD + 10, -60, 330, false, TiroChefe.Movimento.ARCO);
+            for (int i = -2; i <= 2; i++) arma(tiros, TiroChefe.FLECHA, ox, oy, a + i * .11, 450, false, TiroChefe.Movimento.RETO);
+            if (furia) for (int i = 0; i < 5; i++) arma(tiros, TiroChefe.FLECHA, nx - 240 + i * 120, Config.HUD + 4, Math.PI / 2 + .25, 340, false, TiroChefe.Movimento.RETO);
         }
     }
     private void tiro(List<TiroChefe> tiros, double x0, double y0, double angulo,
