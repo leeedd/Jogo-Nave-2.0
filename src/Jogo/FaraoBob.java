@@ -98,13 +98,24 @@ final class FaraoBob {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         int q = vergonha > 0 ? 4 : corrida > 0 ? 5 : giro > 0 ? 1 : desenrolo == 0 ? 0 : desenrolo == 1 ? 2 : 3;
         int fw = ARTE.getWidth() / 6, fh = ARTE.getHeight(), w = fw * ALT / fh, px = (int) x + (300 - w) / 2, py = (int) y;
-        if (giro > 0) { // girando de verdade: espelha rapido e um redemoinho de ataduras em volta
-            boolean vira = (int) (tempo * 22) % 2 == 0; double sq = .75 + .25 * Math.abs(Math.cos(tempo * 34));
-            int ww = (int) (w * sq), xx = px + (w - ww) / 2;
-            if (vira) g.drawImage(ARTE, xx + ww, py, xx, py + ALT, q * fw, 0, q * fw + fw, fh, null); else g.drawImage(ARTE, xx, py, xx + ww, py + ALT, q * fw, 0, q * fw + fw, fh, null);
-            g.setStroke(new java.awt.BasicStroke(5));
-            for (int k = 0; k < 6; k++) { double fase = tempo * 14 + k; int ry = py + 30 + k * (ALT - 60) / 5, rw = (int) (w * (.7 + .25 * Math.sin(fase)));
-                g.setColor(new Color(232, 215, 175, 190)); g.drawArc(px + (w - rw) / 2, ry - 10, rw, 22, (int) Math.toDegrees(fase) % 360, 200); }
+        if (giro > 0) { // funil de tornado: aneis de ataduras e poeira, largo em cima e fino embaixo, com o Bob girando dentro
+            int cx = px + w / 2, topo = py - 10, base = py + ALT + 10, n = 14;
+            g.setStroke(new java.awt.BasicStroke(6));
+            for (int k = 0; k < n; k++) { // metade de tras dos aneis
+                double f = k / (double) (n - 1); int ry = (int) (topo + (base - topo) * f), rw = (int) (w * 1.5 * (1 - f) + 26), rh = 14 + (int) (10 * (1 - f));
+                int sway = (int) (Math.sin(tempo * 9 + f * 4) * 14 * f);
+                g.setColor(new Color(170, 150, 115, 150)); g.drawArc(cx - rw / 2 + sway, ry - rh / 2, rw, rh, 0, 180);
+            }
+            boolean vira = (int) (tempo * 22) % 2 == 0; double sq = .55 + .2 * Math.abs(Math.cos(tempo * 34));
+            int ww = (int) (w * sq), hh = (int) (ALT * .8), xx = cx - ww / 2, yy = py + 10;
+            if (vira) g.drawImage(ARTE, xx + ww, yy, xx, yy + hh, q * fw, 0, q * fw + fw, fh, null); else g.drawImage(ARTE, xx, yy, xx + ww, yy + hh, q * fw, 0, q * fw + fw, fh, null);
+            for (int k = 0; k < n; k++) { // metade da frente dos aneis, girando
+                double f = k / (double) (n - 1); int ry = (int) (topo + (base - topo) * f), rw = (int) (w * 1.5 * (1 - f) + 26), rh = 14 + (int) (10 * (1 - f));
+                int sway = (int) (Math.sin(tempo * 9 + f * 4) * 14 * f), ini = 180 + (int) ((tempo * 900 + k * 40) % 120);
+                g.setColor(new Color(235, 220, 180, 210)); g.drawArc(cx - rw / 2 + sway, ry - rh / 2, rw, rh, ini, 120);
+            }
+            java.util.Random r = new java.util.Random((long) (tempo * 20)); g.setColor(new Color(210, 185, 140, 170));
+            for (int k = 0; k < 14; k++) g.fillOval(cx - 40 + r.nextInt(80), base - 10 + r.nextInt(20), 6, 6); // poeira na ponta
         } else if (tonto > 0) { g.drawImage(ARTE, px, py, px + w, py + ALT, 0, 0, fw, fh, null);
             g.setColor(new Color(255, 235, 110)); for (int k = 0; k < 3; k++) { double a = tempo * 6 + k * 2.1; g.fillOval(px + w / 2 + (int) (Math.cos(a) * 40) - 5, py + 6 + (int) (Math.sin(a) * 10), 10, 10); }
             // olhos girando de tontura: espirais vermelhas no lugar dos olhos
