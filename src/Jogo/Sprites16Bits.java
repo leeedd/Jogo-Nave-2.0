@@ -68,8 +68,12 @@ public final class Sprites16Bits {
      */
     public static boolean desenhar(Graphics2D g, int id, int forma, int largura,
                                    int altura, double tempo, double progressoGolpe) {
-        preparar(id, forma);
         int q=progressoGolpe<0?1:progressoGolpe>.25?2:progressoGolpe>0?3:((int)(tempo*2)%4==3?3:0);
+        return desenharQuadro(g, id, forma, largura, altura, tempo, q);
+    }
+    /** Desenha um quadro escolhido (0 a 3) da arte do chefe. */
+    public static boolean desenharQuadro(Graphics2D g, int id, int forma, int largura, int altura, double tempo, int q) {
+        preparar(id, forma);
         BufferedImage sprite = id==8?carregar(id,forma):PosesChefes.obter(id,forma,q);
         if (sprite == null) return false;
         Graphics2D a = (Graphics2D) g.create();

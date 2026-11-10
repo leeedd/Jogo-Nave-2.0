@@ -34,6 +34,8 @@ public final class ChefeMetal {
     /** James: ato I e a mao do marionetista com o boneco; quebra = boneco desmontando antes do James aparecer. */
     private final MarionetePuppets mar;
     private double quebra; private String aviso;
+    /** Kanoa (ato II): golpe da vez (0 voz, 1 machado, 2 lanca, 3 arco), mostrado no quadro proprio da arte. */
+    private int golpeKanoa = -1, ataquesKanoa; private double tempoGolpeKanoa;
     private static final double QUEBRA = 2.6;
 
 
@@ -60,6 +62,7 @@ public final class ChefeMetal {
         tempo += dt;
         flash = Math.max(0, flash - dt);
         gestoDisparo = Math.max(0, gestoDisparo - dt);
+        if (tempoGolpeKanoa > 0 && (tempoGolpeKanoa = Math.max(0, tempoGolpeKanoa - dt)) == 0) golpeKanoa = -1;
         if (trem != null && forma == 1) { trem.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = trem.entrada(); return; }
         if (mar != null && forma == 1) { mar.vida(vida / (double) vidaPorForma); mar.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = mar.entrada(); if (!mar.investindo()) ataqueFisicoConsumido = false; return; }
         if (quebra > 0) { quebra = Math.max(0, quebra - dt); entrada = 1; x = Config.LARGURA - largura - 28; y = Config.HUD + 47; return; }
@@ -194,7 +197,8 @@ public final class ChefeMetal {
                         tiro(tiros, ox, oy, mira + i * .13, 255, i == 0,
                                 TiroChefe.Movimento.RETO);
                 break;
-            case 7: // Chuck: cristais em losango que convergem e depois se separam.
+            case 7: // Kanoa: no ato II alterna voz de trovao, machado, lanca e arco de tempestade.
+                if (forma == 2 && PosesChefes.temNovaArte(7)) { golpeKanoa(naveX, naveY, tiros); break; }
                 for (int i = -4; i <= 4; i++) {
                     double partidaY = oy + (i % 2 == 0 ? -85 : 85);
                     double angulo = (forma == 1 ? Math.PI : mira) + i * .105;
@@ -207,6 +211,30 @@ public final class ChefeMetal {
         }
     }
 
+    private static final java.awt.Color RAIO = new java.awt.Color(140, 210, 255);
+    private void raio(List<TiroChefe> tiros, double x0, double y0, double vx, double vy, boolean pesado, TiroChefe.Movimento m) {
+        tiros.add(new TiroChefe(x0, y0, vx, vy, pesado, TiroChefe.ENERGIA, m).comCor(RAIO));
+    }
+    private void golpeKanoa(int naveX, int naveY, List<TiroChefe> tiros) {
+        int k = ataquesKanoa++ % 4; golpeKanoa = k; tempoGolpeKanoa = .6;
+        boolean furia = vida < vidaPorForma * .4;
+        double nx = naveX + 22, ny = naveY + 18, ox = x + 70, oy = y + 150;
+        if (k == 0) {        // a voz chama raios do ceu sobre a nave
+            for (int i = -1; i <= 1; i++) raio(tiros, nx + i * 70, Config.HUD + 10, 0, 520, i == 0, TiroChefe.Movimento.ACELERADO);
+            if (furia) for (int i = 0; i < 3; i++) raio(tiros, nx - 200 + i * 200, Config.HUD + 10, 0, 420, false, TiroChefe.Movimento.RETO);
+        } else if (k == 1) { // machado: golpe largo em meia-lua, com um buraco na altura da nave
+            int n = furia ? 11 : 9;
+            for (int i = 0; i < n; i++) { if (i == n / 2) continue; double a = Math.PI + (i - (n - 1) / 2.0) * .16; raio(tiros, ox, oy, Math.cos(a) * 280, Math.sin(a) * 280, true, TiroChefe.Movimento.RETO); }
+        } else if (k == 2) { // lanca: um golpe pesado e rapido na nave, soltando faiscas para os lados
+            double a = Math.atan2(ny - oy, nx - ox);
+            raio(tiros, ox, oy, Math.cos(a) * 560, Math.sin(a) * 560, true, TiroChefe.Movimento.RETO);
+            for (int i = -1; i <= 1; i += 2) raio(tiros, ox, oy, Math.cos(a + i * .5) * 300, Math.sin(a + i * .5) * 300, false, TiroChefe.Movimento.ONDA);
+        } else {             // arco: leque de flechas eletricas e, na furia, chuva de flechas
+            double a = Math.atan2(ny - oy, nx - ox);
+            for (int i = -2; i <= 2; i++) raio(tiros, ox, oy, Math.cos(a + i * .11) * 430, Math.sin(a + i * .11) * 430, false, TiroChefe.Movimento.RETO);
+            if (furia) for (int i = 0; i < 6; i++) raio(tiros, nx - 260 + i * 90, Config.HUD + 10, -60, 330, false, TiroChefe.Movimento.ARCO);
+        }
+    }
     private void tiro(List<TiroChefe> tiros, double x0, double y0, double angulo,
                       double velocidade, boolean pesado, TiroChefe.Movimento movimento) {
         tiros.add(new TiroChefe(x0, y0, Math.cos(angulo) * velocidade,
@@ -297,7 +325,8 @@ public final class ChefeMetal {
             else Sprites16Bits.desenhar(g, artista, formaSprite() - 1, largura, altura, tempo, 0);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, transicao));
         }
-        Sprites16Bits.desenhar(g, artista, formaSprite(), largura, altura, tempo, gesto);
+        if (artista == 7 && forma == 2 && PosesChefes.temNovaArte(7)) Sprites16Bits.desenharQuadro(g, 7, 2, largura, altura, tempo, golpeKanoa < 0 ? 0 : golpeKanoa);
+        else Sprites16Bits.desenhar(g, artista, formaSprite(), largura, altura, tempo, gesto);
         g.setComposite(AlphaComposite.SrcOver);
         if (manobraAtiva > 0 && manobraAtiva < 1.45 && manobraAtiva > .98) {
             // Aviso compacto, fora da silhueta e sem esconder os tiros.
