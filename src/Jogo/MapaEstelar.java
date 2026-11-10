@@ -9,6 +9,8 @@ import java.util.Random;
 /** Cartografia ficcional: camera continua, sistemas e orbitas em coordenadas persistentes. */
 final class MapaEstelar {
  static final String[] NOMES={"ABISMO","FORNALHA","CRISTAIS","SUCATA","GEADA","COLMEIA","VORTICE","CITADELA"};
+ /** Subgenero do metal de cada sistema (docs/SUBGENEROS.md). */
+ static final String[] GENEROS={"DOOM METAL","HEAVY / SPEED","POWER EPICO","INDUSTRIAL","THRASH METAL","DEATH METAL","FOLK METAL","SINFONICO"};
  static final Color[] CORES={new Color(60,170,255),new Color(255,85,40),new Color(90,240,230),new Color(220,165,65),new Color(160,215,255),new Color(90,220,90),new Color(185,105,255),new Color(255,65,75)};
  static final double[][] SISTEMAS={{-830,390},{-640,-210},{-270,-650},{410,-510},{930,-120},{680,550},{120,790},{35,60}};
  private static final Rectangle VISTA=new Rectangle(16,82,706,440);
@@ -273,6 +275,7 @@ final class MapaEstelar {
   if(ESTRELAS[selecionado]!=null&&planeta<0)g.drawImage(ESTRELAS[selecionado],884,88,52,52,null);
   texto(g,NOMES[selecionado],748,137,19,CORES[selecionado]);
   texto(g,"SETOR "+(selecionado+1)+" / 8",748,159,12,Color.WHITE);
+  texto(g,GENEROS[selecionado],834,159,10,CORES[selecionado]);
   if(escolha){
    texto(g,vencido(selecionado)?"CHEFE JA VENCIDO":"CHEFE: "+CHEFES[selecionado],748,181,11,vencido(selecionado)?new Color(120,130,150):new Color(255,199,111));
    texto(g,Turne.planetas(selecionado)+" PLANETAS / RISCO ATE "+Turne.NOMES_RISCO[Turne.risco(selecionado,Turne.planetas(selecionado)-1)],748,197,10,Turne.CORES_RISCO[Turne.risco(selecionado,Turne.planetas(selecionado)-1)]);
