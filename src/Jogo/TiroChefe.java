@@ -426,8 +426,16 @@ public final class TiroChefe {
         g.drawImage(img, px - t[0] / 2, py - t[1] / 2, t[0], t[1], null); g.dispose();
     }
     /** Atadura voando: uma faixa de linho ondulando. */
+    private static final java.awt.image.BufferedImage ARTE_ATADURA = ler("atadura_voando.png");
     private void desenharAtadura(Graphics2D tela, int px, int py) {
         Graphics2D g = (Graphics2D) tela.create(); g.translate(px, py); g.rotate(Math.atan2(vy, vx));
+        if (ARTE_ATADURA != null) { // 4 quadros em pixel art; a ponta desfiada fica para tras (o quadro 1 vem espelhado)
+            int fw = ARTE_ATADURA.getWidth() / 4, fh = ARTE_ATADURA.getHeight(), q = (int) (tempo * 9) % 4, w = 62, h = w * fh / fw;
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            if (q == 1) g.drawImage(ARTE_ATADURA, w / 2 - 10, -h / 2, -w / 2 - 10, h / 2, q * fw, 0, q * fw + fw, fh, null);
+            else g.drawImage(ARTE_ATADURA, -w / 2 - 10, -h / 2, w / 2 - 10, h / 2, q * fw, 0, q * fw + fw, fh, null);
+            g.dispose(); return;
+        }
         int n = 7; int[] xs = new int[n], ys = new int[n];
         for (int k = 0; k < n; k++) { xs[k] = -k * 6; ys[k] = (int) (Math.sin(tempo * 18 + k) * 4); }
         g.setStroke(new java.awt.BasicStroke(7)); g.setColor(new Color(150, 120, 90)); g.drawPolyline(xs, ys, n);
