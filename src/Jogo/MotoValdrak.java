@@ -35,13 +35,16 @@ final class MotoValdrak {
         tempo += dt; flash = Math.max(0, flash - dt); gesto = Math.max(0, gesto - dt);
         if (investindo) {
             double vel = 1150; x -= vel * dt; percorrido += vel * dt;
+            // tenta atropelar: corrige a rota na direcao da nave enquanto ela ainda esta a frente
+            if (x > naveX) y += Math.max(-170 * dt, Math.min(170 * dt, faixa(naveY) - y));
             // a roda de tras deixa a pista em chamas: uma parede de fogo que fica queimando
             if (percorrido - ultimoRastro > 34) { ultimoRastro = percorrido;
                 tiros.add(new TiroChefe(x + w * .78, y + h * .86, 0, 0, false, TiroChefe.PISTA_FOGO, TiroChefe.Movimento.RETO)); }
             if (x < -w - 20) { investindo = false; voltando = true; x = W + 40; y = alvoY = faixa(naveY); }
             return;
         }
-        if (aviso > 0) { aviso = Math.max(0, aviso - dt); x += Math.sin(tempo * 60) * 1.5; if (aviso == 0) { investindo = true; acertou = false; percorrido = ultimoRastro = 0; SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA); } return; }
+        if (aviso > 0) { aviso = Math.max(0, aviso - dt); x += Math.sin(tempo * 60) * 1.5;
+            /* mira na nave e trava no fim do aviso */ if (aviso > .25) { alvoY = faixa(naveY); y += (alvoY - y) * Math.min(1, dt * 6); } if (aviso == 0) { investindo = true; acertou = false; percorrido = ultimoRastro = 0; SomJogo.tocar(SomJogo.Efeito.CHEFE_ENTRADA); } return; }
         if (x > base()) x = Math.max(base(), x - (voltando ? 700 : 480) * dt); else voltando = false;
         if (!voltando) entrada = Math.min(1, entrada + dt / 1.3);
         alvoY += (faixa(naveY) - alvoY) * Math.min(1, dt * .9);
@@ -56,7 +59,7 @@ final class MotoValdrak {
             double ox = x + w * .08, oy = y + h * .5, a = Math.atan2(naveY + 18 - oy, naveX + 22 - ox);
             int n = furia ? 5 : 3;
             for (int i = 0; i < n; i++) { double ang = a + (i - (n - 1) / 2.0) * .14;
-                tiros.add(new TiroChefe(ox, oy, Math.cos(ang) * 380, Math.sin(ang) * 380, i == n / 2, TiroChefe.ENERGIA, TiroChefe.Movimento.RETO).comCor(new Color(255, 150, 40))); }
+                tiros.add(new TiroChefe(ox, oy, Math.cos(ang) * 380, Math.sin(ang) * 380, i == n / 2, TiroChefe.BOLA_FOGO, TiroChefe.Movimento.RETO)); }
         }
         recarga = furia ? 1.25 : 1.6;
     }
@@ -79,7 +82,7 @@ final class MotoValdrak {
         int fw = ARTE.getWidth() / 4, fh = ARTE.getHeight(), px = (int) x, py = (int) y + (int) (Math.sin(tempo * 30) * (investindo ? 2 : 0));
         g.drawImage(ARTE, px, py, px + w, py + h, q * fw, 0, q * fw + fw, fh, null);
         if (investindo) for (int k = 0; k < 8; k++) { g.setColor(new Color(255, 150, 40, 150 - k * 16)); g.fillRect(px + w + k * 22, py + h / 2 + (k % 3) * 18 - 18, 40, 3); }
-        if (aviso > 0) { g.setColor(new Color(255, 60, 30, (int) (90 + 80 * Math.sin(tempo * 30)))); g.fillRect(0, py + h / 3, W, h / 3); }
+        if (aviso > 0) { g.setColor(new Color(255, 60, 30, (int) (70 + 60 * Math.sin(tempo * 30)))); g.fillRect(0, py + h / 3, px, h / 3); }
         if (flash > 0) { g.setColor(new Color(255, 230, 180, (int) (flash / .16 * 170))); for (int k = 0; k < 6; k++) { double a = k * Math.PI / 3; int r = 15 + (int) ((.16 - flash) * 180); g.fillRect(px + w / 2 + (int) (Math.cos(a) * r), py + h / 2 + (int) (Math.sin(a) * r), 4, 4); } }
         g.dispose();
     }

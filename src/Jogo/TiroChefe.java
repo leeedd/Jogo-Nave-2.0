@@ -61,6 +61,7 @@ public final class TiroChefe {
             case BARRIL: desenharBarril(g, px, py); return;
             case RASTRO: desenharRastro(g, px, py); return;
             case PISTA_FOGO: desenharPistaFogo(g, px, py); return;
+            case BOLA_FOGO: desenharBolaFogo(g, px, py); return;
             case ONDA_SOM: desenharOndaLemmy(g, px, py); return;
             case PRATO: desenharPrato(g, px, py); return;
             case ENERGIA: desenharEnergia(g, px, py); return;
@@ -276,6 +277,7 @@ public final class TiroChefe {
     double getVxTeste() { return vx; }
     double getVyTeste() { return vy; }
     public Rectangle getBounds() {
+        if (estilo == BOLA_FOGO) return new Rectangle((int) x - 10, (int) y - 10, 20, 20);
         if (estilo == PISTA_FOGO) { double f = fogoPista(); return f <= .05 ? new Rectangle(-99, -99, 0, 0) : new Rectangle((int) x - 19, (int) (y - 38 * f), 38, (int) (38 * f) + 6); }
         if (estilo == RAIO_CEU) return new Rectangle((int) x - 9, (int) y - 40, 18, 46);
         if (estilo == CORTE) return new Rectangle((int) x - 14, (int) y - 34, 28, 68);
@@ -397,7 +399,7 @@ public final class TiroChefe {
     }
     /** Pneu em chamas deixa fogo na pista: some sozinho em 1,4 s. */
     /** Pista em chamas da moto do Valdrak: sobe rapido, fica queimando e baixa no fim. */
-    static final int PISTA_FOGO = 35; private static final double PISTA_DURA = 2.6;
+    static final int PISTA_FOGO = 35, BOLA_FOGO = 36; private static final double PISTA_DURA = 2.6;
     private double fogoPista() { return Math.max(0, Math.min(1, Math.min(tempo / .15, (PISTA_DURA - tempo) / .6))); }
     private void desenharPistaFogo(Graphics2D tela, int px, int py) {
         Graphics2D g = (Graphics2D) tela.create(); double f = fogoPista();
@@ -408,6 +410,17 @@ public final class TiroChefe {
             g.setColor(new Color(255, 230, 140, (int) (220 * f))); g.fillPolygon(new int[]{lx - 3, lx, lx + 3}, new int[]{py + 6, py + 6 - h / 2, py + 6}, 3);
         }
         g.setColor(new Color(255, 200, 90, (int) (230 * f))); g.fillRect(px - 19, py + 2, 38, 5);
+        g.dispose();
+    }
+    /** Bola de fogo com cauda de chamas apontando para tras do movimento. */
+    private void desenharBolaFogo(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create(); g.translate(px, py); g.rotate(Math.atan2(vy + queda, vx));
+        double fl = Math.sin(tempo * 40) * 2;
+        g.setColor(new Color(255, 80, 20, 120)); g.fillPolygon(new int[]{6, -34 - (int) fl, 6}, new int[]{-11, 0, 11}, 3);
+        g.setColor(new Color(255, 150, 30, 200)); g.fillPolygon(new int[]{5, -24 + (int) fl, 5}, new int[]{-8, 0, 8}, 3);
+        g.setColor(new Color(255, 90, 20)); g.fillOval(-11, -11, 22, 22);
+        g.setColor(new Color(255, 190, 60)); g.fillOval(-7, -7, 15, 15);
+        g.setColor(new Color(255, 250, 210)); g.fillOval(-3, -4, 8, 8);
         g.dispose();
     }
     private void desenharRastro(Graphics2D tela, int px, int py) {

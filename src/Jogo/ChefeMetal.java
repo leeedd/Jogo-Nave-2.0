@@ -38,7 +38,14 @@ public final class ChefeMetal {
     private double quebra; private String aviso;
     /** Kanoa (ato II): golpe da vez (0 voz, 1 machado, 2 lanca, 3 arco), mostrado no quadro proprio da arte. */
     private int golpeKanoa = -1, ataquesKanoa; private double tempoGolpeKanoa;
-    private static final double QUEBRA = 2.6;
+    private static final double QUEBRA = 2.6, MONTAGEM = 4.4;
+    private double quebraTotal = QUEBRA;
+    /** Valdrak (ato II): chicotada que varre a tela, laco de plasma e faiscas dos cabos. */
+    private double chicoteAviso, chicote, chicoteA0, chicoteA1, chicoteAng, tempoQuadroValdrak;
+    private boolean chicoteAcertou; private int golpesValdrak, quadroValdrak = -1;
+    private static final double CHICOTE_ALCANCE = 720;
+    /** Pecas da montagem do Valdrak: x, y de destino, x, y de partida, atraso, giro. */
+    private java.util.List<double[]> pecas; private java.awt.image.BufferedImage valdrakTela; private int vdx, vdy;
 
 
     public ChefeMetal(int artista, Dificuldade dificuldade) {
@@ -66,6 +73,9 @@ public final class ChefeMetal {
         flash = Math.max(0, flash - dt);
         gestoDisparo = Math.max(0, gestoDisparo - dt);
         if (tempoGolpeKanoa > 0 && (tempoGolpeKanoa = Math.max(0, tempoGolpeKanoa - dt)) == 0) golpeKanoa = -1;
+        if (chicoteAviso > 0) { chicoteAviso -= dt; if (chicoteAviso <= 0) { chicoteAviso = 0; chicote = .55; chicoteAcertou = false; SomJogo.tocar(SomJogo.Efeito.CHEFE_TIRO); } }
+        else if (chicote > 0) { chicote = Math.max(0, chicote - dt); double pc = 1 - chicote / .55; pc = pc * pc * (3 - 2 * pc); chicoteAng = chicoteA0 + (chicoteA1 - chicoteA0) * pc; }
+        if (tempoQuadroValdrak > 0 && (tempoQuadroValdrak = Math.max(0, tempoQuadroValdrak - dt)) == 0 && chicote <= 0 && chicoteAviso <= 0) quadroValdrak = -1;
         if (trem != null && forma == 1) { trem.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = trem.entrada(); return; }
         if (mar != null && forma == 1) { mar.vida(vida / (double) vidaPorForma); mar.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = mar.entrada(); if (!mar.investindo()) ataqueFisicoConsumido = false; return; }
         if (moto != null && forma == 1) { moto.atualizar(dt, naveX, naveY, dificuldade, tiros, vida < vidaPorForma * .4); entrada = moto.entrada(); return; }
@@ -153,7 +163,8 @@ public final class ChefeMetal {
                                 TiroChefe.Movimento.PULSANTE);
                 }
                 break;
-            case 2: // Rob: baterias de misseis acelerando; alvo no ato II.
+            case 2: // Valdrak: no ato II, golpes de chicote; no ato I antigo, misseis.
+                if (forma == 2 && PosesChefes.temNovaArte(2)) { golpeValdrak(naveX, naveY, tiros); break; }
                 for (int lado = -1; lado <= 1; lado += 2) {
                     double origemY = oy + lado * 90;
                     double direcao = forma == 1 ? Math.PI + lado * .22
@@ -218,6 +229,26 @@ public final class ChefeMetal {
     private void arma(List<TiroChefe> tiros, int estilo, double x0, double y0, double a, double v, boolean pesado, TiroChefe.Movimento m) {
         tiros.add(new TiroChefe(x0, y0, Math.cos(a) * v, Math.sin(a) * v, pesado, estilo, m));
     }
+    private double maoValdrakX() { return x + largura * .3; }
+    private double maoValdrakY() { return y + altura * .42; }
+    private void golpeValdrak(int naveX, int naveY, List<TiroChefe> tiros) {
+        int k = golpesValdrak++ % 3; boolean furia = vida < vidaPorForma * .4;
+        double nx = naveX + 22, ny = naveY + 18;
+        if (k == 0) {        // laco: gira o chicote e solta um anel de plasma
+            quadroValdrak = 1; tempoQuadroValdrak = .6;
+            int n = furia ? 16 : 12; double cx = x + largura * .32, cy = y + altura * .15;
+            for (int i = 0; i < n; i++) { double a = i * Math.PI * 2 / n + rajadas * .2;
+                tiros.add(new TiroChefe(cx, cy, Math.cos(a) * 230, Math.sin(a) * 230, false, TiroChefe.BOLA_FOGO, TiroChefe.Movimento.RETO)); }
+        } else if (k == 1) { // chicotada: aviso do arco e a varrida
+            boolean deCima = ny < maoValdrakY(); chicoteAviso = .65; quadroValdrak = 1; tempoQuadroValdrak = 1.2;
+            chicoteA0 = Math.PI + (deCima ? .95 : -.95); chicoteA1 = Math.PI + (deCima ? -.95 : .95); chicoteAng = chicoteA0;
+            if (furia) { chicoteA0 += deCima ? .2 : -.2; chicoteA1 += deCima ? -.2 : .2; }
+        } else {             // bate-cabeca: os cabos soltam uma chuva de faiscas sobre a nave
+            quadroValdrak = 3; tempoQuadroValdrak = .7;
+            for (int i = 0; i < (furia ? 9 : 7); i++)
+                tiros.add(new TiroChefe(nx - 220 + i * 70, Config.HUD + 4, -50, 230 + (i % 3) * 40, false, TiroChefe.BOLA_FOGO, TiroChefe.Movimento.ARCO));
+        }
+    }
     private void golpeKanoa(int naveX, int naveY, List<TiroChefe> tiros) {
         int k = ataquesKanoa++ % 4; golpeKanoa = k; tempoGolpeKanoa = .6;
         boolean furia = vida < vidaPorForma * .4;
@@ -274,7 +305,7 @@ public final class ChefeMetal {
             intervalo = 1.7;
             // o morcego vira o Principe das Trevas numa cutscene propria
             if (trem != null && forma == 2) trem.parar();
-            if (moto != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "A MOTO SE TRANSFORMA: VALDRAK!"; SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); }
+            if (moto != null && forma == 2) { quebra = quebraTotal = MONTAGEM; transformando = 0; aviso = "A MOTO SE TRANSFORMA: VALDRAK!"; SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); }
             if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O HEXAR!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (artista == 1 && forma == 3) { cenaPendente = CenaChefe.TRANSFORMACAO; transformando = .3; }
             return false;
@@ -287,6 +318,11 @@ public final class ChefeMetal {
     boolean colide(Rectangle r) { if (mar != null && forma == 1) return mar.colide(r); if (moto != null && forma == 1) return r.intersects(moto.bounds()); if (quebra > 0) return false; return r.intersects(getBounds()); }
     /** Ozzy so causa dano no mergulho, nao durante o aviso. */
     public boolean consumirColisaoCorporal(Rectangle areaNave) {
+        if (artista == 2 && forma == 2 && chicote > 0 && !chicoteAcertou) {
+            double ax = areaNave.getCenterX() - maoValdrakX(), ay = areaNave.getCenterY() - maoValdrakY(), ux = Math.cos(chicoteAng), uy = Math.sin(chicoteAng);
+            double ao = ax * ux + ay * uy;
+            if (ao > 0 && ao < CHICOTE_ALCANCE && Math.abs(ax * uy - ay * ux) < 24) { chicoteAcertou = true; return true; }
+        }
         if (moto != null && forma == 1) return moto.consumirColisao(areaNave);
         if (mar != null && forma == 1) { if (mar.investindo() && !ataqueFisicoConsumido && mar.boneco().intersects(areaNave)) { ataqueFisicoConsumido = true; return true; } return false; }
         if (artista != 1 || forma != 2 || investida <= 0 || ataqueFisicoConsumido ||
@@ -316,13 +352,9 @@ public final class ChefeMetal {
         if (moto != null && forma == 1) { g.dispose(); moto.desenhar(tela, 1f, -1); return; }
         if (quebra > 0) {
             // o boneco desmonta no lugar onde o James aparece, e ele vai surgindo no meio das lascas
-            double p = 1 - quebra / QUEBRA; Graphics2D q = (Graphics2D) tela.create();
+            double p = 1 - quebra / quebraTotal; Graphics2D q = (Graphics2D) tela.create();
             if (mar != null) mar.desenharQuebra(q, p, x + largura * .55, y - 10, altura + 30);
-            else { // a moto vai ate o meio do lugar do Valdrak, abre as pecas (quadro 4) e some num clarao
-                q.translate((x + largura * .5 - moto.largura() / 2.0 - moto.getX()) * Math.min(1, p * 2.5), (y + altura * .5 - moto.altura() / 2.0 - moto.getY()) * Math.min(1, p * 2.5));
-                moto.desenhar(q, (float) Math.max(0, 1 - (p - .45) / .3), p < .2 ? 0 : 3);
-                if (p > .4 && p < .62) { q.setColor(new Color(255, 200, 120, (int) (200 * Math.sin((p - .4) / .22 * Math.PI)))); q.fillOval((int) moto.getX() - 40, (int) moto.getY() - 40, moto.largura() + 80, moto.altura() + 80); }
-            }
+            else { q.dispose(); g.dispose(); montagem(tela, p); return; }
             q.dispose();
             float a = (float) Math.max(0, Math.min(1, (p - .35) / .45));
             if (a > 0) { g.setComposite(AlphaComposite.SrcOver.derive(a)); Sprites16Bits.desenhar(g, artista, 2, largura, altura, tempo, 0); }
@@ -336,7 +368,11 @@ public final class ChefeMetal {
             else Sprites16Bits.desenhar(g, artista, formaSprite() - 1, largura, altura, tempo, 0);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, transicao));
         }
-        if (artista == 7 && forma == 2 && PosesChefes.temNovaArte(7)) Sprites16Bits.desenharQuadro(g, 7, 2, largura, altura, tempo, golpeKanoa < 0 ? 0 : golpeKanoa);
+        if (artista == 2 && forma == 2 && PosesChefes.temNovaArte(2)) {
+            int qv = chicote > 0 ? 2 : chicoteAviso > 0 ? 1 : quadroValdrak >= 0 ? quadroValdrak : 0;
+            Sprites16Bits.desenharQuadro(g, 2, 2, largura, altura, tempo, qv);
+            Graphics2D cg = (Graphics2D) tela.create(); desenharChicote(cg); cg.dispose();
+        } else if (artista == 7 && forma == 2 && PosesChefes.temNovaArte(7)) Sprites16Bits.desenharQuadro(g, 7, 2, largura, altura, tempo, golpeKanoa < 0 ? 0 : golpeKanoa);
         else Sprites16Bits.desenhar(g, artista, formaSprite(), largura, altura, tempo, gesto);
         g.setComposite(AlphaComposite.SrcOver);
         if (manobraAtiva > 0 && manobraAtiva < 1.45 && manobraAtiva > .98) {
@@ -353,6 +389,70 @@ public final class ChefeMetal {
                 int px=35+(int)(Math.cos(angulo)*r),py=altura/2+(int)(Math.sin(angulo)*r);
                 g.fillRect(px,py,4,4);
             }
+        }
+        g.dispose();
+    }
+
+    /** Absolute cinema: faixas de cinema, a moto se abre e o Valdrak se monta peca por peca, dos pes a cabeca. */
+    private void montagem(Graphics2D tela, double p) {
+        Graphics2D g = (Graphics2D) tela.create();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        if (pecas == null) prepararPecas();
+        int W = Config.LARGURA, H = Config.ALTURA, barra = (int) (58 * Math.min(1, Math.min(p / .08, (1 - p) / .06)));
+        // a moto vai para o centro do palco da montagem, abre as pecas e se desfaz enquanto as pecas saem dela
+        double mp = Math.min(1, p / .16);
+        Graphics2D m = (Graphics2D) g.create();
+        m.translate((x + largura * .5 - moto.largura() / 2.0 - moto.getX()) * mp, (y + altura * .62 - moto.altura() / 2.0 - moto.getY()) * mp);
+        moto.desenhar(m, (float) Math.max(0, 1 - (p - .3) / .3), p < .1 ? 0 : 3);
+        m.dispose();
+        // pecas: saem do corpo da moto e encaixam no lugar, em arco, girando
+        java.util.Random fa = new java.util.Random((long) (p * 40));
+        for (double[] pc : pecas) {
+            double t0 = .22 + pc[4] * .5, t = Math.max(0, Math.min(1, (p - t0) / .2)); if (t <= 0) continue;
+            double e = 1 - Math.pow(1 - t, 3), px = pc[2] + (pc[0] - pc[2]) * e, py = pc[3] + (pc[1] - pc[3]) * e - Math.sin(e * Math.PI) * 70;
+            Graphics2D c = (Graphics2D) g.create(); c.translate(px + 8, py + 8); c.rotate(pc[5] * (1 - e)); c.translate(-8, -8);
+            int sx = (int) (pc[0] - vdx), sy = (int) (pc[1] - vdy);
+            c.drawImage(valdrakTela, 0, 0, 16, 16, sx, sy, sx + 16, sy + 16, null); c.dispose();
+            if (t >= 1 && p - t0 < .24) { g.setColor(new Color(255, 210, 120)); g.fillRect((int) pc[0] + fa.nextInt(16), (int) pc[1] + fa.nextInt(16), 3, 3); }
+        }
+        if (p > .9) { float a = (float) Math.min(1, (p - .9) / .06); Graphics2D c = (Graphics2D) g.create(); c.setComposite(AlphaComposite.SrcOver.derive(a)); c.drawImage(valdrakTela, vdx, vdy, null); c.dispose(); }
+        if (p > .9 && p < .97) { g.setColor(new Color(255, 230, 190, (int) (200 * Math.sin((p - .9) / .07 * Math.PI)))); g.fillRect(0, 0, W, H); }
+        g.dispose();
+    }
+    private void prepararPecas() {
+        java.awt.image.BufferedImage v = PosesChefes.obter(2, 2, 0);
+        double esc = (altura - 35.0) / v.getHeight(); int w = (int) Math.round(v.getWidth() * esc), h = (int) Math.round(v.getHeight() * esc);
+        valdrakTela = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = valdrakTela.createGraphics(); g.drawImage(v, 0, 0, w, h, null); g.dispose();
+        vdx = (int) x + (largura - w) / 2; vdy = (int) y + (altura - h) / 2;
+        pecas = new java.util.ArrayList<>(); java.util.Random r = new java.util.Random(2);
+        Rectangle mb = moto.bounds();
+        for (int ty = 0; ty < h; ty += 16) for (int tx = 0; tx < w; tx += 16) {
+            int cheios = 0; for (int yy = ty; yy < Math.min(h, ty + 16); yy += 4) for (int xx = tx; xx < Math.min(w, tx + 16); xx += 4) if ((valdrakTela.getRGB(xx, yy) >>> 24) > 40) cheios++;
+            if (cheios < 2) continue;
+            double atraso = (1 - ty / (double) h) * .8 + r.nextDouble() * .2; // dos pes a cabeca
+            pecas.add(new double[]{vdx + tx, vdy + ty, mb.x + r.nextInt(Math.max(1, mb.width)), mb.y + r.nextInt(Math.max(1, mb.height)), atraso, (r.nextDouble() - .5) * 8});
+        }
+    }
+    /** Altura das faixas de cinema da montagem (0 fora dela); a Fase desenha por cima de tudo. */
+    int cinema() { if (moto == null || quebra <= 0) return 0; double p = 1 - quebra / quebraTotal; return (int) (62 * Math.min(1, Math.min(p / .08, (1 - p) / .06))); }
+    /** A chicotada: aviso do arco e o chicote de plasma esticado da mao. */
+    private void desenharChicote(Graphics2D tela) {
+        Graphics2D g = (Graphics2D) tela.create();
+        double hx = maoValdrakX(), hy = maoValdrakY();
+        if (chicoteAviso > 0) {
+            g.setColor(new Color(255, 120, 40, (int) (60 + 50 * Math.sin(tempo * 30))));
+            int r = (int) CHICOTE_ALCANCE, gi = (int) Math.toDegrees(-chicoteA0), gf = (int) Math.toDegrees(-chicoteA1);
+            g.fillArc((int) hx - r, (int) hy - r, r * 2, r * 2, Math.min(gi, gf), Math.abs(gf - gi));
+        }
+        if (chicote > 0) {
+            int n = 24; int[] xs = new int[n], ys = new int[n]; double ux = Math.cos(chicoteAng), uy = Math.sin(chicoteAng);
+            for (int k = 0; k < n; k++) { double d = CHICOTE_ALCANCE * k / (n - 1), onda = Math.sin(k * .9 + tempo * 40) * 7 * k / n;
+                xs[k] = (int) (hx + ux * d - uy * onda); ys[k] = (int) (hy + uy * d + ux * onda); }
+            g.setStroke(new java.awt.BasicStroke(12)); g.setColor(new Color(255, 110, 30, 110)); g.drawPolyline(xs, ys, n);
+            g.setStroke(new java.awt.BasicStroke(5)); g.setColor(new Color(255, 170, 50)); g.drawPolyline(xs, ys, n);
+            g.setStroke(new java.awt.BasicStroke(2)); g.setColor(new Color(255, 245, 200)); g.drawPolyline(xs, ys, n);
+            g.setColor(new Color(255, 240, 180)); g.fillOval(xs[n - 1] - 9, ys[n - 1] - 9, 18, 18);
         }
         g.dispose();
     }

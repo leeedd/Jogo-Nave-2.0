@@ -1064,7 +1064,9 @@ implements ActionListener {
             graphics2D.setColor(new Color(20,26,38));graphics2D.fillRect(tx,ty,120,8);graphics2D.setColor(rc<=0?new Color(255,206,98):new Color(110,120,140));graphics2D.fillRect(tx,ty,(int)(120*(1-rc/mx)),8);
             graphics2D.setColor(Color.WHITE);graphics2D.drawString((PainelSom.dicasTeclas()?"SHIFT: ":"")+nave.nomeTruque()+(rc>0?"  "+(int)Math.ceil(rc)+"s":""),tx,ty-3);}
         if (this.chefe != null && this.emJogo) {
-            this.chefe.desenharVida(graphics2D);
+            int cine = this.chefe.cinema();
+            if (cine > 0) { graphics2D.setColor(Color.BLACK); graphics2D.fillRect(0, 0, 960, Config.HUD + cine); graphics2D.fillRect(0, 600 - cine, 960, cine); } // faixas de cinema na montagem
+            else this.chefe.desenharVida(graphics2D);
         }
         if (this.etapa == Etapa.APRESENTACAO_CHEFE && this.apresentacao != null) {
             this.apresentacao.desenhar(graphics2D);

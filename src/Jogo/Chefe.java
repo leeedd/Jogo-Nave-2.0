@@ -429,6 +429,7 @@ public final class Chefe {
     double[] puxaoNave() { return hell != null ? hell.puxaoNave() : fim != null ? fim.puxaoNave() : null; }
     /** Aviso de meio de luta (dente arrancado, Deezleboss invocado, Dio revelado). */
     String consumirAviso() { return fim != null ? fim.consumirAviso() : artista != null ? artista.consumirAviso() : null; }
+    int cinema() { return artista != null ? artista.cinema() : 0; }
     int getAtoFinalTeste() { return fim == null ? 0 : fim.ato(); }
     int getDentesTeste() { return fim == null ? 0 : fim.dentes(); }
     int consumirDanoGancho() { return hell != null ? hell.consumirDanoGancho() : fim != null ? fim.consumirDanoGancho() : 0; }
