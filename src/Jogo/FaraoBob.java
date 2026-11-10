@@ -55,12 +55,13 @@ final class FaraoBob {
             x += tvx * dt; y += tvy * dt;
             boolean bateu = false;
             if (x < -60) { x = -60; tvx = Math.abs(tvx); bateu = true; } else if (x > W - 240) { x = W - 240; tvx = -Math.abs(tvx); bateu = true; }
-            if (y < TOPO - 30) { y = TOPO - 30; tvy = Math.abs(tvy); bateu = true; } else if (y > H - ALT + 20) { y = H - ALT + 20; tvy = -Math.abs(tvy); bateu = true; }
+            if (y < TOPO - ALT * .45) { y = TOPO - ALT * .45; tvy = Math.abs(tvy); bateu = true; } else if (y > H - ALT * .55) { y = H - ALT * .55; tvy = -Math.abs(tvy); bateu = true; } // bate no teto e no chao de verdade
             if (bateu) {
                 double v = Math.min(1750, Math.hypot(tvx, tvy) * 1.25), a = Math.atan2(tvy, tvx) + (sorte.nextDouble() - .5) * .9;
                 if (sorte.nextDouble() < .3) a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); // as vezes vem direto na nave
                 tvx = Math.cos(a) * v; tvy = Math.sin(a) * v;
-                if (Math.abs(tvx) < v * .7) { tvx = Math.signum(tvx == 0 ? 1 : tvx) * v * .7; tvy = Math.signum(tvy) * v * .71; } // mais de lado a lado que de cima a baixo SomJogo.tocar(SomJogo.Efeito.IMPACTO);
+                if (Math.abs(tvx) < v * .5) { tvx = Math.signum(tvx == 0 ? 1 : tvx) * v * .5; tvy = Math.signum(tvy == 0 ? 1 : tvy) * v * .87; } // ziguezague: nem reto de lado, nem reto de cima a baixo
+                else if (Math.abs(tvy) < v * .5) { tvy = Math.signum(tvy == 0 ? 1 : tvy) * v * .5; tvx = Math.signum(tvx) * v * .87; } SomJogo.tocar(SomJogo.Efeito.IMPACTO);
             }
             if (giro == 0) tonto = 1.2;
             if ((int) (giro * 12) != (int) ((giro + dt) * 12)) { double a = tempo * 15, cx = x + 150, cy = y + ALT * .5;
