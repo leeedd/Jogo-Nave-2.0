@@ -101,6 +101,8 @@ final class MusicaChip {
                     if (banda) for (int k = 0; k < 6; k++) { if (k == 0 || k == 3) m.bumbo(t0 + k * batida, .35); if (k == 2 || k == 5) m.tom(t0 + k * batida, raiz + 12, .2); if (k == 3) m.caixa(t0 + k * batida, .14); m.chimbal(t0 + k * batida, .025); }
                     break; }
             }
+            if ((u == 2 || u == 7 || u == 8 || v == CHEFE) && c % 2 == 0) { m.timpano(t0, raiz + 12, banda ? .25 : .32); if (banda && c % 4 == 0) for (int n : new int[]{raiz + 12, terca + 12, quinta + 12}) m.orquestra("metais", n, t0, batida * 2, .06); }
+            if (c == intro - 1) m.subida(t0 + comp, Math.min(2, comp), .2);
             // melodia: entra na banda; flauta/triangular em quase todos, pulso fino no thrash/death
             if (banda && (c >= intro + 2 || v == TEMA)) {
                 int passo = u == 4 || u == 5 ? 2 : 1, n = tempos * passo; double d = batida / passo;
@@ -113,7 +115,7 @@ final class MusicaChip {
                 }
             }
         }
-        return m.fechar((int) (total * comp * TAXA));
+        return m.m64 ? m.fechar64((int) (total * comp * TAXA)) : m.fechar((int) (total * comp * TAXA));
     }
 
 
@@ -172,10 +174,16 @@ final class MusicaChip {
     }
 
     private static final class Mix {
-        final float[] a; final Random r;
+        final float[] a; final Random r; boolean m64 = true; // producao cheia (guitarra, coro, reverb); false = chip puro
         Mix(int n, Random r) { a = new float[n]; this.r = r; }
         static double f(double n) { return 440 * Math.pow(2, (n - 69) / 12); }
         void nota(String tipo, double midi, double t0, double dur, double duty, double g, double vib) {
+            if (m64) {
+                if (tipo.equals("saw") || tipo.equals("sq") && midi < 60 && duty != .125) { nota64("dist", midi, t0, dur, g * 1.2, 0); return; }
+                if (tipo.equals("sq") && duty == .125) { nota64("solo", midi, t0, dur, g * 1.4, vib); return; }
+                if (tipo.equals("sq")) { nota64("arp", midi, t0, dur, g * 1.5, 0); return; }
+                if (tipo.equals("tri") && vib > 0) { nota64("solo", midi, t0, dur, g * .9, vib); return; }
+            }
             int i0 = (int) (t0 * TAXA), n = (int) (dur * TAXA), ata = Math.min(n / 4, (int) (.006 * TAXA)), sol = Math.min(n / 3, (int) (.03 * TAXA)); double fr = f(midi), ph = 0;
             for (int i = 0; i < n && i0 + i < a.length; i++) {
                 double t = i / (double) TAXA; ph += (fr * (1 + (vib > 0 ? .004 * vib * Math.sin(2 * Math.PI * 5.5 * t) : 0))) / TAXA; double p = ph % 1, s;
@@ -186,7 +194,7 @@ final class MusicaChip {
         /** Instrumentos "64 bits": guitarra distorcida dobrada (dist), solo encorpado (solo) e cordas suaves (pad). */
         void nota64(String tipo, double midi, double t0, double dur, double g, double vib) {
             int i0 = (int) (t0 * TAXA), n = (int) (dur * TAXA), ata = Math.min(n / 4, (int) ((tipo.equals("pad") ? .25 : .004) * TAXA)), sol = Math.min(n / 3, (int) ((tipo.equals("pad") ? .3 : .04) * TAXA));
-            double fr = f(midi), p1 = r.nextDouble(), p2 = r.nextDouble(), p3 = r.nextDouble(), lp = 0, corte = tipo.equals("dist") ? .32 : tipo.equals("solo") ? .45 : .12;
+            double fr = f(midi), p1 = r.nextDouble(), p2 = r.nextDouble(), p3 = r.nextDouble(), lp = 0, corte = tipo.equals("dist") ? .32 : tipo.equals("solo") ? .45 : tipo.equals("arp") ? .22 : .12;
             for (int i = 0; i < n && i0 + i < a.length; i++) {
                 double t = i / (double) TAXA, v = 1 + (vib > 0 ? .005 * vib * Math.sin(2 * Math.PI * 5.2 * t) * Math.min(1, t * 3) : 0);
                 p1 += fr * v / TAXA; p2 += fr * v * 1.0045 / TAXA; p3 += fr * v * .9958 / TAXA;
@@ -233,12 +241,12 @@ final class MusicaChip {
             float[] o = new float[n]; double mx = 1e-6; for (int i = 0; i < n; i++) { x[i] = x[i] * .8 + y[i] * .38; mx = Math.max(mx, Math.abs(x[i])); }
             for (int i = 0; i < n; i++) o[i] = (float) (x[i] * .88 / mx); return o;
         }
-        void acorde(int[] ns, double t0, double dur, double duty, double g, boolean vib) { for (int n : ns) nota("sq", n, t0, dur, duty, g, vib ? .6 : 0); }
+        void acorde(int[] ns, double t0, double dur, double duty, double g, boolean vib) { if (m64) { for (int n : ns) orquestra("coro", n + 12, t0, dur + .25, g * 1.6); return; } for (int n : ns) nota("sq", n, t0, dur, duty, g, vib ? .6 : 0); }
         void sino(double midi, double t0, double g) { int i0 = (int) (t0 * TAXA), n = (int) (2.2 * TAXA); double f1 = f(midi), f2 = f(midi + 7);
             for (int i = 0; i < n && i0 + i < a.length; i++) { double t = i / (double) TAXA; a[i0 + i] += g * (Math.sin(2 * Math.PI * f1 * t) * Math.exp(-t * 2.5) + .4 * Math.sin(2 * Math.PI * f2 * t) * Math.exp(-t * 4)); } }
-        void bumbo(double t0, double g) { int i0 = (int) (t0 * TAXA), n = (int) (.12 * TAXA); double ph = 0;
+        void bumbo(double t0, double g) { if (m64) { bumbo64(t0, g * 1.05); return; } int i0 = (int) (t0 * TAXA), n = (int) (.12 * TAXA); double ph = 0;
             for (int i = 0; i < n && i0 + i < a.length; i++) { double t = i / (double) TAXA; ph += (55 + 90 * Math.exp(-t * 40)) / TAXA; a[i0 + i] += g * Math.sin(2 * Math.PI * ph) * Math.exp(-t * 25); } }
-        void caixa(double t0, double g) { ruido(t0, .15, 22, g); }
+        void caixa(double t0, double g) { if (m64) caixa64(t0, g * 1.15); else ruido(t0, .15, 22, g); }
         void chimbal(double t0, double g) { ruido(t0, .03, 90, g); }
         void metal(double t0, double g) { int i0 = (int) (t0 * TAXA), n = (int) (.25 * TAXA);
             for (int i = 0; i < n && i0 + i < a.length; i++) { double t = i / (double) TAXA; a[i0 + i] += g * (Math.signum(Math.sin(2 * Math.PI * 1170 * t)) * .5 + Math.signum(Math.sin(2 * Math.PI * 1630 * t)) * .5 + r.nextDouble() - .5) * Math.exp(-t * 14); } }
