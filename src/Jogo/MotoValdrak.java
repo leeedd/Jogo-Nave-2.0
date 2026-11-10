@@ -87,10 +87,23 @@ final class MotoValdrak {
             double esc = h / (double) fh, giro = -tempo * (investindo ? 30 : 12);
             for (int[] rd : RODAS[q]) {
                 int R = rd[2] + 6; double cx = px + rd[0] * esc, cy = py + rd[1] * esc, Re = R * esc;
-                Graphics2D c = (Graphics2D) g.create();
-                c.clip(new java.awt.geom.Ellipse2D.Double(cx - Re, cy - Re, Re * 2, Re * 2));
-                c.rotate(giro, cx, cy);
-                c.drawImage(ARTE, (int) (cx - Re), (int) (cy - Re), (int) (cx + Re), (int) (cy + Re), q * fw + rd[0] - R, rd[1] - R, q * fw + rd[0] + R, rd[1] + R, null);
+                // borrao de movimento: a roda girada e mais duas copias atrasadas, transparentes
+                for (int k = 2; k >= 0; k--) {
+                    Graphics2D c = (Graphics2D) g.create();
+                    c.clip(new java.awt.geom.Ellipse2D.Double(cx - Re, cy - Re, Re * 2, Re * 2));
+                    if (k > 0) c.setComposite(AlphaComposite.SrcOver.derive(k == 1 ? .55f : .3f));
+                    c.rotate(giro + k * (investindo ? .35 : .2), cx, cy);
+                    c.drawImage(ARTE, (int) (cx - Re), (int) (cy - Re), (int) (cx + Re), (int) (cy + Re), q * fw + rd[0] - R, rd[1] - R, q * fw + rd[0] + R, rd[1] + R, null);
+                    c.dispose();
+                }
+                // riscos de velocidade correndo pelo aro
+                Graphics2D c = (Graphics2D) g.create(); c.setStroke(new java.awt.BasicStroke(3));
+                int rr = (int) (rd[2] * esc);
+                for (int k = 0; k < 3; k++) {
+                    int a0 = (int) Math.toDegrees(-giro) + k * 120;
+                    c.setColor(new Color(255, 240, 180, 200)); c.drawArc((int) cx - rr, (int) cy - rr, rr * 2, rr * 2, a0, 34);
+                    c.setColor(new Color(255, 170, 60, 140)); c.drawArc((int) cx - rr + 4, (int) cy - rr + 4, rr * 2 - 8, rr * 2 - 8, a0 + 10, 50);
+                }
                 c.dispose();
             }
         }
