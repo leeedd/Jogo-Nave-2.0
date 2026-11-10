@@ -32,7 +32,8 @@ final class CentopeiaKrovax {
     private double grito, mordida, enrolar, alvoX, alvoY, anguloEnrolar;
     private int golpes, ultimoSegAtingido = -1;
     private boolean furia, bloqueou, acertou;
-    private double esperaContato;
+    private double esperaContato, wx = W * .7, wy = TOPO + 220, agitacao;
+    private final java.util.Random sorte = new java.util.Random(4);
 
     CentopeiaKrovax() { java.util.Arrays.fill(vidaSeg, VIDA_SEG); for (int i = 0; i < 400; i++) rastro.add(new double[]{hx + i * 3, hy}); }
     double entrada() { return entrada; }
@@ -46,7 +47,9 @@ final class CentopeiaKrovax {
         entrada = Math.min(1, entrada + dt / 1.6);
         double nx = naveX + 22, ny = naveY + 18;
         // velocidade sobe quando perde segmentos e na furia
-        double vel = (150 + (SEGMENTOS - vivos()) * 14) * (furia ? 1.45 : 1);
+        // agitacao 0..1: sobe quando perde vida (no ato I ate .5, na furia ate 1)
+        agitacao = furia ? .5 + .5 * (1 - vidaFrac) : .5 * (1 - vidaFrac);
+        double vel = (170 + (SEGMENTOS - vivos()) * 12) * (1 + 1.3 * agitacao);
         double tx, ty;
         if (enrolar > 0) {         // furia: circula em volta da nave fechando o cerco
             enrolar = Math.max(0, enrolar - dt); anguloEnrolar += dt * 3.2;
@@ -55,22 +58,23 @@ final class CentopeiaKrovax {
         } else if (mordida > 0) {  // investida: vai direto no ponto travado e volta
             mordida = Math.max(0, mordida - dt);
             tx = mordida > .55 ? alvoX : W * .8; ty = mordida > .55 ? alvoY : TOPO + 220; vel = mordida > .55 ? 620 : 340;
-        } else {                   // serpenteia pela metade direita
-            fase += dt * (furia ? .75 : .55);
-            tx = W * .66 + Math.cos(fase) * W * .24; ty = TOPO + (H - TOPO) * .5 + Math.sin(fase * 2.1) * (H - TOPO) * .36;
+        } else {                   // rasteja pelo mapa todo: vai de um ponto a outro, as vezes saindo pela borda
+            if (Math.hypot(wx - hx, wy - hy) < 70 || sorte.nextDouble() < agitacao * .6 * dt) novoPonto();
+            tx = wx; ty = wy;
             if (entrada < 1) { tx = W * .78; ty = TOPO + 220; }
         }
         double desejado = Math.atan2(ty - hy, tx - hx), dif2 = Math.atan2(Math.sin(desejado - ang), Math.cos(desejado - ang));
-        double giro = (mordida > .55 || enrolar > 0 ? 6 : 2.6) * dt;
+        double giro = (mordida > .55 || enrolar > 0 ? 6 : 2.4 + 3 * agitacao) * dt;
         ang += Math.max(-giro, Math.min(giro, dif2));
         hx += Math.cos(ang) * vel * dt; hy += Math.sin(ang) * vel * dt;
-        hx = Math.max(-60, Math.min(W + 140, hx)); hy = Math.max(TOPO - 20, Math.min(H + 20, hy));
+        hx = Math.max(-140, Math.min(W + 140, hx)); hy = Math.max(TOPO - 90, Math.min(H + 90, hy));
         rastro.add(0, new double[]{hx, hy}); if (rastro.size() > 900) rastro.remove(rastro.size() - 1);
         grito = Math.max(0, grito - dt);
         if (entrada < 1 || mordida > 0 || enrolar > 0) return;
-        recarga -= dt * dif.cadenciaInimigos * (furia ? 1.35 : 1);
+        recarga -= dt * dif.cadenciaInimigos * (1 + agitacao);
         if (recarga > 0 || tiros.size() > 50) return;
-        int g = golpes++ % 4;
+        // calma: ataques em sequencia; ferida: golpe sorteado e ritmo irregular
+        int g = agitacao < .3 ? golpes % 4 : sorte.nextInt(4); golpes++;
         if (g == 0) {              // fogo das patas: cada segmento vivo cospe uma bola de fogo na nave
             for (int i = 0; i < SEGMENTOS; i++) { if (vidaSeg[i] <= 0 || i % 2 != golpes % 2) continue; double[] p = posSeg(i);
                 double a = Math.atan2(ny - p[1], nx - p[0]); tiros.add(new TiroChefe(p[0], p[1] + 14, Math.cos(a) * 260, Math.sin(a) * 260, false, TiroChefe.BOLA_FOGO, TiroChefe.Movimento.RETO)); }
@@ -84,7 +88,13 @@ final class CentopeiaKrovax {
             for (int i = 0; i < (furia ? 6 : 4); i++) tiros.add(new TiroChefe(c[0], c[1], -120 - i * 45, -200 + i * 30, false, TiroChefe.ENERGIA, TiroChefe.Movimento.ARCO).comCor(new Color(110, 255, 90)));
             if (furia) { enrolar = 3; alvoX = nx; alvoY = ny; anguloEnrolar = Math.atan2(hy - ny, hx - nx); }
         }
-        recarga = furia ? 1.15 : 1.5;
+        recarga = agitacao < .3 ? 1.5 : .45 + sorte.nextDouble() * 1.4 * (1 - agitacao * .5);
+        if (agitacao > .6 && sorte.nextDouble() < .3) recarga = .15; // as vezes emenda dois golpes
+    }
+    /** Proximo ponto: qualquer lugar do campo; as vezes um pouco fora da borda, para sumir e voltar. */
+    private void novoPonto() {
+        if (sorte.nextDouble() < .2) { int b = sorte.nextInt(4); wx = b == 0 ? -110 : b == 1 ? W + 110 : 60 + sorte.nextInt(W - 120); wy = b == 2 ? TOPO - 70 : b == 3 ? H + 70 : TOPO + 40 + sorte.nextInt(H - TOPO - 80); }
+        else { wx = 60 + sorte.nextInt(W - 120); wy = TOPO + 40 + sorte.nextInt(H - TOPO - 80); }
     }
 
     private int indiceRastro(int seg) { // o rastro e gravado por quadro: acha o ponto a (seg+1)*PASSO de distancia percorrida
