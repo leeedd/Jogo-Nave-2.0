@@ -3,7 +3,11 @@ import java.awt.image.BufferedImage;import javax.imageio.ImageIO;
 /** Separa silhuetas completas, sem depender de linhas de corte aproximadas. */
 final class PosesChefes {
  private static final BufferedImage[][][] CACHE=new BufferedImage[8][3][4];
- static synchronized BufferedImage obter(int id,int forma,int quadro){if(forma==2){BufferedImage[] n=novaArte(id);if(n!=null)return n[quadro];}if(CACHE[id][forma][0]==null)carregar(id);return CACHE[id][forma][quadro];}
+ /** Malachar na forma do meio: o morcego gigante (malachar_morcego.png, 4 quadros iguais, virado para a esquerda). */
+ private static BufferedImage[] morcego;private static boolean morcegoLido;
+ static synchronized BufferedImage[] morcegoMalachar(){if(morcegoLido)return morcego;morcegoLido=true;java.net.URL u=PosesChefes.class.getResource("/ImagemIcon/malachar_morcego.png");if(u==null)return null;
+  try{BufferedImage a=ImageIO.read(u);int c=a.getWidth()/4;morcego=new BufferedImage[4];for(int q=0;q<4;q++)morcego[q]=a.getSubimage(q*c,0,c,a.getHeight());}catch(Exception e){morcego=null;}return morcego;}
+ static synchronized BufferedImage obter(int id,int forma,int quadro){if(id==1&&forma==1){BufferedImage[] m=morcegoMalachar();if(m!=null)return m[quadro];}if(forma==2){BufferedImage[] n=novaArte(id);if(n!=null)return n[quadro];}if(CACHE[id][forma][0]==null)carregar(id);return CACHE[id][forma][quadro];}
  private static final BufferedImage[][] NOVA=new BufferedImage[8][];private static final boolean[] CONSULTADA=new boolean[8];
  /** Arte nova do ato II (ImagemIcon/chefe_N_ato2.png), ja virada para a esquerda. */
  static synchronized boolean temNovaArte(int id){return id>=1&&id<=7&&novaArte(id)!=null;}

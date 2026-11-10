@@ -313,7 +313,7 @@ public final class ChefeMetal {
             if (cento != null && forma == 2) { transformando = 0; cento.furia(); aviso = "KROVAX ENFURECEU!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (moto != null && forma == 2) { quebra = quebraTotal = MONTAGEM; transformando = 0; aviso = "A MOTO SE TRANSFORMA: VALDRAK!"; SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); }
             if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O HEXAR!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
-            if (artista == 1 && forma == 3) { cenaPendente = CenaChefe.TRANSFORMACAO; transformando = .3; }
+            if (artista == 1 && forma == 3) aviso = "O MORCEGO CAI... MALACHAR, O REI DAS SOMBRAS!"; // sem cutscene: o morcego se funde no Malachar dentro da luta
             return false;
         }
         return true;

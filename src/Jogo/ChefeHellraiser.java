@@ -71,6 +71,8 @@ final class ChefeHellraiser {
 
     int ato() { return ato; }
     String consumirCena() { String c = cenaPendente; cenaPendente = null; return c; }
+    private String avisoTexto;
+    String consumirAviso() { String a = avisoTexto; avisoTexto = null; return a; }
     double getEntrada() { return entrada; }
 
     void atualizar(double dt, int naveX, int naveY, Dificuldade dif, List<TiroChefe> tiros) {
@@ -296,7 +298,7 @@ final class ChefeHellraiser {
             if (k == 0) vidaOzzy = Math.max(0, vidaOzzy - dano); else vidaLemmy = Math.max(0, vidaLemmy - dano);
             if (vidaOzzy <= 0 && vidaLemmy <= 0) {
                 // Lemmy cai, Ozzy se recusa a perder: cutscene do dragao
-                ato = DRAGAO; vida = vidaDragao; entrada = 0; cenaPendente = CenaChefe.DRAGAO; proximoGolpe = 2.4; intervalo = 1;
+                ato = DRAGAO; vida = vidaDragao; entrada = 0; proximoGolpe = 2.4; intervalo = 1; avisoTexto = "MALACHAR SE RECUSA A CAIR: VIRA DRAGAO!";
             }
             return false;
         }
@@ -440,7 +442,7 @@ final class ChefeHellraiser {
     }
     private void desenharDragao(Graphics2D g) {
         int x = (int) dx, y = (int) dy;
-        int q = carga > 0 || sopro > 0 ? 1 : garra > 0 ? 3 : 0;
+        int q = sopro > 0 ? 2 : carga > 0 ? 1 : garra > 0 ? 3 : 0; // inspira, sopra, garra
         if (ARTE_DRAGAO != null) {
             int fw = ARTE_DRAGAO.getWidth() / 4;
             g.drawImage(ARTE_DRAGAO, x, y, x + dragW, y + dragH, q * fw, 0, q * fw + fw, ARTE_DRAGAO.getHeight(), null);

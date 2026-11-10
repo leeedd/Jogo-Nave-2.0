@@ -428,7 +428,7 @@ public final class Chefe {
     /** Ponto para onde o gancho da van esta arrastando a nave (null se ninguem esta puxando). */
     double[] puxaoNave() { return hell != null ? hell.puxaoNave() : fim != null ? fim.puxaoNave() : null; }
     /** Aviso de meio de luta (dente arrancado, Deezleboss invocado, Dio revelado). */
-    String consumirAviso() { return fim != null ? fim.consumirAviso() : artista != null ? artista.consumirAviso() : null; }
+    String consumirAviso() { return fim != null ? fim.consumirAviso() : artista != null ? artista.consumirAviso() : hell != null ? hell.consumirAviso() : null; }
     int cinema() { return artista != null ? artista.cinema() : 0; }
     int getAtoFinalTeste() { return fim == null ? 0 : fim.ato(); }
     int getDentesTeste() { return fim == null ? 0 : fim.dentes(); }

@@ -22,7 +22,8 @@ Zaref o Mago dos Prismas, Demônio das Correntes, Palheta Maldita.
 - Integrantes: as 25 folhas integrante_*.png (os arquivos já têm os nomes novos, mas a arte é antiga).
 - Luta final: arco_final_099.png, jack_violao/kyle_violao (Bardo e Monge), deezleboss.png (Belzebu),
   dio_espada.png (Zaref), tenacious_d_palco.png.
-- Hellraiser: van, Ozzy dragão (ozzy_dragao.png), cutscenes ozzy_*.png.
+- Van do Inferno: hellraiser_van*.png ainda mostram rostos reais nas janelas e amplificadores com marca: REFAZER (Malachar e Krovax).
+- Feito: Malachar (chefe_1_ato2, malachar_morcego, dragão em ozzy_dragao.png); cutscenes com rosto real removidas.
 - Emblemas das bandas (emblema_banda_N.png) e camisas do piloto (CamisaShow).
 - Final: silhueta e cabeça do robô gigante (megazord_*.png) viram um robô original.
 - Símbolos dos poderes e das fusões que lembrem marcas reais.

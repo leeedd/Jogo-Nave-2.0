@@ -110,7 +110,7 @@ public final class Sprites16Bits {
 
     /** Poses cuja arte original encara a direita (Bruce no ato II e de frente, com a bandeira). */
     static boolean voltadoParaDireita(int id, int forma) {
-        if (forma == 1) return id == 1 || id == 2 || id == 3;
+        if (forma == 1) return id == 1 && PosesChefes.morcegoMalachar() == null || id == 2 || id == 3;
         if (forma == 2 && PosesChefes.temNovaArte(id)) return false;
         return forma == 2 && (id == 1 || id == 2 || id == 4 || id == 5 || id == 6);
     }
