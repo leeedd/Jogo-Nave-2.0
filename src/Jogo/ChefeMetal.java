@@ -386,7 +386,7 @@ public final class ChefeMetal {
             double ao = ax * ux + ay * uy;
             if (ao > 0 && ao < CHICOTE_ALCANCE && Math.abs(ax * uy - ay * ux) < 24) { chicoteAcertou = true; return true; }
         }
-        if (bob != null && forma == 1) { if (bob.emGiro() && !ataqueFisicoConsumido && bob.bounds().intersects(areaNave)) { ataqueFisicoConsumido = true; return true; } if (!bob.emGiro()) ataqueFisicoConsumido = false; return false; }
+        if (bob != null && forma == 1) return bob.contato(areaNave);
         if (cento != null) return cento.contato(areaNave);
         if (artista == 3 && forma == 2 && korEstado == 2 && !korAcertou && getBounds().intersects(areaNave)) { korAcertou = true; return true; }
         if (moto != null && forma == 1) return moto.consumirColisao(areaNave);

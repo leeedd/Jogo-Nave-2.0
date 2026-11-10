@@ -26,6 +26,8 @@ final class FaraoBob {
     private double x = W + 40, y = TOPO + 140, tempo, entrada, recarga = 1.6, flash, giro, olhos, ergue, vergonha, corrida;
     private int golpes, desenrolo; // 0 enfaixado, 1 meio, 2 quase osso
     private boolean usouVergonha;
+    private double tvx, tvy, esperaContato, tonto;
+    private final java.util.Random sorte = new java.util.Random(7);
     private double vidaFrac = 1;
 
     double entrada() { return entrada; }
@@ -33,7 +35,7 @@ final class FaraoBob {
     boolean envergonhado() { return vergonha > 0; }
 
     void atualizar(double dt, int naveX, int naveY, Dificuldade dif, List<TiroChefe> tiros) {
-        tempo += dt; flash = Math.max(0, flash - dt); olhos = Math.max(0, olhos - dt); ergue = Math.max(0, ergue - dt);
+        tempo += dt; flash = Math.max(0, flash - dt); esperaContato = Math.max(0, esperaContato - dt); tonto = Math.max(0, tonto - dt); olhos = Math.max(0, olhos - dt); ergue = Math.max(0, ergue - dt);
         double baseX = W - 250;
         if (entrada < 1) { entrada = Math.min(1, entrada + dt / 1.4); x = W + 40 - (W + 40 - baseX) * (1 - Math.pow(1 - entrada, 3)); return; }
         double nx = naveX + 22, ny = naveY + 18;
@@ -44,8 +46,19 @@ final class FaraoBob {
         desenrolo = vidaFrac > .66 ? 0 : vidaFrac > .3 ? 1 : 2;
         x += (baseX + Math.sin(tempo * .7) * 30 - x) * Math.min(1, dt * 2);
         y += (Math.max(TOPO, Math.min(H - ALT, ny - ALT * .5)) - y) * Math.min(1, dt * (giro > 0 ? 2.2 : .8));
-        if (giro > 0) { // piao: solta ataduras em espiral
+        if (tonto > 0) { x += (baseX - x) * Math.min(1, dt * 2); return; }
+        if (giro > 0) { // tornado: quica pela tela toda, cada batida mais rapido, e solta ataduras
             giro = Math.max(0, giro - dt);
+            x += tvx * dt; y += tvy * dt;
+            boolean bateu = false;
+            if (x < -60) { x = -60; tvx = Math.abs(tvx); bateu = true; } else if (x > W - 240) { x = W - 240; tvx = -Math.abs(tvx); bateu = true; }
+            if (y < TOPO - 30) { y = TOPO - 30; tvy = Math.abs(tvy); bateu = true; } else if (y > H - ALT + 20) { y = H - ALT + 20; tvy = -Math.abs(tvy); bateu = true; }
+            if (bateu) {
+                double v = Math.min(980, Math.hypot(tvx, tvy) * 1.18), a = Math.atan2(tvy, tvx) + (sorte.nextDouble() - .5) * .9;
+                if (sorte.nextDouble() < .4) a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); // as vezes vem direto na nave
+                tvx = Math.cos(a) * v; tvy = Math.sin(a) * v; SomJogo.tocar(SomJogo.Efeito.IMPACTO);
+            }
+            if (giro == 0) tonto = 1.2;
             if ((int) (giro * 12) != (int) ((giro + dt) * 12)) { double a = tempo * 7, cx = x + 150, cy = y + ALT * .5;
                 for (int k = 0; k < 2; k++) { double aa = a + k * Math.PI; tiros.add(new TiroChefe(cx, cy, Math.cos(aa) * 260, Math.sin(aa) * 260, false, TiroChefe.ATADURA, TiroChefe.Movimento.ONDA)); } }
             return;
@@ -53,7 +66,7 @@ final class FaraoBob {
         recarga -= dt * dif.cadenciaInimigos * (vidaFrac < .5 ? 1.3 : 1);
         if (recarga > 0 || tiros.size() > 55) return;
         int g = golpes++ % 4;
-        if (g == 0) giro = 1.6;
+        if (g == 0) { giro = 4.2; double a = Math.atan2(ny - (y + ALT * .5), nx - (x + 150)); tvx = Math.cos(a) * 380; tvy = Math.sin(a) * 380; }
         else if (g == 1) { // raio dos olhos: dois feixes vermelhos em X
             olhos = .5; double ex = x + 135, ey = y + 62;
             for (int i = -1; i <= 1; i += 2) { double a = Math.atan2(ny - ey, nx - ex) + i * .22;
@@ -76,6 +89,8 @@ final class FaraoBob {
     void ferido() { flash = .16; }
     Rectangle bounds() { return new Rectangle((int) x + 80, (int) y + 30, 150, ALT - 40); }
     boolean emGiro() { return giro > 0; }
+    /** Encosto no tornado: machuca, com uma pausa curta entre um dano e outro. */
+    boolean contato(Rectangle nave) { if (giro <= 0 || esperaContato > 0 || !bounds().intersects(nave)) return false; esperaContato = .7; return true; }
 
     void desenhar(Graphics2D tela) {
         if (ARTE == null) return;
@@ -83,7 +98,16 @@ final class FaraoBob {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         int q = vergonha > 0 ? 4 : corrida > 0 ? 5 : giro > 0 ? 1 : desenrolo == 0 ? 0 : desenrolo == 1 ? 2 : 3;
         int fw = ARTE.getWidth() / 6, fh = ARTE.getHeight(), w = fw * ALT / fh, px = (int) x + (300 - w) / 2, py = (int) y;
-        g.drawImage(ARTE, px, py, px + w, py + ALT, q * fw, 0, q * fw + fw, fh, null);
+        if (giro > 0) { // girando de verdade: espelha rapido e um redemoinho de ataduras em volta
+            boolean vira = (int) (tempo * 22) % 2 == 0; double sq = .75 + .25 * Math.abs(Math.cos(tempo * 34));
+            int ww = (int) (w * sq), xx = px + (w - ww) / 2;
+            if (vira) g.drawImage(ARTE, xx + ww, py, xx, py + ALT, q * fw, 0, q * fw + fw, fh, null); else g.drawImage(ARTE, xx, py, xx + ww, py + ALT, q * fw, 0, q * fw + fw, fh, null);
+            g.setStroke(new java.awt.BasicStroke(5));
+            for (int k = 0; k < 6; k++) { double fase = tempo * 14 + k; int ry = py + 30 + k * (ALT - 60) / 5, rw = (int) (w * (.7 + .25 * Math.sin(fase)));
+                g.setColor(new Color(232, 215, 175, 190)); g.drawArc(px + (w - rw) / 2, ry - 10, rw, 22, (int) Math.toDegrees(fase) % 360, 200); }
+        } else if (tonto > 0) { g.drawImage(ARTE, px, py, px + w, py + ALT, 0, 0, fw, fh, null);
+            g.setColor(new Color(255, 235, 110)); for (int k = 0; k < 3; k++) { double a = tempo * 6 + k * 2.1; g.fillOval(px + w / 2 + (int) (Math.cos(a) * 40) - 5, py + 6 + (int) (Math.sin(a) * 10), 10, 10); }
+        } else g.drawImage(ARTE, px, py, px + w, py + ALT, q * fw, 0, q * fw + fw, fh, null);
         if (flash > 0) { g.setColor(new Color(255, 230, 170, (int) (flash / .16 * 230))); for (int k = 0; k < 6; k++) { double a = k * Math.PI / 3; int r = 12 + (int) ((.16 - flash) * 160); g.fillRect(px + w / 2 + (int) (Math.cos(a) * r), py + ALT / 2 + (int) (Math.sin(a) * r), 4, 4); } }
         if (olhos > 0) { g.setColor(new Color(255, 60, 40, 200)); g.fillOval((int) x + 125, (int) y + 52, 22, 18); }
         if (ergue > 0) { // olho de horus no ceu chamando a tropa
