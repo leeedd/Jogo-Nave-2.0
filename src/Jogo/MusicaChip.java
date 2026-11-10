@@ -120,57 +120,51 @@ final class MusicaChip {
 
 
     /**
-     * Abertura: thrash melodico epico, composto para o jogo. Sobe devagar com acordes e rufar de tons,
-     * entra o meio-tempo pesado com as duas guitarras harmonizadas em tercas e explode em thrash
-     * rapido com a mesma melodia, fechando num acorde longo. Em mi menor (com o si maior epico).
+     * Abertura: thrash cru e rapido, composto para o jogo. Prato e riff ja no primeiro segundo,
+     * refrao de guitarra que gruda (guitarras gemeas em tercas), parada com pancadas secas,
+     * quebradeira em meio-tempo e volta dobrada. Em mi menor, 184 bpm, som seco.
      */
     static float[] abertura() {
-        Random r = new Random(2019);
-        double[][] frases = { // nota midi, duracao em tempos
-            {76, 1, 78, .5, 79, .5, 81, 1, 79, .5, 78, .5, 76, 1, 75, .5, 76, .5, 78, 2},
-            {79, 1, 81, .5, 83, .5, 84, 1.5, 83, .5, 81, 1, 79, .5, 78, .5, 79, 1, 83, 1},
-            {84, 1, 83, .5, 81, .5, 79, 1, 81, .5, 83, .5, 88, 2, 86, 1, 83, 1},
-            {81, 1, 79, .5, 78, .5, 76, 1, 75, 1, 76, 4}};
-        int[][] acordes = {{40, 47, 52}, {36, 43, 48}, {38, 45, 50}, {35, 42, 47}, {40, 47, 52}, {36, 43, 48}, {33, 40, 45}, {35, 42, 47}};
+        Random r = new Random(1984);
+        double b = 60 / 184.0, d = b / 4; Mix m = new Mix((int) (40 * TAXA), r);
+        int[] riff = {0, 0, 0, 0, 3, 0, 0, 2, 0, 0, 0, 0, 6, 5, 3, 2}; // mi pedal com cromatismo
+        int[] h1 = {71, 71, 76, 74, 71, 69, 67, 69, 71, 71, 76, 78, 79, 78, 76, -1}, h2 = {71, 71, 76, 74, 71, 69, 67, 69, 67, 69, 71, 74, 76, -1, -1, -1};
         int[] esc = {64, 66, 67, 69, 71, 72, 74};
-        double intro = 10.4, b1 = 60 / 118.0, b2 = 60 / 192.0, fim = 3.2;
-        double t1 = intro, t2 = t1 + 32 * b1, total = t2 + 32 * b2 + fim;
-        Mix m = new Mix((int) (total * TAXA) + TAXA, r);
-        // 1) subida: acordes longos crescendo, rufar de tons cada vez mais rapido, prato no fim
-        for (int c = 0; c < 4; c++) { int[] a = acordes[c * 2 % 8]; double t0 = c * intro / 4;
-            for (int n : a) m.nota64("pad", n + 12, t0, intro / 4 + .3, .09 + c * .03, .6);
-            m.nota64("dist", a[0], t0, intro / 4, .05 + c * .02, 0); m.nota64("dist", a[1], t0, intro / 4, .04 + c * .015, 0); }
-        for (int c = 0; c < 4; c++) { int[] a = acordes[c * 2 % 8]; double t0 = c * intro / 4;
-            for (int n : a) m.orquestra("coro", n + 24, t0, intro / 4 + .5, .05 + c * .02); // coro crescendo
-            m.timpano(t0, a[0] + 12, .35); m.timpano(t0 + intro / 8, a[0] + 12, .22);
-            if (c == 3) for (int n : a) m.orquestra("metais", n + 12, t0, intro / 4, .08); }
-        for (double t = intro * .6, passo = .3; t < intro - .05; t += passo, passo = Math.max(.06, passo * .82)) m.timpano(t, 52, .12 + .2 * (t / intro)); // rufar final
-        m.subida(intro, 2.4, .25);
-        m.ruido(intro - .02, 1.6, 2.5, .2); m.bumbo64(intro - .02, .5);
-        // 2) meio-tempo pesado e 3) thrash rapido: mesma melodia, guitarras em tercas
-        for (int parte = 0; parte < 2; parte++) {
-            double b = parte == 0 ? b1 : b2, t0 = parte == 0 ? t1 : t2;
-            for (int c = 0; c < 8; c++) { int[] a = acordes[c]; double tc = t0 + c * 4 * b;
-                for (int n : a) m.orquestra("coro", n + 24, tc, 4 * b + .3, parte == 0 ? .05 : .045);
-                if (c % 2 == 0) { for (int n : a) m.orquestra("metais", n + 12, tc, b * (parte == 0 ? 1.5 : 3), .07); m.timpano(tc, a[0] + 12, .25); }
-                for (int k = 0; k < (parte == 0 ? 8 : 16); k++) { double d = parte == 0 ? b / 2 : b / 4, tk = tc + k * d;
-                    m.nota64("dist", a[0], tk, d * .8, .11, 0); m.nota64("dist", a[1], tk, d * .8, .08, 0);
-                    m.nota("tri", a[0] - 12, tk, d * .9, 0, .1, 0); }
-                for (int k = 0; k < 4; k++) { double tk = tc + k * b;
-                    if (parte == 0) { m.bumbo64(tk, .42); if (k == 1 || k == 3) m.bumbo64(tk + b / 2, .32); if (k == 2) m.caixa64(tk, .3); m.chimbal(tk + b / 2, .05); if (k == 0 && c % 2 == 0) m.ruido(tk, .9, 4, .07); }
-                    else { m.bumbo64(tk, .36); m.caixa64(tk + b / 2, .24); m.chimbal(tk, .04); m.chimbal(tk + b / 2, .04); if (k == 0 && c % 2 == 0) m.ruido(tk, .7, 5, .08); } }
+        double t = 0;
+        // compassos: R riff, P parada, H refrao (riff por baixo), Q quebradeira, F final
+        String forma = "RRRRPHHHHQQRHHHHF";
+        for (char c : forma.toCharArray()) {
+            int bar = (int) (t / (4 * b));
+            if (c == 'R' || c == 'H') {
+                for (int k = 0; k < 16; k++) { int x = riff[k]; double tk = t + k * d; boolean acento = x != 0;
+                    m.nota64("dist", 40 + x, tk, d * (acento ? .95 : .55), acento ? .14 : .11, 0); if (acento) m.nota64("dist", 47 + x, tk, d * .95, .09, 0);
+                    m.nota("tri", 28 + x, tk, d * .9, 0, .1, 0); }
+                for (int k = 0; k < 4; k++) { m.bumbo64(t + k * b, .38); m.caixa64(t + k * b + b / 2, .26); m.chimbal(t + k * b, .05); m.chimbal(t + k * b + b / 2, .05); }
+                if (bar % 2 == 0) m.ruido(t, .8, 4.5, .12);
+            } else if (c == 'P') { // parada: tres pancadas secas e silencio, depois rufar
+                for (int k : new int[]{0, 3, 6}) { double tk = t + k * d * 2; m.nota64("dist", 40, tk, d * 1.6, .16, 0); m.nota64("dist", 47, tk, d * 1.6, .1, 0); m.bumbo64(tk, .45); m.ruido(tk, .5, 6, .12); }
+                for (int k = 0; k < 8; k++) m.caixa64(t + 2 * b + k * d, .1 + k * .025);
+            } else if (c == 'Q') { // quebradeira: meio-tempo esmagador
+                int[] q = {0, -1, -1, 0, -1, 0, -1, -1, 1, -1, 0, -1, -1, 0, 0, 0};
+                for (int k = 0; k < 16; k++) if (q[k] >= 0) { double tk = t + k * d; m.nota64("dist", 40 + q[k], tk, d * .9, .15, 0); m.nota64("dist", 47 + q[k], tk, d * .9, .09, 0); m.nota("tri", 28 + q[k], tk, d, 0, .12, 0); m.bumbo64(tk, .4); }
+                m.caixa64(t + 2 * b, .32); m.ruido(t, 1.2, 3, .1);
+            } else { // final: acorde aberto com prato
+                for (int n : new int[]{40, 47, 52, 59}) m.nota64("dist", n, t, 2.4, .11, 0); m.bumbo64(t, .5); m.ruido(t, 2.2, 1.8, .2); t += 2.6; break;
             }
-            double t = t0;
-            for (double[] f : frases) for (int i = 0; i < f.length; i += 2) { int n = (int) f[i]; double d = f[i + 1] * b;
-                int g = 0; for (int k = 0; k < 7; k++) if (Math.abs(esc[k] - (n % 12 + 60 + (n >= 72 ? 0 : 0))) == 0 || esc[k] % 12 == n % 12) g = k;
-                int terca = esc[(g + 5) % 7] % 12 + (n / 12) * 12; if (terca >= n) terca -= 12; // terca abaixo, dentro da escala
-                m.nota64("solo", n, t, d * .97, .1, 2.5); m.nota64("solo", terca, t, d * .97, .07, 2.5); t += d; }
+            t += 4 * b;
         }
-        // fecho: acorde de mi longo com prato
-        m.subida(t2, 1.8, .2); double tf = t2 + 32 * b2; m.subida(tf, 1.5, .2);
-        for (int n : new int[]{52, 59, 64, 67}) { m.orquestra("coro", n + 12, tf, fim, .07); m.orquestra("metais", n, tf, fim, .07); } m.timpano(tf, 52, .4); for (int n : new int[]{40, 47, 52}) m.nota64("dist", n, tf, fim, .1, 0); for (int n : new int[]{59, 64, 71}) m.nota64("pad", n, tf, fim, .1, .6);
-        m.ruido(tf, 2.5, 1.6, .2); m.bumbo64(tf, .5);
-        return m.fechar64((int) (total * TAXA));
+        // refrao: duas guitarras em tercas por cima dos compassos H (h1 e h2 se alternando)
+        double tt = 0; int hb = 0;
+        for (char c : forma.toCharArray()) {
+            if (c == 'F') break;
+            if (c == 'H') { int[] h = (hb / 2) % 2 == 0 ? h1 : h2; int metade = hb % 2; hb++;
+                for (int k = 0; k < 8; k++) { int n = h[metade * 8 + k]; if (n < 0) continue; double tk = tt + k * 2 * d, dur = 2 * d * .95;
+                    int nx = k + 1 < 8 ? h[metade * 8 + k + 1] : 0; if (nx < 0) dur = 2 * d * (8 - k) * .95;
+                    int g = 0; for (int e = 0; e < 7; e++) if (esc[e] % 12 == n % 12) g = e; int terca = esc[(g + 5) % 7] % 12 + (n / 12) * 12; if (terca >= n) terca -= 12;
+                    m.nota64("solo", n, tk, dur, .12, 2.5); m.nota64("solo", terca, tk, dur, .08, 2.5); } }
+            tt += 4 * b;
+        }
+        return m.fechar64((int) (Math.min(40, t + .2) * TAXA), .12);
     }
 
     private static final class Mix {
@@ -233,12 +227,13 @@ final class MusicaChip {
         void caixa64(double t0, double g) { int i0 = (int) (t0 * TAXA), n = (int) (.28 * TAXA); double lp = 0;
             for (int i = 0; i < n && i0 + i < a.length; i++) { double t = i / (double) TAXA, w = r.nextDouble() * 2 - 1; lp += (w - lp) * .55; a[i0 + i] += g * (lp * Math.exp(-t * 13) + .5 * Math.sin(2 * Math.PI * 185 * t) * Math.exp(-t * 30)); } }
         /** Fecha com filtro suave e reverb de sala (Schroeder), o acabamento "64 bits". */
-        float[] fechar64(int n) {
+        float[] fechar64(int n) { return fechar64(n, .38); }
+        float[] fechar64(int n, double molhado) {
             n = Math.min(n, a.length); double[] x = new double[n]; double lp = 0; for (int i = 0; i < n; i++) { lp += (a[i] - lp) * .55; x[i] = lp; }
             int[] cd = {2557, 2617, 2491, 2422, 3011, 2203}; double[] y = new double[n];
             for (int d : cd) { double[] b = new double[d]; int k = 0; double f = 0; for (int i = 0; i < n; i++) { double o = b[k]; f = o * .7 + f * .3; b[k] = x[i] + f * .86; k = (k + 1) % d; y[i] += o * .17; } }
             for (int d : new int[]{225, 556}) { double[] b = new double[d]; int k = 0; for (int i = 0; i < n; i++) { double o = b[k], in = y[i]; b[k] = in + o * .5; y[i] = o - in * .5; k = (k + 1) % d; } }
-            float[] o = new float[n]; double mx = 1e-6; for (int i = 0; i < n; i++) { x[i] = x[i] * .8 + y[i] * .38; mx = Math.max(mx, Math.abs(x[i])); }
+            float[] o = new float[n]; double mx = 1e-6; for (int i = 0; i < n; i++) { x[i] = x[i] * .8 + y[i] * molhado; mx = Math.max(mx, Math.abs(x[i])); }
             for (int i = 0; i < n; i++) o[i] = (float) (x[i] * .88 / mx); return o;
         }
         void acorde(int[] ns, double t0, double dur, double duty, double g, boolean vib) { if (m64) { for (int n : ns) orquestra("coro", n + 12, t0, dur + .25, g * 1.6); return; } for (int n : ns) nota("sq", n, t0, dur, duty, g, vib ? .6 : 0); }
