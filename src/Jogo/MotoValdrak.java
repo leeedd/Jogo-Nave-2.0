@@ -35,8 +35,9 @@ final class MotoValdrak {
         tempo += dt; flash = Math.max(0, flash - dt); gesto = Math.max(0, gesto - dt);
         if (investindo) {
             double vel = 1150; x -= vel * dt; percorrido += vel * dt;
-            if (percorrido - ultimoRastro > 36) { ultimoRastro = percorrido;
-                tiros.add(new TiroChefe(x + w * .75, y + h * .78, 0, 0, false, TiroChefe.RASTRO, TiroChefe.Movimento.RETO)); }
+            // a roda de tras deixa a pista em chamas: uma parede de fogo que fica queimando
+            if (percorrido - ultimoRastro > 34) { ultimoRastro = percorrido;
+                tiros.add(new TiroChefe(x + w * .78, y + h * .86, 0, 0, false, TiroChefe.PISTA_FOGO, TiroChefe.Movimento.RETO)); }
             if (x < -w - 20) { investindo = false; voltando = true; x = W + 40; y = alvoY = faixa(naveY); }
             return;
         }

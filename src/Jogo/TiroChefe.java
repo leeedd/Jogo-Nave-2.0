@@ -41,6 +41,7 @@ public final class TiroChefe {
         y += (vy + queda) * dt * velocidade + perpy * curva;
         tempo += dt;
         if (estilo == RASTRO && tempo > 1.4) visivel = false;
+        if (estilo == PISTA_FOGO && tempo > PISTA_DURA) visivel = false;
         int margem = estilo == VAGAO ? 130 : 40;
         if (x < -margem || x > Config.LARGURA + margem || y < Config.HUD - margem || y > Config.ALTURA + margem)
             visivel = false;
@@ -59,6 +60,7 @@ public final class TiroChefe {
             case FOGO_ROXO: desenharFogoRoxo(g, px, py); return;
             case BARRIL: desenharBarril(g, px, py); return;
             case RASTRO: desenharRastro(g, px, py); return;
+            case PISTA_FOGO: desenharPistaFogo(g, px, py); return;
             case ONDA_SOM: desenharOndaLemmy(g, px, py); return;
             case PRATO: desenharPrato(g, px, py); return;
             case ENERGIA: desenharEnergia(g, px, py); return;
@@ -274,6 +276,7 @@ public final class TiroChefe {
     double getVxTeste() { return vx; }
     double getVyTeste() { return vy; }
     public Rectangle getBounds() {
+        if (estilo == PISTA_FOGO) { double f = fogoPista(); return f <= .05 ? new Rectangle(-99, -99, 0, 0) : new Rectangle((int) x - 19, (int) (y - 38 * f), 38, (int) (38 * f) + 6); }
         if (estilo == RAIO_CEU) return new Rectangle((int) x - 9, (int) y - 40, 18, 46);
         if (estilo == CORTE) return new Rectangle((int) x - 14, (int) y - 34, 28, 68);
         if (estilo == LANCA || estilo == FLECHA) { int r = estilo == LANCA ? 12 : 10; return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2); }
@@ -393,6 +396,20 @@ public final class TiroChefe {
         g.dispose();
     }
     /** Pneu em chamas deixa fogo na pista: some sozinho em 1,4 s. */
+    /** Pista em chamas da moto do Valdrak: sobe rapido, fica queimando e baixa no fim. */
+    static final int PISTA_FOGO = 35; private static final double PISTA_DURA = 2.6;
+    private double fogoPista() { return Math.max(0, Math.min(1, Math.min(tempo / .15, (PISTA_DURA - tempo) / .6))); }
+    private void desenharPistaFogo(Graphics2D tela, int px, int py) {
+        Graphics2D g = (Graphics2D) tela.create(); double f = fogoPista();
+        g.setColor(new Color(255, 120, 30, (int) (70 * f))); g.fillOval(px - 24, py - (int) (30 * f), 48, (int) (36 * f) + 8);
+        for (int k = 0; k < 4; k++) {
+            int h = (int) ((22 + (Math.sin(tempo * 18 + px * .13 + k * 1.7) + 1) * 9) * f), lx = px - 15 + k * 10;
+            g.setColor(new Color(255, 70 + k * 35, 20, (int) (235 * f))); g.fillPolygon(new int[]{lx - 7, lx, lx + 7}, new int[]{py + 6, py + 6 - h, py + 6}, 3);
+            g.setColor(new Color(255, 230, 140, (int) (220 * f))); g.fillPolygon(new int[]{lx - 3, lx, lx + 3}, new int[]{py + 6, py + 6 - h / 2, py + 6}, 3);
+        }
+        g.setColor(new Color(255, 200, 90, (int) (230 * f))); g.fillRect(px - 19, py + 2, 38, 5);
+        g.dispose();
+    }
     private void desenharRastro(Graphics2D tela, int px, int py) {
         Graphics2D g = (Graphics2D) tela.create();
         double vida = 1 - tempo / 1.4; int a = (int) (230 * Math.max(0, Math.min(1, vida * 2)));
