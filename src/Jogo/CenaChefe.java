@@ -85,7 +85,7 @@ final class CenaChefe {
             int q = tempo > 4.2 ? 1 : (int) (tempo * 8) % 2 == 0 ? 0 : 1;
             g.drawImage(arte, (int) x, y, (int) x + w, y + h, q * fw, 0, q * fw + fw, fh, null);
         }
-        if (tempo > .8 && tempo < 4.4) legenda(g, tempo < 2.6 ? "MALACHAR E GRIMBO PEGARAM A ESTRADA..." : "E VIERAM BUSCAR VOCE.", 120, 18, Color.WHITE);
+        if (tempo > .8 && tempo < 4.4) legenda(g, tempo < 2.6 ? "MALACHAR E KROVAX PEGARAM A ESTRADA..." : "E VIERAM BUSCAR VOCE.", 120, 18, Color.WHITE);
         if (tempo > 4.4) {
             float a = (float) Math.min(1, (tempo - 4.4) / .4);
             Graphics2D t = (Graphics2D) g.create(); t.setComposite(AlphaComposite.SrcOver.derive(a));

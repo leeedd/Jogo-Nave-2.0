@@ -14,7 +14,7 @@ conhecida. Cada banda é uma espécie alienígena.
 | 6 | Fúria da Tormenta | colossos de rocha e raio | Kanoa | Iren, Solus (guit.), Dakar (baixo) |
 | 7 | Eclipse Profano | vampiros alados | Malachar, o rei das sombras | Ossian (guit.), Brun (baixo), Tesk (bat.), Raven (guit.) |
 
-Especiais: Van do Inferno (Malachar e Grimbo), Os Destemidos (Bardo e Monge), Belzebu,
+Especiais: Van do Inferno (Malachar e Krovax), Os Destemidos (Bardo e Monge), Belzebu,
 Zaref o Mago dos Prismas, Demônio das Correntes, Palheta Maldita.
 
 ## Arte a refazer (até lá o jogo NÃO pode ser publicado)
