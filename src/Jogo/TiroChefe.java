@@ -276,7 +276,7 @@ public final class TiroChefe {
     public Rectangle getBounds() {
         if (estilo == RAIO_CEU) return new Rectangle((int) x - 9, (int) y - 40, 18, 46);
         if (estilo == CORTE) return new Rectangle((int) x - 14, (int) y - 34, 28, 68);
-        if (estilo == LANCA || estilo == FLECHA) { int r = estilo == LANCA ? 12 : 8; return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2); }
+        if (estilo == LANCA || estilo == FLECHA) { int r = estilo == LANCA ? 12 : 10; return new Rectangle((int) x - r, (int) y - r, r * 2, r * 2); }
         if (estilo == VAGAO) return new Rectangle((int) x - 70, (int) y - 26, 150, 52);
         if (estilo == ONDA_SOM) { int h = alturaOnda() * 3 / 4; return new Rectangle((int) x - 16, (int) y - h / 2, 32, h); }
         int r = estilo == ENERGIA ? 9 : estilo == NOTA ? 9 : estilo == PRATO ? 14 : estilo == AS_ESPADAS ? 14 : estilo == MORCEGO_OZZY ? 13 : estilo == BARRIL ? 13 : estilo == RASTRO ? 10 : estilo == FUMACA ? (int) (16 + Math.min(14, tempo * 16)) : estilo == FOGO_ROXO ? 13 : pesado ? 11 : 6;
@@ -297,13 +297,13 @@ public final class TiroChefe {
             g.setStroke(new java.awt.BasicStroke(2)); g.setColor(BRANCO_RAIO); g.drawArc(-27, -32, 36, 64, -60, 120);
             for (int k = 0; k < 4; k++) g.fillRect(4 + r.nextInt(8), -30 + r.nextInt(60), 3, 3);
         } else {
-            int L = estilo == LANCA ? 54 : 30;
+            int L = estilo == LANCA ? 58 : 44;
             // haste de raio em zigue-zague e ponta de cristal
             int[] xs = new int[6], ys = new int[6];
             for (int k = 0; k < 6; k++) { xs[k] = -L + k * (L - 8) / 5; ys[k] = k == 0 || k == 5 ? 0 : r.nextInt(7) - 3; }
             g.setStroke(new java.awt.BasicStroke(estilo == LANCA ? 7 : 5)); g.setColor(new Color(90, 170, 255, 120)); g.drawPolyline(xs, ys, 6);
             g.setStroke(new java.awt.BasicStroke(estilo == LANCA ? 3 : 2)); g.setColor(BRANCO_RAIO); g.drawPolyline(xs, ys, 6);
-            int c = estilo == LANCA ? 14 : 9;
+            int c = estilo == LANCA ? 16 : 13;
             g.setColor(AZUL_RAIO); g.fillPolygon(new int[]{-8, c, -8}, new int[]{-c / 2 - 2, 0, c / 2 + 2}, 3);
             g.setColor(BRANCO_RAIO); g.fillPolygon(new int[]{-4, c - 4, -4}, new int[]{-c / 4, 0, c / 4}, 3);
             if (estilo == FLECHA) { g.setColor(AZUL_RAIO); g.drawLine(-L, 0, -L - 6, -6); g.drawLine(-L, 0, -L - 6, 6); }

@@ -227,7 +227,7 @@ public final class ChefeMetal {
         } else if (k == 2) { // lanca: um arremesso pesado e rapido direto na nave
             arma(tiros, TiroChefe.LANCA, ox, oy, a, 600, true, TiroChefe.Movimento.RETO);
         } else {             // arco: leque de flechas eletricas e, na furia, chuva de flechas
-            for (int i = -2; i <= 2; i++) arma(tiros, TiroChefe.FLECHA, ox, oy, a + i * .11, 450, false, TiroChefe.Movimento.RETO);
+            for (int i = -2; i <= 2; i++) arma(tiros, TiroChefe.FLECHA, ox, oy, a + i * .13, 360, false, TiroChefe.Movimento.RETO);
             if (furia) for (int i = 0; i < 5; i++) arma(tiros, TiroChefe.FLECHA, nx - 240 + i * 120, Config.HUD + 4, Math.PI / 2 + .25, 340, false, TiroChefe.Movimento.RETO);
         }
     }
