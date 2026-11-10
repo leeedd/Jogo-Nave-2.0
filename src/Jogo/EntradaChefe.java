@@ -12,12 +12,12 @@ import java.awt.image.BufferedImage;
 public final class EntradaChefe {
     public static final double DURACAO = 3.8;
     private static final String[] NOMES = {
-        "", "MALACHAR", "VALDRAK", "ALMIRANTE KORVUS", "GRIMBO",
+        "", "MALACHAR", "VALDRAK", "ALMIRANTE KORVUS", "KROVAX",
         "HEXAR", "MORGATH", "KANOA", "LULA DO ABISMO"
     };
     private static final String[] SUBTITULOS = {
         "", "O REI DAS SOMBRAS", "LEGIAO CROMADA - MOTO DE CROMO", "VORTICE NEGRO - O CORSARIO DO VACUO",
-        "FERRUGEM ATOMICA - CANHAO DE GRAVES", "CINZAS DE ORION - O MARIONETISTA", "NECROPOLIS - CHUVA DE FOGO",
+        "FERRUGEM ATOMICA - A CENTOPEIA DE SUCATA", "CINZAS DE ORION - O MARIONETISTA", "NECROPOLIS - CHUVA DE FOGO",
         "FURIA DA TORMENTA - VOZ DO TROVAO", "OS TENTACULOS DESPERTARAM"
     };
     private static final Color[] CORES = {

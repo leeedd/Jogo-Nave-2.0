@@ -44,7 +44,7 @@ final class Turne {
         {"RAJADA ENERGIA 80 240 110", "LEQUE7 NOTA 110 255 140", "ZIGUE ONDA 80 230 120"},
         {"CHUVA ENERGIA 150 70 220", "RAJADA ONDA 150 90 255", "PAREDE PRATO 220 190 120", "ANEL ENERGIA 255 210 60"}};
     /** Vocalistas (os chefes do setor), que entram junto com a banda reunida na fortaleza. Abismo nao tem: a Lula e o chefe. */
-    static final String[] VOCALISTAS = {"", "VALDRAK", "ALMIRANTE KORVUS", "GRIMBO", "HEXAR", "MORGATH", "KANOA", "MALACHAR"};
+    static final String[] VOCALISTAS = {"", "VALDRAK", "ALMIRANTE KORVUS", "KROVAX", "HEXAR", "MORGATH", "KANOA", "MALACHAR"};
     /** Id do chefe de cada setor (mesma ordem da Fase: 8 Lula, 2 Rob, 3 Bruce, 4 Lemmy, 5 James, 6 Tom, 7 Chuck, 1 Ozzy). */
     static final int[] ID_CHEFE = {8, 2, 3, 4, 5, 6, 7, 1};
     static final String[] ATAQUES_VOCAL = {"", "CHUVA ENERGIA 255 120 30", "CRUZ NOTA 90 230 220", "PAREDE AS 255 150 60", "RAIO2 ENERGIA 80 160 255", "CHUVA NOTA 240 60 70", "ANEL NOTA 100 240 130", "ESPIRAL ENERGIA 190 90 240"};

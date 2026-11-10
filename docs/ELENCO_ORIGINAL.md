@@ -8,7 +8,7 @@ conhecida. Cada banda é uma espécie alienígena.
 | 0 | Crias do Abismo | lulas abissais | Lula do Abismo | Enguia das Profundezas, Cria da Lula |
 | 1 | Legião Cromada | ciborgues de cromo | Valdrak | Krell, Sorvik (guit.), Bront (baixo), Takka (bat.) |
 | 2 | Vórtice Negro | piratas cefalópodes | Almirante Korvus | Draven (baixo), Zeph, Mardok, Ilyas (guit.), Gorm (bat.) |
-| 3 | Ferrugem Atômica | trolls de sucata | Grimbo | Rask (guit.), Dozer (bat.) |
+| 3 | Ferrugem Atômica | insetos de sucata | Krovax, a centopeia de sucata | Rask (guit.), Dozer (bat.) |
 | 4 | Cinzas de Órion | insetoides de quatro braços | Hexar, o marionetista | Vex (guit.), Brakka (bat.), Oruk (baixo) |
 | 5 | Necrópolis | mortos-vivos de obsidiana | Morgath | Skarn, Velka (guit.), Thul (bat.) |
 | 6 | Fúria da Tormenta | colossos de rocha e raio | Kanoa | Iren, Solus (guit.), Dakar (baixo) |
