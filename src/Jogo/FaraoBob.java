@@ -17,7 +17,7 @@ import java.util.List;
  * Arte: tutan_bob.png (6 quadros: enfaixado, piao, meio desenrolado, quase osso, envergonhado, correndo).
  */
 final class FaraoBob {
-    private static final BufferedImage ARTE = ler("tutan_bob.png");
+    private static final BufferedImage ARTE = ler("tutan_bob.png"), VERGONHA = ler("tutan_bob_vergonha.png");
     static final BufferedImage SOLDADO0 = ler("egito_soldado_0.png"), SOLDADO1 = ler("egito_soldado_1.png"), CARRUAGEM = ler("egito_carruagem.png"),
             ESFINGE = ler("egito_esfinge.png"), RAINHA = ler("egito_rainha.png"), BLOCO = ler("egito_bloco.png");
     static boolean temArte() { return ARTE != null; }
@@ -132,7 +132,8 @@ final class FaraoBob {
                 g.setColor(new Color(255, 70, 50)); double a0 = tempo * 14;
                 for (int k = 0; k < 14; k++) { double a = a0 + k * .55, r = 1 + k * .55; int x1 = cx + (int) (Math.cos(a) * r), y1 = cy + (int) (Math.sin(a) * r);
                     double a2 = a + .55, r2 = r + .55; g.drawLine(x1, y1, cx + (int) (Math.cos(a2) * r2), cy + (int) (Math.sin(a2) * r2)); } }
-        } else g.drawImage(ARTE, px, py, px + w, py + ALT, q * fw, 0, q * fw + fw, fh, null);
+        } else if (q == 4 && VERGONHA != null) { int vw = VERGONHA.getWidth() * ALT / VERGONHA.getHeight(); g.drawImage(VERGONHA, px + (w - vw) / 2, py, vw, ALT, null); }
+        else g.drawImage(ARTE, px, py, px + w, py + ALT, q * fw, 0, q * fw + fw, fh, null);
         if (flash > 0) { g.setColor(new Color(255, 230, 170, (int) (flash / .16 * 230))); for (int k = 0; k < 6; k++) { double a = k * Math.PI / 3; int r = 12 + (int) ((.16 - flash) * 160); g.fillRect(px + w / 2 + (int) (Math.cos(a) * r), py + ALT / 2 + (int) (Math.sin(a) * r), 4, 4); } }
         if (olhos > 0) { g.setColor(new Color(255, 60, 40, 200)); g.fillOval((int) x + 125, (int) y + 52, 22, 18); }
         if (ergue > 0) { // olho de horus no ceu chamando a tropa
