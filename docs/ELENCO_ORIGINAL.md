@@ -12,7 +12,7 @@ conhecida. Cada banda é uma espécie alienígena.
 | 4 | Cinzas de Órion | insetoides de quatro braços | Hexar, o marionetista | Vex (guit.), Brakka (bat.), Oruk (baixo) |
 | 5 | Necrópolis | mortos-vivos de obsidiana | Morgath | Skarn, Velka (guit.), Thul (bat.) |
 | 6 | Fúria da Tormenta | colossos de rocha e raio | Kanoa | Iren, Solus (guit.), Dakar (baixo) |
-| 7 | Eclipse Profano | vampiros alados | Malachar, o rei das sombras | Ossian (guit.), Brun (baixo), Tesk (bat.), Raven (guit.) |
+| 7 | Eclipse Profano | criaturas do eclipse | Malachar, o Maestro do Eclipse | Ossian (guit.), Brun (baixo), Tesk (bat.), Raven (guit.) |
 
 Especiais: Van do Inferno (Malachar e Krovax), Os Destemidos (Bardo e Monge), Belzebu,
 Zaref o Mago dos Prismas, Demônio das Correntes, Palheta Maldita.

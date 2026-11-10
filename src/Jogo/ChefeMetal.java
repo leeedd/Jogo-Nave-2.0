@@ -313,7 +313,7 @@ public final class ChefeMetal {
             if (cento != null && forma == 2) { transformando = 0; cento.furia(); aviso = "KROVAX ENFURECEU!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (moto != null && forma == 2) { quebra = quebraTotal = MONTAGEM; transformando = 0; aviso = "A MOTO SE TRANSFORMA: VALDRAK!"; SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); }
             if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O HEXAR!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
-            if (artista == 1 && forma == 3) aviso = "O MORCEGO CAI... MALACHAR, O REI DAS SOMBRAS!"; // sem cutscene: o morcego se funde no Malachar dentro da luta
+            if (artista == 1 && forma == 3) aviso = "O MORCEGO CAI... MALACHAR, O MAESTRO DO ECLIPSE!"; // sem cutscene: o morcego se funde no Malachar dentro da luta
             return false;
         }
         return true;
@@ -502,7 +502,7 @@ public final class ChefeMetal {
     public double getEntrada() { return entrada; }
     public String getNome() {
         switch (artista) {
-            case 1: return forma == 1 ? "MALACHAR - EXPRESSO DAS TREVAS" : forma == 2 ? "MALACHAR - ASA NOTURNA" : "MALACHAR - REI DAS SOMBRAS";
+            case 1: return forma == 1 ? "MALACHAR - EXPRESSO DO ECLIPSE" : forma == 2 ? "MALACHAR - ASA DO ECLIPSE" : "MALACHAR - MAESTRO DO ECLIPSE";
             case 2: return moto != null && forma == 1 ? "VALDRAK - MOTO DE CROMO" : "VALDRAK - CHICOTE DE PLASMA";
             case 3: return "KORVUS - CORSARIO DO VACUO";
             case 4: return forma == 1 ? "KROVAX - A CENTOPEIA DE SUCATA" : "KROVAX - FURIA DE FERRUGEM";
