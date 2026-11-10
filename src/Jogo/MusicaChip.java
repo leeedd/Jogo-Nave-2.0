@@ -124,44 +124,53 @@ final class MusicaChip {
      * segundo, guitarras gemeas em tercas, parada com rufar, refrao de hino com acordes abertos e
      * volta ao galope. Mi menor, 152 bpm, guitarra com amplificador simulado.
      */
-    static float[] abertura() {
-        Random r = new Random(1980);
-        double b = 60 / 152.0, d = b / 4, comp = 4 * b; Mix m = new Mix((int) (45 * TAXA), r);
-        int[] riff = {40, 40, 36, 38, 40, 40, 43, 38}; // raiz de cada compasso do galope (E E C D E E G D)
-        int[][] gancho = {{71, 76, 78, 79, 78, 76, 74, 76}, {71, 76, 78, 79, 81, 79, 78, 74}, {72, 76, 79, 84, 83, 79, 76, 72}, {74, 78, 81, 86, 84, 81, 78, 81},
+    static float[] abertura() { return abertura(0); }
+    /** Versoes da abertura para comparar: 0 galope classico, 1 cavalgada rapida (la menor), 2 hino de meio-tempo (re menor). */
+    static float[] abertura(int versao) {
+        Random r = new Random(1980 + versao);
+        int tr = versao == 1 ? 5 : versao == 2 ? -2 : 0; double bpm = versao == 1 ? 176 : versao == 2 ? 128 : 152;
+        double b = 60 / bpm, d = b / 4, comp = 4 * b; Mix m = new Mix((int) (60 * TAXA), r);
+        int[] riff = versao == 1 ? new int[]{40, 40, 43, 41, 40, 40, 36, 38} : versao == 2 ? new int[]{40, 36, 38, 35, 40, 36, 43, 38} : new int[]{40, 40, 36, 38, 40, 40, 43, 38}; // raiz de cada compasso
+        int[][] gancho = versao == 1 ? new int[][]{{76, 74, 76, 79, 76, 74, 72, 71}, {72, 74, 76, 72, 71, 69, 67, 69}, {76, 74, 76, 79, 81, 79, 76, 79}, {83, 81, 79, 78, 79, -1, 76, -1},
+                          {76, 74, 76, 79, 76, 74, 72, 71}, {72, 74, 76, 72, 71, 69, 67, 69}, {67, 69, 71, 72, 74, 76, 78, 79}, {76, -1, -1, -1, -1, -1, -1, -1}}
+                       : versao == 2 ? new int[][]{{64, -1, 67, 69, 71, -1, 69, 67}, {72, -1, 71, 69, 67, -1, 64, -1}, {74, -1, 72, 71, 69, -1, 71, 72}, {71, -1, -1, -1, 66, -1, -1, -1},
+                          {64, -1, 67, 69, 71, -1, 74, 76}, {79, -1, 78, 76, 74, -1, 72, -1}, {71, 72, 74, 72, 71, -1, 69, -1}, {64, -1, -1, -1, -1, -1, -1, -1}}
+                       : new int[][]{{71, 76, 78, 79, 78, 76, 74, 76}, {71, 76, 78, 79, 81, 79, 78, 74}, {72, 76, 79, 84, 83, 79, 76, 72}, {74, 78, 81, 86, 84, 81, 78, 81},
                           {71, 76, 78, 79, 78, 76, 74, 76}, {71, 76, 78, 79, 81, 79, 78, 74}, {72, 74, 76, 79, 78, 76, 74, 71}, {76, -1, -1, -1, -1, -1, -1, -1}};
-        int[] coroRaiz = {36, 38, 40, 40, 36, 38, 35, 35}; // refrao: C D Em Em C D B B
-        double[][] coroMel = {{79, 2, 78, 1, 76, 1}, {74, 2, 76, 2}, {79, 1, 78, 1, 76, 1, 74, 1}, {76, 4}, {72, 1, 74, 1, 76, 1, 79, 1}, {78, 2, 81, 2}, {78, 2, 75, 2}, {71, 4}};
+        int[] coroRaiz = versao == 1 ? new int[]{40, 36, 43, 38, 40, 36, 38, 35} : versao == 2 ? new int[]{40, 43, 38, 36, 40, 43, 35, 35} : new int[]{36, 38, 40, 40, 36, 38, 35, 35}; // refrao
+        double[][] coroMel = versao == 1 ? new double[][]{{76, 1, 79, 1, 83, 2}, {81, 2, 79, 2}, {79, 1, 81, 1, 83, 1, 86, 1}, {81, 4}, {76, 1, 79, 1, 83, 2}, {84, 2, 83, 1, 81, 1}, {79, 2, 78, 2}, {76, 4}}
+                           : versao == 2 ? new double[][]{{71, 3, 72, 1}, {74, 2, 71, 2}, {69, 3, 71, 1}, {72, 2, 69, 2}, {71, 3, 74, 1}, {76, 2, 79, 2}, {78, 3, 75, 1}, {76, 4}}
+                           : new double[][]{{79, 2, 78, 1, 76, 1}, {74, 2, 76, 2}, {79, 1, 78, 1, 76, 1, 74, 1}, {76, 4}, {72, 1, 74, 1, 76, 1, 79, 1}, {78, 2, 81, 2}, {78, 2, 75, 2}, {71, 4}};
         int[] esc = {64, 66, 67, 69, 71, 72, 74};
         double t = 0; m.prato(0, .22, 1.4);
-        String forma = "GGGGLLLLLLLLPCCCCCCCCGGF"; int g = 0, l = 0, c = 0;
+        String forma = versao == 1 ? "GGGGLLLLLLLLPCCCCCCCCLLLLF" : versao == 2 ? "CCCCGGGGLLLLLLLLPCCCCCCCCF" : "GGGGLLLLLLLLPCCCCCCCCGGF"; int g = 0, l = 0, c = 0;
         for (char x : forma.toCharArray()) {
             if (x == 'G' || x == 'L') { int raiz = riff[(g++) % 8];
                 for (int k = 0; k < 4; k++) { double tk = t + k * b; // galope: colcheia + duas semicolcheias
-                    for (double[] q : new double[][]{{0, 2}, {2, 1}, {3, 1}}) { double tq = tk + q[0] * d, dq = q[1] * d * .92;
-                        m.guitarra(raiz, tq, dq, .1, true, 0); m.guitarra(raiz + 7, tq, dq, .07, true, 0); m.nota("tri", raiz - 12, tq, dq, 0, .11, 0); }
+                    for (double[] q : versao == 2 ? new double[][]{{0, 2}, {2, 2}} : new double[][]{{0, 2}, {2, 1}, {3, 1}}) { double tq = tk + q[0] * d, dq = q[1] * d * .92;
+                        m.guitarra(raiz + tr, tq, dq, .1, true, 0); m.guitarra(raiz + 7 + tr, tq, dq, .07, true, 0); m.nota("tri", raiz - 12 + tr, tq, dq, 0, .11, 0); }
                     m.bumbo64(tk, .36); if (k % 2 == 1) m.caixa64(tk, .3); m.chimbal64(tk + b / 2, .05, false); m.chimbal64(tk, .05, false); }
                 if (g % 4 == 1) m.prato(t, .14, 1.8);
                 if (x == 'L') { int[] h = gancho[(l++) % 8];
                     for (int k = 0; k < 8; k++) { int n = h[k]; if (n < 0) continue; int fim = k + 1; while (fim < 8 && h[fim] < 0) fim++; double dur = (fim - k) * 2 * d * .96;
                         int gr = 0; for (int e = 0; e < 7; e++) if (esc[e] % 12 == n % 12) gr = e; int terca = esc[(gr + 5) % 7] % 12 + (n / 12) * 12; if (terca >= n) terca -= 12;
-                        m.guitarra(n, t + k * 2 * d, dur, .075, false, 2); m.guitarra(terca, t + k * 2 * d, dur, .05, false, 2); } }
+                        m.guitarra(n + tr, t + k * 2 * d, dur, .075, false, 2); m.guitarra(terca + tr, t + k * 2 * d, dur, .05, false, 2); } }
             } else if (x == 'P') { // parada: acorde que soa, rufar de caixa e tons
-                m.guitarra(40, t, comp * .5, .1, false, 0); m.guitarra(47, t, comp * .5, .07, false, 0); m.guitarra(52, t, comp * .5, .06, false, 0); m.bumbo64(t, .45); m.prato(t, .2, 1.6);
+                m.guitarra(40 + tr, t, comp * .5, .1, false, 0); m.guitarra(47 + tr, t, comp * .5, .07, false, 0); m.guitarra(52 + tr, t, comp * .5, .06, false, 0); m.bumbo64(t, .45); m.prato(t, .2, 1.6);
                 for (int k = 8; k < 16; k++) m.caixa64(t + k * d, .1 + (k - 8) * .03); m.tom(t + 12 * d, 57, .2); m.tom(t + 14 * d, 52, .25);
             } else if (x == 'C') { int raiz = coroRaiz[c % 8]; double[] mel = coroMel[c % 8]; c++;
-                for (int n : new int[]{raiz, raiz + 7, raiz + 12}) m.guitarra(n, t, comp * .98, .075, false, 0); // acorde aberto
-                m.nota("tri", raiz - 12, t, comp, 0, .13, 0);
+                for (int n : new int[]{raiz, raiz + 7, raiz + 12}) m.guitarra(n + tr, t, comp * .98, .075, false, 0); // acorde aberto
+                m.nota("tri", raiz - 12 + tr, t, comp, 0, .13, 0);
                 for (int k = 0; k < 8; k++) { m.bumbo64(t + k * 2 * d, .32); m.chimbal64(t + k * 2 * d + d, .04, k % 2 == 1); } m.caixa64(t + b, .3); m.caixa64(t + 3 * b, .3); if (c % 2 == 1) m.prato(t, .15, 1.6);
                 double tm = t; for (int i = 0; i < mel.length; i += 2) { int n = (int) mel[i]; double dur = mel[i + 1] * b * .97;
                     int gr = 0; for (int e = 0; e < 7; e++) if (esc[e] % 12 == n % 12) gr = e; int terca = esc[(gr + 5) % 7] % 12 + (n / 12) * 12; if (terca >= n) terca -= 12;
-                    m.guitarra(n, tm, dur, .085, false, 2.5); m.guitarra(terca, tm, dur, .055, false, 2.5); tm += mel[i + 1] * b; }
+                    m.guitarra(n + tr, tm, dur, .085, false, 2.5); m.guitarra(terca + tr, tm, dur, .055, false, 2.5); tm += mel[i + 1] * b; }
             } else { // final
-                for (int n : new int[]{40, 47, 52, 55, 59}) m.guitarra(n, t, 2.6, .07, false, 1); m.nota("tri", 28, t, 2.6, 0, .14, 0); m.bumbo64(t, .5); m.prato(t, .25, 1.2); t += 2.8; break;
+                for (int n : new int[]{40, 47, 52, 55, 59}) m.guitarra(n + tr, t, 2.6, .07, false, 1); m.nota("tri", 28 + tr, t, 2.6, 0, .14, 0); m.bumbo64(t, .5); m.prato(t, .25, 1.2); t += 2.8; break;
             }
             t += comp;
         }
-        return m.fechar64((int) (Math.min(45, t) * TAXA), .16);
+        return m.fechar64((int) (Math.min(60, t) * TAXA), .16);
     }
 
     private static final class Mix {
