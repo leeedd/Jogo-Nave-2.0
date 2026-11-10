@@ -31,6 +31,7 @@ public final class ChefeMetal {
     private final int ultimaForma;
     private String cenaPendente;
     private final Trem trem;
+    private final EnxameMalachar enx;
     /** James: ato I e a mao do marionetista com o boneco; quebra = boneco desmontando antes do James aparecer. */
     private final MarionetePuppets mar;
     /** Valdrak: ato I e a moto-robo; na quebra ela se transforma no Valdrak. */
@@ -65,6 +66,7 @@ public final class ChefeMetal {
         this.vida = vidaPorForma;
         this.ultimaForma = 2; // o Malachar perdeu o trem: morcego no ato I, maestro no ato II
         this.trem = null; // Trem (Expresso do Eclipse) aposentado
+        this.enx = artista == 1 && EnxameMalachar.temArte() ? new EnxameMalachar() : null;
         this.mar = artista == 5 && MarionetePuppets.temArte() ? new MarionetePuppets() : null;
         this.moto = artista == 2 && MotoValdrak.temArte() ? new MotoValdrak() : null;
         this.cento = artista == 4 && CentopeiaKrovax.temArte() ? new CentopeiaKrovax() : null;
@@ -86,6 +88,7 @@ public final class ChefeMetal {
         else if (chicote > 0) { chicote = Math.max(0, chicote - dt); double pc = 1 - chicote / .55; pc = pc * pc * (3 - 2 * pc); chicoteAng = chicoteA0 + (chicoteA1 - chicoteA0) * pc; }
         if (tempoQuadroValdrak > 0 && (tempoQuadroValdrak = Math.max(0, tempoQuadroValdrak - dt)) == 0 && chicote <= 0 && chicoteAviso <= 0) quadroValdrak = -1;
         if (trem != null && forma == 1) { trem.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = trem.entrada(); return; }
+        if (enx != null && (forma == 1 || transformando > 0)) { enx.vida(vida / (double) vidaPorForma); enx.atualizar(dt, naveX, naveY, dificuldade, tiros); if (forma == 1) { entrada = enx.entrada(); return; } }
         if (mar != null && forma == 1) { mar.vida(vida / (double) vidaPorForma); mar.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = mar.entrada(); if (!mar.investindo()) ataqueFisicoConsumido = false; return; }
         if (cento != null) { if (transformando > 0) transformando = Math.max(0, transformando - dt); cento.atualizar(dt, naveX, naveY, dificuldade, tiros, vida / (double) vidaPorForma); entrada = cento.entrada(); return; }
         if (bob != null && forma == 1) { bob.vida(vida / (double) vidaPorForma); bob.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = bob.entrada(); return; }
@@ -353,6 +356,7 @@ public final class ChefeMetal {
         if (moto != null && forma == 1) moto.ferido();
         if (bob != null && forma == 1) { bob.ferido(); dano = bob.envergonhado() ? dano * 2 : Math.max(1, dano * 45 / 100); } // o Bob e duro, menos quando esta pelado
         if (cento != null) { if (cento.consumirBloqueio()) return false; cento.ferido(); }
+        if (enx != null && forma == 1) { if (enx.consumirBloqueio()) return false; enx.ferido(); }
         if (artista == 3 && forma == 2 && korEstado == 5) { korRebater++; flash = .1; return false; }
         vida = Math.max(0, vida - Math.max(0, dano));
         flash = .16;
@@ -368,7 +372,8 @@ public final class ChefeMetal {
             if (cento != null && forma == 2) { transformando = 0; cento.furia(); aviso = "KROVAX ENFURECEU!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (moto != null && forma == 2) { quebra = quebraTotal = MONTAGEM; transformando = 0; aviso = "A MOTO SE TRANSFORMA: VALDRAK!"; SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); }
             if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O HEXAR!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
-            if (artista == 1 && forma == 2) aviso = "O MORCEGO CAI... MALACHAR, O MAESTRO DO ECLIPSE!"; // sem cutscene: o morcego se funde no Malachar dentro da luta
+            if (enx != null && forma == 2) { x = Config.LARGURA - largura - 28; y = Config.HUD + 47; entrada = 1; enx.juntar(x + largura * .5, y + altura * .5); transformando = 1.45; aviso = "OS MORCEGOS SE JUNTAM... MALACHAR, O MAESTRO DO ECLIPSE!"; }
+            else if (artista == 1 && forma == 2) aviso = "O MORCEGO CAI... MALACHAR, O MAESTRO DO ECLIPSE!"; // sem cutscene: o morcego se funde no Malachar dentro da luta
             return false;
         }
         return true;
@@ -376,7 +381,7 @@ public final class ChefeMetal {
 
     String consumirAviso() { String a = aviso; aviso = null; return a; }
     /** Tiro do jogador: no ato I da marionete o boneco segura os tiros. */
-    boolean colide(Rectangle r) { if (bob != null && forma == 1) return r.intersects(bob.bounds()); if (cento != null) return cento.colide(r); if (mar != null && forma == 1) return mar.colide(r); if (moto != null && forma == 1) return r.intersects(moto.bounds()); if (quebra > 0) return false; return r.intersects(getBounds()); }
+    boolean colide(Rectangle r) { if (enx != null && forma == 1) return enx.colide(r); if (bob != null && forma == 1) return r.intersects(bob.bounds()); if (cento != null) return cento.colide(r); if (mar != null && forma == 1) return mar.colide(r); if (moto != null && forma == 1) return r.intersects(moto.bounds()); if (quebra > 0) return false; return r.intersects(getBounds()); }
     /** Ozzy so causa dano no mergulho, nao durante o aviso. */
     public boolean consumirColisaoCorporal(Rectangle areaNave) {
         if (artista == 2 && forma == 2 && chicote > 0 && !chicoteAcertou) {
@@ -385,6 +390,7 @@ public final class ChefeMetal {
             if (ao > 0 && ao < CHICOTE_ALCANCE && Math.abs(ax * uy - ay * ux) < 24) { chicoteAcertou = true; return true; }
         }
         if (bob != null && forma == 1) return bob.contato(areaNave);
+        if (enx != null && forma == 1) return enx.contato(areaNave);
         if (cento != null) return cento.contato(areaNave);
         if (artista == 3 && forma == 2 && korEstado == 2 && !korAcertou && getBounds().intersects(areaNave)) { korAcertou = true; return true; }
         if (moto != null && forma == 1) return moto.consumirColisao(areaNave);
@@ -412,6 +418,7 @@ public final class ChefeMetal {
                     ? -(1 - Math.max(0, intervalo) / .38) : 0;
         // Transformacao dissolve as duas formas; nenhuma bolha cobre o personagem.
         if (trem != null && forma == 1) { g.dispose(); trem.desenhar(tela, flash); return; }
+        if (enx != null && forma == 1) { g.dispose(); enx.desenhar(tela, 1f); return; }
         if (mar != null && forma == 1) { g.dispose(); mar.desenhar(tela, 1f); return; }
         if (cento != null) { g.dispose(); cento.desenhar(tela); return; }
         if (bob != null && forma == 1) { g.dispose(); bob.desenhar(tela); return; }
@@ -431,6 +438,7 @@ public final class ChefeMetal {
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1-transicao));
             // o trem explode e o morcego sai da fumaca
             if (trem != null && forma == 2) { Graphics2D t = (Graphics2D) tela.create(); t.setComposite(g.getComposite()); trem.desenhar(t, 0); t.dispose(); }
+            else if (enx != null && forma == 2) enx.desenhar(tela, 1 - transicao);
             else Sprites16Bits.desenhar(g, artista, formaSprite() - 1, largura, altura, tempo, 0);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, transicao));
         }
@@ -559,6 +567,7 @@ public final class ChefeMetal {
 
     public Rectangle getBounds() {
         if (trem != null && forma == 1) return trem.getBounds();
+        if (enx != null && forma == 1) return enx.bounds();
         if (mar != null && forma == 1) return mar.bounds();
         if (moto != null && forma == 1) return moto.bounds();
         if (cento != null) return cento.bounds();
@@ -568,8 +577,8 @@ public final class ChefeMetal {
     public boolean estaVivo() { return vida > 0; }
     public int getVida() { return vida; }
     public int getVidaMaxima() { return vidaPorForma; }
-    public int getX() { return cento != null || (trem != null || mar != null || moto != null || bob != null) && forma == 1 ? getBounds().x : (int)x; }
-    public int getY() { return cento != null || (trem != null || mar != null || moto != null || bob != null) && forma == 1 ? getBounds().y : (int)y; }
+    public int getX() { return cento != null || (trem != null || enx != null || mar != null || moto != null || bob != null) && forma == 1 ? getBounds().x : (int)x; }
+    public int getY() { return cento != null || (trem != null || enx != null || mar != null || moto != null || bob != null) && forma == 1 ? getBounds().y : (int)y; }
     public int getForma() { return forma; }
     public double getEntrada() { return entrada; }
     public String getNome() {
