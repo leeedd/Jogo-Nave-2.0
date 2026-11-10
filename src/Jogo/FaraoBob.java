@@ -23,7 +23,7 @@ final class FaraoBob {
     static boolean temArte() { return ARTE != null; }
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD, ALT = 340;
 
-    private double x = W + 40, y = TOPO + 140, tempo, entrada, recarga = 1.6, flash, giro, olhos, ergue, vergonha, corrida;
+    private double x = W + 40, y = TOPO + 140, tempo, entrada, recarga = 1.6, flash, giro, olhos, ergue, vergonha, corrida, aponta; private int tropa;
     private int golpes, desenrolo; // 0 enfaixado, 1 meio, 2 quase osso
     private boolean usouVergonha;
     private double tvx, tvy, esperaContato, tonto;
@@ -36,6 +36,7 @@ final class FaraoBob {
 
     void atualizar(double dt, int naveX, int naveY, Dificuldade dif, List<TiroChefe> tiros) {
         tempo += dt; flash = Math.max(0, flash - dt); esperaContato = Math.max(0, esperaContato - dt); tonto = Math.max(0, tonto - dt); olhos = Math.max(0, olhos - dt); ergue = Math.max(0, ergue - dt);
+        if (aponta > 0 && (aponta -= dt) <= 0) { aponta = 0; chamarTropa(tropa, naveY + 18, tiros); SomJogo.tocar(SomJogo.Efeito.IMPACTO); }
         double baseX = W - 250;
         if (entrada < 1) { entrada = Math.min(1, entrada + dt / 1.4); x = W + 40 - (W + 40 - baseX) * (1 - Math.pow(1 - entrada, 3)); return; }
         double nx = naveX + 22, ny = naveY + 18;
@@ -79,14 +80,18 @@ final class FaraoBob {
             for (int c = 0; c < 8; c++) { if (Math.abs(c - buraco) < 1) continue; double bx = 60 + c * 110;
                 tiros.add(new TiroChefe(bx, TOPO - 20 - Math.abs(c - 3.5) * 40, -10, 120, true, TiroChefe.BLOCO, TiroChefe.Movimento.ARCO)); }
         } else if (g == 1) { // exercito: aponta e a tropa atravessa a tela da direita para a esquerda
-            ergue = 1.2; int tipo = golpes / 4 % 3;
-            for (int i = 0; i < 5; i++) tiros.add(new TiroChefe(W + 40 + i * 60, TOPO + 50 + i * 95, -190, 0, true, TiroChefe.SOLDADO, TiroChefe.Movimento.RETO));
-            if (tipo == 0) tiros.add(new TiroChefe(W + 260, ny, -430, 0, true, TiroChefe.CARRUAGEM, TiroChefe.Movimento.RETO));
-            else if (tipo == 1) tiros.add(new TiroChefe(W + 220, H - 110, -160, 0, true, TiroChefe.ESFINGE, TiroChefe.Movimento.RETO));
-            else { tiros.add(new TiroChefe(W + 120, TOPO + 120, -110, 0, true, TiroChefe.RAINHA, TiroChefe.Movimento.RETO));
-                for (int i = -1; i <= 1; i++) tiros.add(new TiroChefe(W - 40, TOPO + 140, -300, i * 90, false, TiroChefe.ENERGIA, TiroChefe.Movimento.ONDA).comCor(new Color(120, 220, 90))); }
+            ergue = 1.6; aponta = .7; tropa = golpes / 4 % 3; // aponta primeiro; a tropa entra quando o braco desce
         }
         recarga = vidaFrac < .5 ? 1.25 : 1.7;
+    }
+
+    /** A tropa chamada pelo dedo do farao atravessa a tela da direita para a esquerda. */
+    private void chamarTropa(int tipo, double ny, List<TiroChefe> tiros) {
+        for (int i = 0; i < 5; i++) tiros.add(new TiroChefe(W + 40 + i * 60, TOPO + 50 + i * 95, -190, 0, true, TiroChefe.SOLDADO, TiroChefe.Movimento.RETO));
+        if (tipo == 0) tiros.add(new TiroChefe(W + 260, ny, -430, 0, true, TiroChefe.CARRUAGEM, TiroChefe.Movimento.RETO));
+        else if (tipo == 1) tiros.add(new TiroChefe(W + 220, H - 110, -160, 0, true, TiroChefe.ESFINGE, TiroChefe.Movimento.RETO));
+        else { tiros.add(new TiroChefe(W + 120, TOPO + 120, -110, 0, true, TiroChefe.RAINHA, TiroChefe.Movimento.RETO));
+            for (int i = -1; i <= 1; i++) tiros.add(new TiroChefe(W - 40, TOPO + 140, -300, i * 90, false, TiroChefe.ENERGIA, TiroChefe.Movimento.ONDA).comCor(new Color(120, 220, 90))); }
     }
 
     void ferido() { flash = .16; }
