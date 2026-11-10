@@ -117,6 +117,17 @@ implements ActionListener {
     private MiniChefe miniChefe;
     private boolean miniChefeEnfrentado;
     /** Turne ao contrario: planeta atual do sistema (0..integrantes); o ultimo e o do chefe. */
+    /** Classes de inimigo de cada etapa da campanha (pelo numero de chefes vencidos). */
+    static final Alien.Classe[][] GRUPOS_INIMIGOS={
+                {Alien.Classe.ORGANICO,Alien.Classe.ESQUADRAO,Alien.Classe.INTERCEPTADOR},
+                {Alien.Classe.INTERCEPTADOR,Alien.Classe.LASER,Alien.Classe.TANQUE},
+                {Alien.Classe.ORGANICO,Alien.Classe.KAMIKAZE},
+                {Alien.Classe.TANQUE,Alien.Classe.ESQUADRAO},
+                {Alien.Classe.LASER,Alien.Classe.INTERCEPTADOR},
+                {Alien.Classe.KAMIKAZE,Alien.Classe.TANQUE},
+                {Alien.Classe.ORGANICO,Alien.Classe.LASER},
+                {Alien.Classe.ORGANICO,Alien.Classe.TANQUE,Alien.Classe.KAMIKAZE}};
+    private final FabricasIndustriais fabricas = new FabricasIndustriais();
     private int planetaAtual;
     /** Bandas cujo contrato dourado falhou nesta jornada: a base nao oferece outro dela. */
     private int douradoPerdido;
@@ -764,15 +775,7 @@ implements ActionListener {
             }
             d5 = Math.max(440.0, Math.min(842.0, d5));
             d6 = Math.max(122.0, Math.min(500.0, d6));
-            Alien.Classe[][] grupos={
-                {Alien.Classe.ORGANICO,Alien.Classe.ESQUADRAO,Alien.Classe.INTERCEPTADOR},
-                {Alien.Classe.INTERCEPTADOR,Alien.Classe.LASER,Alien.Classe.TANQUE},
-                {Alien.Classe.ORGANICO,Alien.Classe.KAMIKAZE},
-                {Alien.Classe.TANQUE,Alien.Classe.ESQUADRAO},
-                {Alien.Classe.LASER,Alien.Classe.INTERCEPTADOR},
-                {Alien.Classe.KAMIKAZE,Alien.Classe.TANQUE},
-                {Alien.Classe.ORGANICO,Alien.Classe.LASER},
-                {Alien.Classe.ORGANICO,Alien.Classe.TANQUE,Alien.Classe.KAMIKAZE}};
+            Alien.Classe[][] grupos=GRUPOS_INIMIGOS;
             Alien.Classe[] grupo=grupos[Math.min(7,chefesDerrotados)];classe=grupo[(i+n5)%grupo.length];
             tipo=classe==Alien.Classe.ORGANICO?Alien.Tipo.ALIENIGENA_ORIGINAL:Alien.Tipo.PIRATA;
             n6=n4==0?(int)d6:n4==1?110+aleatorio.nextInt(80):440+aleatorio.nextInt(80);
@@ -968,6 +971,7 @@ implements ActionListener {
         boolean naTurne = !reuniao && !emHellraiser && !intercepcao && planetaAtual < Turne.planetas(setorAtual);
         this.fundoEspacial.definirPlaneta(setorAtual, planetaAtual, naTurne && Turne.anel(setorAtual, planetaAtual));
         this.fundoEspacial.desenhar(graphics2D2);
+        if (setorAtual == FabricasIndustriais.SUCATA && etapa == Etapa.COMBATE) fabricas.desenhar(graphics2D2, GRUPOS_INIMIGOS[Math.min(7, chefesDerrotados)]); // fabricas montando as naves que vem por ai
         if(segredo!=null)segredo.desenhar(graphics2D2,tempoTotal,nave.temScanner());
         if(segredoCasco!=null)segredoCasco.desenhar(graphics2D2,tempoTotal,nave.temScanner());
         if(base!=null)base.desenhar(graphics2D2);
@@ -1351,7 +1355,7 @@ implements ActionListener {
         if(intercepcao&&miniChefe!=null&&miniChefe.morrendo()){
             tirosInimigos.clear();tirosChefes.clear();tirosElementais.clear();nave.getMisseis().clear();
             espacoPressionado=geloPressionado=fogoPressionado=false;nave.soltarTeclas();
-            miniChefe.atualizar(d,nave.getY());atualizarEfeitos(d);fundoEspacial.atualizar(d);
+            miniChefe.atualizar(d,nave.getY());atualizarEfeitos(d);fundoEspacial.atualizar(d); if (setorAtual == FabricasIndustriais.SUCATA) fabricas.atualizar(d);
             if(miniChefe.derrotado())derrotarMiniChefe();repaint();return;
         }
         if (etapa == Etapa.INTERDICAO) {
@@ -1386,9 +1390,9 @@ implements ActionListener {
         if (this.emJogo && !intercepcao) {
             int n = this.chefesDerrotados == 0 ? 0 : FINAIS_SETORES[Math.min(this.chefesDerrotados - 1, 7)];
             this.fundoEspacial.definirProgresso(Math.min(1.0, Math.max(0.0, (double)(this.eliminados - n) / (double)this.quantidadeSetor())), this.setorAtual);
-            this.fundoEspacial.atualizar(d);
+            this.fundoEspacial.atualizar(d); if (setorAtual == FabricasIndustriais.SUCATA) fabricas.atualizar(d);
         }
-        if (intercepcao && emJogo) fundoEspacial.atualizar(d);
+        if (intercepcao && emJogo) fundoEspacial.atualizar(d); if (setorAtual == FabricasIndustriais.SUCATA) fabricas.atualizar(d);
         recargaFusao=Math.max(0,recargaFusao-d);
         atualizarPoderes(d);
         if(efeitoFusao!=null){efeitoFusao.atualizar(d);if(!efeitoFusao.ativa())efeitoFusao=null;}
