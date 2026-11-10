@@ -33,6 +33,8 @@ public final class ChefeMetal {
     private final Trem trem;
     /** James: ato I e a mao do marionetista com o boneco; quebra = boneco desmontando antes do James aparecer. */
     private final MarionetePuppets mar;
+    /** Valdrak: ato I e a moto-robo; na quebra ela se transforma no Valdrak. */
+    private final MotoValdrak moto;
     private double quebra; private String aviso;
     /** Kanoa (ato II): golpe da vez (0 voz, 1 machado, 2 lanca, 3 arco), mostrado no quadro proprio da arte. */
     private int golpeKanoa = -1, ataquesKanoa; private double tempoGolpeKanoa;
@@ -50,6 +52,7 @@ public final class ChefeMetal {
         this.ultimaForma = artista == 1 ? 3 : 2;
         this.trem = artista == 1 ? new Trem() : null;
         this.mar = artista == 5 && MarionetePuppets.temArte() ? new MarionetePuppets() : null;
+        this.moto = artista == 2 && MotoValdrak.temArte() ? new MotoValdrak() : null;
     }
     /** Cutscene pedida pela luta (lida uma unica vez pela Fase). */
     String consumirCena() { String c = cenaPendente; cenaPendente = null; return c; }
@@ -65,6 +68,7 @@ public final class ChefeMetal {
         if (tempoGolpeKanoa > 0 && (tempoGolpeKanoa = Math.max(0, tempoGolpeKanoa - dt)) == 0) golpeKanoa = -1;
         if (trem != null && forma == 1) { trem.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = trem.entrada(); return; }
         if (mar != null && forma == 1) { mar.vida(vida / (double) vidaPorForma); mar.atualizar(dt, naveX, naveY, dificuldade, tiros); entrada = mar.entrada(); if (!mar.investindo()) ataqueFisicoConsumido = false; return; }
+        if (moto != null && forma == 1) { moto.atualizar(dt, naveX, naveY, dificuldade, tiros, vida < vidaPorForma * .4); entrada = moto.entrada(); return; }
         if (quebra > 0) { quebra = Math.max(0, quebra - dt); entrada = 1; x = Config.LARGURA - largura - 28; y = Config.HUD + 47; return; }
         entrada = Math.min(1.0, entrada + dt / 1.35);
         double suavizar = 1 - Math.pow(1 - entrada, 3);
@@ -259,6 +263,7 @@ public final class ChefeMetal {
     public boolean receberDano(int dano) {
         if (vida <= 0 || entrada < 1 || transformando > 0 || quebra > 0) return false;
         if (mar != null && forma == 1) { if (mar.consumirBloqueio()) return false; mar.ferido(); }
+        if (moto != null && forma == 1) moto.ferido();
         vida = Math.max(0, vida - Math.max(0, dano));
         flash = .16;
         if (vida != 0) return false;
@@ -269,6 +274,7 @@ public final class ChefeMetal {
             intervalo = 1.7;
             // o morcego vira o Principe das Trevas numa cutscene propria
             if (trem != null && forma == 2) trem.parar();
+            if (moto != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "A MOTO SE TRANSFORMA: VALDRAK!"; SomJogo.tocar(SomJogo.Efeito.EVOLUCAO); }
             if (mar != null && forma == 2) { quebra = QUEBRA; transformando = 0; aviso = "O BONECO SE DESFAZ... QUEM PUXAVA OS FIOS ERA O HEXAR!"; SomJogo.tocar(SomJogo.Efeito.EXPLOSAO_GRANDE); }
             if (artista == 1 && forma == 3) { cenaPendente = CenaChefe.TRANSFORMACAO; transformando = .3; }
             return false;
@@ -278,9 +284,10 @@ public final class ChefeMetal {
 
     String consumirAviso() { String a = aviso; aviso = null; return a; }
     /** Tiro do jogador: no ato I da marionete o boneco segura os tiros. */
-    boolean colide(Rectangle r) { if (mar != null && forma == 1) return mar.colide(r); if (quebra > 0) return false; return r.intersects(getBounds()); }
+    boolean colide(Rectangle r) { if (mar != null && forma == 1) return mar.colide(r); if (moto != null && forma == 1) return r.intersects(moto.bounds()); if (quebra > 0) return false; return r.intersects(getBounds()); }
     /** Ozzy so causa dano no mergulho, nao durante o aviso. */
     public boolean consumirColisaoCorporal(Rectangle areaNave) {
+        if (moto != null && forma == 1) return moto.consumirColisao(areaNave);
         if (mar != null && forma == 1) { if (mar.investindo() && !ataqueFisicoConsumido && mar.boneco().intersects(areaNave)) { ataqueFisicoConsumido = true; return true; } return false; }
         if (artista != 1 || forma != 2 || investida <= 0 || ataqueFisicoConsumido ||
                 transformando > 0) return false;
@@ -306,9 +313,17 @@ public final class ChefeMetal {
         // Transformacao dissolve as duas formas; nenhuma bolha cobre o personagem.
         if (trem != null && forma == 1) { g.dispose(); trem.desenhar(tela, flash); return; }
         if (mar != null && forma == 1) { g.dispose(); mar.desenhar(tela, 1f); return; }
+        if (moto != null && forma == 1) { g.dispose(); moto.desenhar(tela, 1f, -1); return; }
         if (quebra > 0) {
             // o boneco desmonta no lugar onde o James aparece, e ele vai surgindo no meio das lascas
-            double p = 1 - quebra / QUEBRA; Graphics2D q = (Graphics2D) tela.create(); mar.desenharQuebra(q, p, x + largura * .55, y - 10, altura + 30); q.dispose();
+            double p = 1 - quebra / QUEBRA; Graphics2D q = (Graphics2D) tela.create();
+            if (mar != null) mar.desenharQuebra(q, p, x + largura * .55, y - 10, altura + 30);
+            else { // a moto vai ate o meio do lugar do Valdrak, abre as pecas (quadro 4) e some num clarao
+                q.translate((x + largura * .5 - moto.largura() / 2.0 - moto.getX()) * Math.min(1, p * 2.5), (y + altura * .5 - moto.altura() / 2.0 - moto.getY()) * Math.min(1, p * 2.5));
+                moto.desenhar(q, (float) Math.max(0, 1 - (p - .45) / .3), p < .2 ? 0 : 3);
+                if (p > .4 && p < .62) { q.setColor(new Color(255, 200, 120, (int) (200 * Math.sin((p - .4) / .22 * Math.PI)))); q.fillOval((int) moto.getX() - 40, (int) moto.getY() - 40, moto.largura() + 80, moto.altura() + 80); }
+            }
+            q.dispose();
             float a = (float) Math.max(0, Math.min(1, (p - .35) / .45));
             if (a > 0) { g.setComposite(AlphaComposite.SrcOver.derive(a)); Sprites16Bits.desenhar(g, artista, 2, largura, altura, tempo, 0); }
             g.dispose(); return;
@@ -364,19 +379,20 @@ public final class ChefeMetal {
     public Rectangle getBounds() {
         if (trem != null && forma == 1) return trem.getBounds();
         if (mar != null && forma == 1) return mar.bounds();
+        if (moto != null && forma == 1) return moto.bounds();
         return new Rectangle((int)x + 42, (int)y + 30, largura - 87, altura - 74);
     }
     public boolean estaVivo() { return vida > 0; }
     public int getVida() { return vida; }
     public int getVidaMaxima() { return vidaPorForma; }
-    public int getX() { return (trem != null || mar != null) && forma == 1 ? getBounds().x : (int)x; }
-    public int getY() { return (trem != null || mar != null) && forma == 1 ? getBounds().y : (int)y; }
+    public int getX() { return (trem != null || mar != null || moto != null) && forma == 1 ? getBounds().x : (int)x; }
+    public int getY() { return (trem != null || mar != null || moto != null) && forma == 1 ? getBounds().y : (int)y; }
     public int getForma() { return forma; }
     public double getEntrada() { return entrada; }
     public String getNome() {
         switch (artista) {
             case 1: return forma == 1 ? "MALACHAR - EXPRESSO DAS TREVAS" : forma == 2 ? "MALACHAR - ASA NOTURNA" : "MALACHAR - REI DAS SOMBRAS";
-            case 2: return "VALDRAK - MOTO DE CROMO";
+            case 2: return moto != null && forma == 1 ? "VALDRAK - MOTO DE CROMO" : "VALDRAK - CHICOTE DE PLASMA";
             case 3: return "KORVUS - CORSARIO DO VACUO";
             case 4: return "GRIMBO - CANHAO DE GRAVES";
             case 5: return mar != null && forma == 1 ? "CINZAS DE ORION - O MARIONETISTA" : "HEXAR - RIFF DE QUATRO BRACOS";
