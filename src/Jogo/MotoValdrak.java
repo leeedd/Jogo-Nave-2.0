@@ -16,6 +16,8 @@ import java.util.List;
 final class MotoValdrak {
     private static final BufferedImage ARTE = ler("chefe_2_moto.png");
     static boolean temArte() { return ARTE != null; }
+    /** Rodas de cada quadro na arte (centro x, y e raio do aro, em pixels da folha); o quadro 3 transforma. */
+    private static final int[][][] RODAS = {{{173, 275, 46}, {469, 282, 40}}, {{123, 128, 47}, {357, 286, 41}}, {{217, 281, 43}, {450, 278, 41}}};
     private static final int W = Config.LARGURA, H = Config.ALTURA, TOPO = Config.HUD;
     private final int h = 170, w;
     private double x = W + 40, y, alvoY, tempo, entrada, recarga = 1.6, gesto, aviso, flash;
@@ -81,6 +83,17 @@ final class MotoValdrak {
         int q = quadroForcado >= 0 ? quadroForcado : aviso > 0 || investindo ? 1 : gesto > 0 ? quadroGesto : 0;
         int fw = ARTE.getWidth() / 4, fh = ARTE.getHeight(), px = (int) x, py = (int) y + (int) (Math.sin(tempo * 30) * (investindo ? 2 : 0));
         g.drawImage(ARTE, px, py, px + w, py + h, q * fw, 0, q * fw + fw, fh, null);
+        if (q < 3) { // rodas girando: recorta o disco de cada roda e redesenha girado no mesmo lugar
+            double esc = h / (double) fh, giro = -tempo * (investindo ? 30 : 12);
+            for (int[] rd : RODAS[q]) {
+                int R = rd[2] + 6; double cx = px + rd[0] * esc, cy = py + rd[1] * esc, Re = R * esc;
+                Graphics2D c = (Graphics2D) g.create();
+                c.clip(new java.awt.geom.Ellipse2D.Double(cx - Re, cy - Re, Re * 2, Re * 2));
+                c.rotate(giro, cx, cy);
+                c.drawImage(ARTE, (int) (cx - Re), (int) (cy - Re), (int) (cx + Re), (int) (cy + Re), q * fw + rd[0] - R, rd[1] - R, q * fw + rd[0] + R, rd[1] + R, null);
+                c.dispose();
+            }
+        }
         if (investindo) for (int k = 0; k < 8; k++) { g.setColor(new Color(255, 150, 40, 150 - k * 16)); g.fillRect(px + w + k * 22, py + h / 2 + (k % 3) * 18 - 18, 40, 3); }
         if (aviso > 0) { g.setColor(new Color(255, 60, 30, (int) (70 + 60 * Math.sin(tempo * 30)))); g.fillRect(0, py + h / 3, px, h / 3); }
         if (flash > 0) { g.setColor(new Color(255, 230, 180, (int) (flash / .16 * 170))); for (int k = 0; k < 6; k++) { double a = k * Math.PI / 3; int r = 15 + (int) ((.16 - flash) * 180); g.fillRect(px + w / 2 + (int) (Math.cos(a) * r), py + h / 2 + (int) (Math.sin(a) * r), 4, 4); } }

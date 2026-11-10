@@ -434,8 +434,10 @@ public final class ChefeMetal {
             pecas.add(new double[]{vdx + tx, vdy + ty, mb.x + r.nextInt(Math.max(1, mb.width)), mb.y + r.nextInt(Math.max(1, mb.height)), atraso, (r.nextDouble() - .5) * 8});
         }
     }
+    /** Montagem sem faixas de cinema (pedido do jogo). */
+    private static final boolean SEM_CINEMA = true;
     /** Altura das faixas de cinema da montagem (0 fora dela); a Fase desenha por cima de tudo. */
-    int cinema() { if (moto == null || quebra <= 0) return 0; double p = 1 - quebra / quebraTotal; return (int) (62 * Math.min(1, Math.min(p / .08, (1 - p) / .06))); }
+    int cinema() { if (SEM_CINEMA || moto == null || quebra <= 0) return 0; double p = 1 - quebra / quebraTotal; return (int) (62 * Math.min(1, Math.min(p / .08, (1 - p) / .06))); }
     /** A chicotada: aviso do arco e o chicote de plasma esticado da mao. */
     private void desenharChicote(Graphics2D tela) {
         Graphics2D g = (Graphics2D) tela.create();
