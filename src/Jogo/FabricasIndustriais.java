@@ -16,9 +16,9 @@ import java.util.Random;
 final class FabricasIndustriais {
     private static final BufferedImage ARTE = ler("fabrica_industrial.png");
     static final int SUCATA = 3;
-    private static final int N = 3, FW = 300;
+    private static final int N = 3, FW = 330;
     private static final double TEMPO_MONTAGEM = 4.2, TEMPO_SAIDA = 1.6, VELOCIDADE = 14, ESCALA = 1.15;
-    private final double[] fx = {120, 520, 920}, fy = {Config.ALTURA - 250, Config.HUD + 30, Config.ALTURA - 230}, relogio = {0, 1.7, 3.1};
+    private final double[] fx = {80, 510, 940}, fy = {Config.ALTURA - 230, Config.HUD + 20, Config.ALTURA - 215}, relogio = {0, 1.7, 3.1};
     private final int[] indice = {0, 1, 2};
     private final Random sorte = new Random(3);
     private double tempo;
@@ -26,7 +26,7 @@ final class FabricasIndustriais {
     void atualizar(double dt) {
         tempo += dt;
         for (int i = 0; i < N; i++) {
-            fx[i] -= VELOCIDADE * dt; if (fx[i] < -FW) fx[i] += N * 400;
+            fx[i] -= VELOCIDADE * dt; if (fx[i] < -FW) fx[i] += N * 430;
             relogio[i] += dt; if (relogio[i] > TEMPO_MONTAGEM + TEMPO_SAIDA + .6) { relogio[i] = 0; indice[i] += N; }
         }
     }
@@ -39,17 +39,17 @@ final class FabricasIndustriais {
             int x = (int) fx[i], y = (int) fy[i];
             g.setComposite(AlphaComposite.SrcOver.derive(.75f));
             if (ARTE != null) g.drawImage(ARTE, x, y, FW, FW * ARTE.getHeight() / ARTE.getWidth(), null);
-            int dx = x + FW / 2, dy = y + (ARTE != null ? (FW * ARTE.getHeight() / ARTE.getWidth()) * 45 / 100 : 60); // centro da doca
+            int fh = ARTE != null ? FW * ARTE.getHeight() / ARTE.getWidth() : 120, dx = x + FW * 51 / 100, dy = y + fh * 55 / 100; // centro da doca
             Alien.Classe c = tipos[indice[i] % tipos.length];
             BufferedImage nave = sprite(c, indice[i]);
-            int w = (int) (nave.getWidth() * ESCALA), h = (int) (nave.getHeight() * ESCALA);
+            double esc = Math.min(ESCALA, FW * .36 / nave.getWidth()); int w = (int) (nave.getWidth() * esc), h = (int) (nave.getHeight() * esc); // cabe na doca
             double t = relogio[i];
             if (t < TEMPO_MONTAGEM) { // montagem: a nave aparece de baixo para cima, com a solda correndo na linha
-                double p = t / TEMPO_MONTAGEM; int corte = (int) (nave.getHeight() * (1 - p));
+                double p = t / TEMPO_MONTAGEM; int corte = (int) (nave.getHeight() * (1 - p)); double ESC = esc;
                 g.setComposite(AlphaComposite.SrcOver.derive(.22f)); g.drawImage(nave, dx - w / 2, dy - h / 2, w, h, null); // esqueleto
                 g.setComposite(AlphaComposite.SrcOver.derive(.9f));
-                g.drawImage(nave, dx - w / 2, dy - h / 2 + (int) (corte * ESCALA), dx + w / 2, dy + h / 2, 0, corte, nave.getWidth(), nave.getHeight(), null);
-                int ly = dy - h / 2 + (int) (corte * ESCALA);
+                g.drawImage(nave, dx - w / 2, dy - h / 2 + (int) (corte * ESC), dx + w / 2, dy + h / 2, 0, corte, nave.getWidth(), nave.getHeight(), null);
+                int ly = dy - h / 2 + (int) (corte * ESC);
                 g.setColor(new Color(255, 220, 120)); g.fillRect(dx - w / 2, ly, w, 2);
                 for (int k = 0; k < 4; k++) { int sx = dx - w / 2 + sorte.nextInt(Math.max(1, w)); g.setColor(k % 2 == 0 ? new Color(255, 250, 200) : new Color(255, 150, 40)); g.fillRect(sx, ly - 2 - sorte.nextInt(6), 2, 2); }
             } else if (t < TEMPO_MONTAGEM + TEMPO_SAIDA) { // pronta: sai da doca para a esquerda e some na distancia
