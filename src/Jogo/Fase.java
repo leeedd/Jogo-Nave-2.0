@@ -184,8 +184,10 @@ public class Fase extends JPanel implements ActionListener {
 				if (formaMissel.intersects(formaInimigo)) {
 					
 					if (Missel.getTipoMissel() == 2) {
-						alien = new ArrayList<Alien>();
-						inicializaInimigos();
+						// Bomba Nuclear: destroi todos os inimigos da tela (antes recriava os 120)
+						for (Alien inimigo : alien) {
+							inimigo.setVisible(false);
+						}
 					}
 					
 					tempInimigo.setVisible(false);
