@@ -126,7 +126,7 @@ final class MusicaChip {
      * segundo, guitarras gemeas em tercas, parada com rufar, refrao de hino com acordes abertos e
      * volta ao galope. Mi menor, 152 bpm, guitarra com amplificador simulado.
      */
-    static float[] abertura() { return menu(); }
+    static float[] abertura() { return menuAnimado(); }
     /** Versoes da abertura para comparar: 0 galope classico, 1 cavalgada rapida (la menor), 2 hino de meio-tempo (re menor). */
     static float[] abertura(int versao) {
         Random r = new Random(1980 + versao);
