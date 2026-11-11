@@ -34,6 +34,7 @@ final class MusicaChip {
 
     static float[] gerar(int u, int v) {
         u = Math.max(0, Math.min(8, u));
+        if (u == 1 && v != CHEFE) return abertura(v == TEMA ? 0 : v % 3); // Fornalha (heavy classico): galope, cavalgada e hino nos planetas
         Random r = new Random(u * 1000L + v * 7919L + 13);
         int tempos = TEMPOS[u]; double bpm = BPM[u] * (v == CHEFE ? 1.06 : 1 + (r.nextInt(5) - 2) * .02);
         double batida = 60 / bpm * (tempos == 6 ? .5 : 1), comp = batida * tempos;
