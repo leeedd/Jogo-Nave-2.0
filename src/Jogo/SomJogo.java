@@ -47,6 +47,8 @@ public final class SomJogo {
    float[] a=!f.isFile()&&propria==null&&MusicaChip.reconhece(arquivo)?MusicaChip.gerar(arquivo):carregar(u,50331648); // sem arquivo: trilha 16-bit gerada na hora
    if(arquivo.equals(musicaPedida))MOTOR.musica(a);}catch(Exception e){diagnostico="MUSICA "+arquivo+": "+e.getMessage();}},"MetalSpace-Musica");
   t.setDaemon(true);t.start();}
+ /** Toca agora uma musica ja pronta (sem atraso de geracao), repetindo a partir de loopInicio. */
+ public static void tocarPronta(String nome,float[] a,int loopInicio){if(OFFLINE||a==null)return;musicaPedida=nome;MOTOR.musica(a,loopInicio);}
  public static void pausar(boolean p){if(pausado!=p){pausado=p;MOTOR.pausar(p);if(p)FILA.clear();}}
  public static void limpar(){FILA.clear();MOTOR.limpar();}
  static long emitidosTeste(Efeito e){return CONTAGEM[e.ordinal()];}
