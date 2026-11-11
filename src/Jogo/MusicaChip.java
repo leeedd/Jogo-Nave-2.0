@@ -357,7 +357,7 @@ final class MusicaChip {
         Random r = new Random(2112);
         double b = 60 / 156.0, d = b / 4, comp = 4 * b;
         // I intro (2), R riff (4), C refrao maior (8), P ponte (2), R riff (2), C refrao (4) = 22 compassos
-        String forma = "IIRRRRCCCCCCCCPPSSSSSSSSKKKKKKKK"; int total = forma.length(); double fim = total * comp;
+        String forma = "IIRRRRCCCCCCCCRRRRCCCCCCCCIIPPSSSSSSSSSSSSPPKKKKKKKKRRRRII"; /* ~1min30 */ int total = forma.length(); double fim = total * comp;
         int[] menor = {35, 31, 33, 30}, maior = {38, 31, 35, 33}; // Bm G A F#  |  D G Bm A
         Mix m = new Mix((int) (fim * TAXA) + TAXA, r), solo = new Mix((int) (fim * TAXA) + TAXA, r);
         double[][] frase = {{78, .5, 81, .5, 86, 3}, {85, 1, 83, 1, 81, 2}, {78, .5, 81, .5, 86, 1, 88, 1, 90, 1}, {88, 2, 85, 2},
@@ -365,6 +365,8 @@ final class MusicaChip {
         int ir = 0, ic = 0;
         for (int c = 0; c < total; c++) {
             char x = forma.charAt(c); double t = c * comp;
+            int pos = 0; for (int q = c - 1; q >= 0 && forma.charAt(q) == x; q--) pos++; // posicao dentro da parte
+            boolean ultimo = c + 1 >= total || forma.charAt(c + 1) != x;
             boolean refrao = x == 'C' || x == 'K'; int tom = x == 'K' ? 2 : 0; int raiz = (refrao ? maior[ic % 4] : menor[(x == 'R' ? ir : x == 'S' ? c : c) % 4]) + tom;
             boolean acordeMenor = raiz - tom == 35 || (!refrao && raiz == 30); int terca = raiz + (acordeMenor ? 3 : 4);
             m.orquestra("coro", raiz + 24, t, comp + .2, refrao ? .09 : .06); m.orquestra("coro", terca + 24, t, comp + .2, refrao ? .07 : .045);
@@ -376,8 +378,8 @@ final class MusicaChip {
             if (x == 'I') { // intro curta: guitarra dedilhando com eco, bumbo pulsando, subida
                 int[] ded = {raiz + 24, raiz + 31, terca + 24, raiz + 36};
                 for (int k = 0; k < 8; k++) solo.nota64("arp", ded[k % 4] + (k >= 4 ? 12 : 0) - 12, t + k * 2 * d, 2 * d * .9, .09, 0);
-                for (int k = 0; k < 4; k++) m.bumbo64(t + k * b, .3 + c * .08);
-                if (c == 1) { for (int k = 8; k < 16; k++) m.caixa64(t + k * d, .08 + (k - 8) * .03); m.subida(t + comp, 1.6, .3); }
+                for (int k = 0; k < 4; k++) m.bumbo64(t + k * b, .3 + pos * .08);
+                if (ultimo && c + 1 < total) { for (int k = 8; k < 16; k++) m.caixa64(t + k * d, .08 + (k - 8) * .03); m.subida(t + comp, 1.6, .3); }
             } else if (x == 'R') { // riff com batida de thrash
                 int[] pal = {0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 5, 3, 2, 0};
                 for (int k = 0; k < 16; k++) { int v = pal[k]; double tk = t + k * d; boolean ac = v != 0;
@@ -395,14 +397,14 @@ final class MusicaChip {
                     solo.guitarra(n, tm, f[k + 1] * b * .96, .1, false, 4, true); solo.guitarra(tercaSolo, tm, f[k + 1] * b * .96, .065, false, 4, true); tm += f[k + 1] * b; }
                 ic++;
             } else if (x == 'S') { // solo: arpejos rapidos fritando sobre o riff
-                int[] ac = {raiz + 24, terca + 24, raiz + 31, raiz + 36}; int sobe = (c % 2) * 12;
+                int[] ac = {raiz + 24, terca + 24, raiz + 31, raiz + 36}; int sobe = (pos % 2) * 12 + (pos >= 8 ? 12 : 0); // a ultima volta do solo sobe mais
                 for (int k = 0; k < 16; k++) { int idx = k % 8 < 4 ? k % 4 : 3 - k % 4; solo.guitarra(ac[idx] + sobe, t + k * d, d * .9, .075, false, 1, true); }
                 for (int k = 0; k < 16; k += 2) { m.guitarra(raiz, t + k * d, d * .8, .1, true, 0, true); m.guitarra(raiz + 7, t + k * d, d * .8, .06, true, 0, true); }
                 for (int k = 0; k < 8; k++) { double tk = t + k * 2 * d; m.bumbo64(tk, .34); m.bumbo64(tk + d, .22); if (k % 2 == 1) m.caixa64(tk, .3); m.chimbal64(tk, .04, false); }
-                if (c % 2 == 0) m.prato(t, .14, 1.8); if (c == forma.lastIndexOf('S')) m.subida(t + comp, 1.6, .3);
+                if (pos % 2 == 0) m.prato(t, .14, 1.8); if (ultimo) m.subida(t + comp, 1.6, .3);
             } else { // ponte: pancadas no contratempo e virada
                 for (int k : new int[]{0, 3, 6, 10, 12, 14}) { double tk = t + k * d; m.guitarra(raiz, tk, d * 1.6, .12, false, 0, true); m.guitarra(raiz + 7, tk, d * 1.6, .07, false, 0, true); m.bumbo64(tk, .42); }
-                m.prato(t, .15, 2); if (c % 2 == 1) { for (int k = 8; k < 16; k++) m.tom(t + k * d, 50 - (k - 8), .18); m.subida(t + comp, 1.4, .25); }
+                m.prato(t, .15, 2); if (ultimo) { for (int k = 8; k < 16; k++) m.tom(t + k * d, 50 - (k - 8), .18); m.subida(t + comp, 1.4, .25); }
             }
         }
         int n = (int) (fim * TAXA), atraso = (int) (b * .75 * TAXA);
