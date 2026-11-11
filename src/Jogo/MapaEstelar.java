@@ -44,7 +44,8 @@ final class MapaEstelar {
  /** Modo de escolha do proximo setor: setores vencidos ficam bloqueados. */
  private boolean escolha;private int vencidos;
  static final String[] CHEFES={"LULA DO ABISMO","VALDRAK","ALMIRANTE KORVUS","KROVAX","HEXAR","MORGATH","KANOA","MALACHAR"};
- void iniciarEscolha(int setoresVencidos,int atualSetor){tocando=-1;escolha=true;vencidos=setoresVencidos;atual=atualSetor;selecionado=atualSetor;escolherProximo(1);visaoGalactica();}
+ private static int visitas;
+ void iniciarEscolha(int setoresVencidos,int atualSetor){tocando=-3;escolha=true;vencidos=setoresVencidos;atual=atualSetor;selecionado=atualSetor;escolherProximo(1);visaoGalactica();}
  boolean vencido(int i){return (vencidos&(1<<i))!=0;}
  void escolherProximo(int passo){for(int n=1;n<=8;n++){int i=Math.floorMod(selecionado+passo*n,8);if(!vencido(i)){selecionado=i;planeta=-1;alvoX=SISTEMAS[i][0]*.35;alvoY=SISTEMAS[i][1]*.35;return;}}}
  int escolhaValida(){if(!escolha||vencido(selecionado))return -1;escolha=false;return selecionado;}
@@ -143,7 +144,8 @@ final class MapaEstelar {
  }
  private int tocando=-1;
  void desenhar(Graphics2D original){
-  if(escolha&&selecionado!=tocando){tocando=selecionado;MusicaJogo.trocarSeDisponivel("universo_"+selecionado+"_"+MusicaChip.TEMA);} // tema do universo selecionado
+  if(escolha&&tocando==-3){tocando=selecionado;MusicaJogo.trocarSeDisponivel("mapa_"+(visitas++%2));} // ao abrir: rock ou hino
+  else if(escolha&&selecionado!=tocando){tocando=selecionado;MusicaJogo.trocarSeDisponivel("universo_"+selecionado+"_"+MusicaChip.TEMA);} // tema do universo selecionado
   Graphics2D g=(Graphics2D)original.create();
   g.setColor(new Color(3,7,15));g.fillRect(0,0,960,600);
   g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);

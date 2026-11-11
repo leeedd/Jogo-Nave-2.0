@@ -22,12 +22,13 @@ final class MusicaChip {
         {{0, 5, 3, 4}, {0, 3, 5, 4}}, {{0, 5, 6, 0}, {0, 6, 5, 6}}, {{0, 4, 5, 3}, {5, 3, 0, 4}}, {{0, 1, 0, 6}, {0, 0, 1, 1}},
         {{0, 1, 0, 4}, {0, 6, 5, 1}}, {{0, 1, 5, 4}, {0, 4, 1, 0}}, {{0, 6, 3, 0}, {0, 3, 6, 4}}, {{0, 5, 2, 6}, {0, 3, 4, 4}}, {{0, 5, 3, 1}, {0, 1, 5, 4}}};
 
-    static boolean reconhece(String nome) { return nome != null && (nome.startsWith("universo_") || nome.matches("chefe_[1-8]") || nome.equals("abertura")); }
+    static boolean reconhece(String nome) { return nome != null && (nome.startsWith("universo_") || nome.matches("chefe_[1-8]") || nome.equals("abertura") || nome.startsWith("mapa_")); }
     static final int ABERTURA = 77;
 
     /** Monta a trilha do nome (universo_S_V ou chefe_N). */
     static float[] gerar(String nome) {
         if (nome.equals("abertura")) return abertura();
+        if (nome.startsWith("mapa_")) return nome.endsWith("0") ? aberturaRock() : hino(); // mapa: rock de videogame e hino, revezando
         if (nome.startsWith("chefe_")) { int c = Integer.parseInt(nome.substring(6)); int[] ordem = {8, 2, 3, 4, 5, 6, 7, 1}; for (int s = 0; s < 8; s++) if (ordem[s] == c) return gerar(s, CHEFE); }
         String[] p = nome.split("_"); return gerar(Integer.parseInt(p[1]), Integer.parseInt(p[2]));
     }
