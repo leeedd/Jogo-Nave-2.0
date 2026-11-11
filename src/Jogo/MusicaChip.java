@@ -125,7 +125,7 @@ final class MusicaChip {
      * segundo, guitarras gemeas em tercas, parada com rufar, refrao de hino com acordes abertos e
      * volta ao galope. Mi menor, 152 bpm, guitarra com amplificador simulado.
      */
-    static float[] abertura() { return aberturaRock(); }
+    static float[] abertura() { return hino(); }
     /** Versoes da abertura para comparar: 0 galope classico, 1 cavalgada rapida (la menor), 2 hino de meio-tempo (re menor). */
     static float[] abertura(int versao) {
         Random r = new Random(1980 + versao);
@@ -234,6 +234,66 @@ final class MusicaChip {
         return m.fechar64(n, .14);
     }
 
+
+    /**
+     * Hino do Metal Space: tudo nasce do motivo "ME-TAL SPA-CE" (curto, curto, LONGO; si, re, MI e
+     * si, re, SOL, fa#, MI). A torcida entoa o motivo com pisadas e palmas, as guitarras viram o motivo
+     * em riff, o solo desenvolve, o refrao canta o motivo em coro e guitarra, repete um tom acima e
+     * fecha com tres pancadas no ritmo do nome. 132 bpm, mi menor.
+     */
+    static float[] hino() {
+        Random r = new Random(2026);
+        double b = 60 / 132.0, d = b / 4, comp = 4 * b;
+        Mix m = new Mix((int) (60 * TAXA), r), solo = new Mix((int) (60 * TAXA), r);
+        // motivo em dois compassos: notas e duracao em tempos
+        double[] motivoA = {71, .5, 74, .5, 76, 3}, motivoB = {71, .5, 74, .5, 79, 1, 78, 1, 76, 5};
+        int[] acordes = {40, 36, 43, 38}; // Em C G D
+        double t = 0;
+        String forma = "TTTTRRRRVVVVVVVVCCCCCCCCKKKKF"; int it = 0, ir = 0, iv = 0, ic = 0;
+        for (char x : forma.toCharArray()) {
+            int raiz = acordes[(x == 'T' ? 0 : (x == 'R' ? ir : x == 'V' ? iv : ic)) % 4] + (x == 'K' ? 2 : 0);
+            if (x == 'T') { // a torcida: coro cantando o motivo, pisadas e palmas
+                double[] mo = it % 2 == 0 ? motivoA : new double[]{71, .5, 74, .5, 79, 1, 78, 1};
+                double tm = t; for (int k = 0; k < mo.length; k += 2) { m.orquestra("coro", mo[k], tm, mo[k + 1] * b * .95, .16); m.orquestra("coro", mo[k] - 12, tm, mo[k + 1] * b * .95, .1); tm += mo[k + 1] * b; }
+                for (int k = 0; k < 4; k++) { m.tom(t + k * b, 40, .3); if (k % 2 == 1) { m.ruido(t + k * b, .12, 30, .22); m.ruido(t + k * b + .012, .1, 35, .14); } }
+                if (it == 3) for (int k = 8; k < 16; k++) m.caixa64(t + k * d, .1 + (k - 8) * .03);
+                it++;
+            } else if (x == 'R') { // riff: o motivo em power chord, palhetada em colcheias
+                double[] mo = ir % 2 == 0 ? motivoA : new double[]{71, .5, 74, .5, 79, 1, 78, 1};
+                double tm = t; for (int k = 0; k < mo.length; k += 2) { int n = (int) mo[k] - 36; int passos = (int) Math.round(mo[k + 1] * 2);
+                    for (int q = 0; q < passos; q++) { m.guitarra(n, tm + q * 2 * d, 2 * d * .85, .1, q > 0, 0); m.guitarra(n + 7, tm + q * 2 * d, 2 * d * .85, .07, q > 0, 0); m.nota("sq", n - 12, tm + q * 2 * d, 2 * d * .7, .5, .12, 0); }
+                    tm += mo[k + 1] * b; }
+                bateria(m, t, b, true); if (ir % 2 == 0) m.prato(t, .18, 1.6); ir++;
+            } else if (x == 'V') { // verso: palhetada no acorde, solo desenvolvendo o motivo (com eco)
+                for (int q = 0; q < 8; q++) { m.guitarra(raiz, t + q * 2 * d, 2 * d * .85, .09, true, 0); m.guitarra(raiz + 7, t + q * 2 * d, 2 * d * .85, .06, true, 0); m.nota("sq", raiz - 12, t + q * 2 * d, 2 * d * .7, .5, .12, 0); }
+                double[][] verso = {{76, 1, 79, 1, 81, 2}, {83, 1, 81, .5, 79, .5, 78, 2}, {76, 1, 79, 1, 83, 2}, {86, 2, 83, 2}, {84, 1, 83, 1, 81, 1, 79, 1}, {81, 1, 79, 1, 78, 2}, {76, 1, 78, 1, 79, 1, 81, 1}, {83, 4}};
+                double tm = t; double[] v = verso[iv % 8]; for (int k = 0; k < v.length; k += 2) { solo.nota64("solo", v[k], tm, v[k + 1] * b * .95, .12, 2.5); tm += v[k + 1] * b; }
+                bateria(m, t, b, false); iv++;
+            } else if (x == 'C' || x == 'K') { // refrao: o motivo cantado por coro e guitarra, acordes abertos
+                for (int n : new int[]{raiz, raiz + 7, raiz + 12}) m.guitarra(n, t, comp * .97, .075, false, 0);
+                for (int q = 0; q < 8; q++) m.nota("sq", raiz - 12, t + q * 2 * d, 2 * d * .7, .5, .12, 0);
+                int tr = x == 'K' ? 2 : 0; int fase = (x == 'K' ? ic : ic) % 2;
+                if (fase == 0) { double[] mo = (ic / 2) % 2 == 0 ? motivoA : motivoB; double tm = t;
+                    for (int k = 0; k < mo.length; k += 2) { double n = mo[k] + tr + 12, dur = Math.min(mo[k + 1], 8) * b * .95;
+                        m.orquestra("coro", n - 12, tm, dur, .14); m.orquestra("coro", n - 24, tm, dur, .09); solo.nota64("solo", n, tm, dur, .13, 3); tm += mo[k + 1] * b; } }
+                bateria(m, t, b, true); if (fase == 0) m.prato(t, .18, 1.5); ic++;
+            } else { // ME-TAL SPA-CE! tres pancadas, silencio e acorde final
+                double[] golpes = {0, .5, 1};
+                for (double g : golpes) { double tg = t + g * b; for (int n : new int[]{42, 49, 54}) m.guitarra(n, tg, g == 1 ? b * .4 : b * .3, .1, false, 0); m.bumbo64(tg, .5); m.prato(tg, .12, 6); m.orquestra("coro", g == 0 ? 73 : g == .5 ? 76 : 78, tg, b * .4, .16); }
+                double tf = t + 2.5 * b; for (int n : new int[]{42, 49, 54, 58, 61}) m.guitarra(n, tf, 3, .07, false, 1); m.orquestra("coro", 66, tf, 3, .14); m.orquestra("coro", 73, tf, 3, .12);
+                m.nota("sq", 30, tf, 3, .5, .12, 0); m.bumbo64(tf, .5); m.prato(tf, .25, 1.1); solo.nota64("solo", 85, tf, 2.8, .12, 3); t = tf + 3.2; break;
+            }
+            t += comp;
+        }
+        int n = (int) (Math.min(60, t) * TAXA), atraso = (int) (b * .75 * TAXA);
+        for (int i = 0; i < n; i++) m.a[i] += solo.a[i] + (i >= atraso ? solo.a[i - atraso] * .35 : 0) + (i >= 2 * atraso ? solo.a[i - 2 * atraso] * .14 : 0);
+        return m.fechar64(n, .2);
+    }
+    /** Bateria de hino: bumbo no 1 e no 3 (com extras), caixa no 2 e no 4, chimbal em colcheias. */
+    private static void bateria(Mix m, double t, double b, boolean cheio) {
+        for (int k = 0; k < 4; k++) { double tk = t + k * b; if (k % 2 == 0) m.bumbo64(tk, .4); else m.caixa64(tk, .32); if (cheio && k == 2) m.bumbo64(tk + b / 2, .3); m.chimbal64(tk, .045, false); m.chimbal64(tk + b / 2, .04, cheio); }
+    }
+
     private static final class Mix {
         final float[] a; final Random r; boolean m64 = true; // producao cheia (guitarra, coro, reverb); false = chip puro
         Mix(int n, Random r) { a = new float[n]; this.r = r; }
@@ -272,7 +332,7 @@ final class MusicaChip {
         /** Camada de orquestra: coro "aah" (5 vozes desafinadas, filtro fechado) e metais (filtro que abre no ataque). */
         void orquestra(String tipo, double midi, double t0, double dur, double g) {
             int i0 = (int) (t0 * TAXA), n = (int) (dur * TAXA); boolean coro = tipo.equals("coro");
-            int ata = Math.min(n / 2, (int) ((coro ? .6 : .05) * TAXA)), sol = Math.min(n / 2, (int) ((coro ? .8 : .25) * TAXA));
+            int ata = Math.min(n / 2, (int) ((coro ? Math.min(.6, dur * .25) : .05) * TAXA)), sol = Math.min(n / 2, (int) ((coro ? .8 : .25) * TAXA));
             double fr = f(midi), lp1 = 0, lp2 = 0; double[] ph = new double[5]; double[] dt = {1, 1.006, .994, 1.011, .989}; for (int k = 0; k < 5; k++) ph[k] = r.nextDouble();
             for (int i = 0; i < n && i0 + i < a.length; i++) {
                 double t = i / (double) TAXA, v = 1 + .004 * Math.sin(2 * Math.PI * 4.8 * t + midi), x = 0;
