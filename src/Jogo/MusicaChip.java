@@ -261,33 +261,33 @@ final class MusicaChip {
             } else if (x == 'R') { // riff: o motivo em power chord, palhetada em colcheias
                 double[] mo = ir % 2 == 0 ? motivoA : new double[]{71, .5, 74, .5, 79, 1, 78, 1};
                 double tm = t; for (int k = 0; k < mo.length; k += 2) { int n = (int) mo[k] - 36; int passos = (int) Math.round(mo[k + 1] * 2);
-                    for (int q = 0; q < passos; q++) { m.guitarra(n, tm + q * 2 * d, 2 * d * .85, .1, q > 0, 0); m.guitarra(n + 7, tm + q * 2 * d, 2 * d * .85, .07, q > 0, 0); m.nota("sq", n - 12, tm + q * 2 * d, 2 * d * .7, .5, .12, 0); }
+                    for (int q = 0; q < passos; q++) { m.guitarra(n, tm + q * 2 * d, 2 * d * .85, .1, q > 0, 0, true); m.guitarra(n + 7, tm + q * 2 * d, 2 * d * .85, .07, q > 0, 0, true); m.nota("sq", n - 12, tm + q * 2 * d, 2 * d * .7, .5, .12, 0); }
                     tm += mo[k + 1] * b; }
                 bateria(m, t, b, true); if (ir % 2 == 0) m.prato(t, .18, 1.6); ir++;
             } else if (x == 'V') { // verso: palhetada no acorde, solo desenvolvendo o motivo (com eco)
-                for (int q = 0; q < 8; q++) { m.guitarra(raiz, t + q * 2 * d, 2 * d * .85, .09, true, 0); m.guitarra(raiz + 7, t + q * 2 * d, 2 * d * .85, .06, true, 0); m.nota("sq", raiz - 12, t + q * 2 * d, 2 * d * .7, .5, .12, 0); }
+                for (int q = 0; q < 16; q++) { int nq = raiz + (q == 14 ? 1 : q == 15 ? 3 : 0); m.guitarra(nq, t + q * d, d * .8, .1, true, 0, true); m.guitarra(nq + 7, t + q * d, d * .8, .06, true, 0, true); if (q % 2 == 0) m.nota("sq", nq - 12, t + q * d, 2 * d * .7, .5, .12, 0); }
                 double[][] verso = {{76, 1, 79, 1, 81, 2}, {83, 1, 81, .5, 79, .5, 78, 2}, {76, 1, 79, 1, 83, 2}, {86, 2, 83, 2}, {84, 1, 83, 1, 81, 1, 79, 1}, {81, 1, 79, 1, 78, 2}, {76, 1, 78, 1, 79, 1, 81, 1}, {83, 4}};
-                double tm = t; double[] v = verso[iv % 8]; for (int k = 0; k < v.length; k += 2) { solo.nota64("solo", v[k], tm, v[k + 1] * b * .95, .12, 2.5); tm += v[k + 1] * b; }
-                bateria(m, t, b, false); iv++;
+                double tm = t; double[] v = verso[iv % 8]; for (int k = 0; k < v.length; k += 2) { solo.guitarra(v[k], tm, v[k + 1] * b * .95, .09, false, 4, true); tm += v[k + 1] * b; }
+                for (int k = 0; k < 8; k++) { double tk = t + k * 2 * d; m.bumbo64(tk, .34); m.caixa64(tk + d, .26); m.chimbal64(tk, .04, false); } iv++; // batida de thrash
             } else if (x == 'C' || x == 'K') { // refrao: o motivo cantado por coro e guitarra, acordes abertos
-                for (int n : new int[]{raiz, raiz + 7, raiz + 12}) m.guitarra(n, t, comp * .97, .075, false, 0);
+                for (int n : new int[]{raiz, raiz + 7, raiz + 12}) m.guitarra(n, t, comp * .97, .075, false, 0, true);
                 for (int q = 0; q < 8; q++) m.nota("sq", raiz - 12, t + q * 2 * d, 2 * d * .7, .5, .12, 0);
                 int tr = x == 'K' ? 2 : 0; int fase = (x == 'K' ? ic : ic) % 2;
                 if (fase == 0) { double[] mo = (ic / 2) % 2 == 0 ? motivoA : motivoB; double tm = t;
                     for (int k = 0; k < mo.length; k += 2) { double n = mo[k] + tr + 12, dur = Math.min(mo[k + 1], 8) * b * .95;
-                        m.orquestra("coro", n - 12, tm, dur, .14); m.orquestra("coro", n - 24, tm, dur, .09); solo.nota64("solo", n, tm, dur, .13, 3); tm += mo[k + 1] * b; } }
+                        m.orquestra("coro", n - 12, tm, dur, .14); m.orquestra("coro", n - 24, tm, dur, .09); solo.guitarra(n, tm, dur, .1, false, 4, true); tm += mo[k + 1] * b; } }
                 bateria(m, t, b, true); if (fase == 0) m.prato(t, .18, 1.5); ic++;
             } else { // ME-TAL SPA-CE! tres pancadas, silencio e acorde final
                 double[] golpes = {0, .5, 1};
-                for (double g : golpes) { double tg = t + g * b; for (int n : new int[]{42, 49, 54}) m.guitarra(n, tg, g == 1 ? b * .4 : b * .3, .1, false, 0); m.bumbo64(tg, .5); m.prato(tg, .12, 6); m.orquestra("coro", g == 0 ? 73 : g == .5 ? 76 : 78, tg, b * .4, .16); }
-                double tf = t + 2.5 * b; for (int n : new int[]{42, 49, 54, 58, 61}) m.guitarra(n, tf, 3, .07, false, 1); m.orquestra("coro", 66, tf, 3, .14); m.orquestra("coro", 73, tf, 3, .12);
+                for (double g : golpes) { double tg = t + g * b; for (int n : new int[]{42, 49, 54}) m.guitarra(n, tg, g == 1 ? b * .4 : b * .3, .1, false, 0, true); m.bumbo64(tg, .5); m.prato(tg, .12, 6); m.orquestra("coro", g == 0 ? 73 : g == .5 ? 76 : 78, tg, b * .4, .16); }
+                double tf = t + 2.5 * b; for (int n : new int[]{42, 49, 54, 58, 61}) m.guitarra(n, tf, 3, .07, false, 1, true); m.orquestra("coro", 66, tf, 3, .14); m.orquestra("coro", 73, tf, 3, .12);
                 m.nota("sq", 30, tf, 3, .5, .12, 0); m.bumbo64(tf, .5); m.prato(tf, .25, 1.1); solo.nota64("solo", 85, tf, 2.8, .12, 3); t = tf + 3.2; break;
             }
             t += comp;
         }
         int n = (int) (Math.min(60, t) * TAXA), atraso = (int) (b * .75 * TAXA);
         for (int i = 0; i < n; i++) m.a[i] += solo.a[i] + (i >= atraso ? solo.a[i - atraso] * .35 : 0) + (i >= 2 * atraso ? solo.a[i - 2 * atraso] * .14 : 0);
-        return m.fechar64(n, .2);
+        return m.fechar64(n, .08);
     }
     /** Bateria de hino: bumbo no 1 e no 3 (com extras), caixa no 2 e no 4, chimbal em colcheias. */
     private static void bateria(Mix m, double t, double b, boolean cheio) {
@@ -350,7 +350,9 @@ final class MusicaChip {
         void subida(double tFim, double dur, double g) { int n = (int) (dur * TAXA), i0 = (int) ((tFim - dur) * TAXA); double lp = 0;
             for (int i = 0; i < n && i0 + i < a.length; i++) { if (i0 + i < 0) continue; double p = i / (double) n, w = r.nextDouble() * 2 - 1; lp += (w - lp) * (.05 + .6 * p); a[i0 + i] += g * (w - lp) * p * p; } }
         /** Guitarra com amplificador simulado: 3 cordas desafinadas, pre-filtro, saturacao assimetrica e caixa de som. */
-        void guitarra(double midi, double t0, double dur, double g, boolean abafada, double vib) {
+        void guitarra(double midi, double t0, double dur, double g, boolean abafada, double vib) { guitarra(midi, t0, dur, g, abafada, vib, false); }
+        /** suja = thrash: ganho no talo, corte duro, medio cavado e chiado do amplificador. */
+        void guitarra(double midi, double t0, double dur, double g, boolean abafada, double vib, boolean suja) {
             int i0 = (int) (t0 * TAXA), n = (int) (dur * TAXA), sol = Math.min(n / 3, (int) ((abafada ? .015 : .05) * TAXA));
             double fr = f(midi), p1 = r.nextDouble(), p2 = r.nextDouble(), p3 = r.nextDouble(), hp = 0, c1 = 0, c2 = 0, c3 = 0, corte = abafada ? .1 : .2;
             for (int i = 0; i < n && i0 + i < a.length; i++) {
@@ -359,9 +361,11 @@ final class MusicaChip {
                 double x = (2 * (p1 % 1) - 1) + (2 * (p2 % 1) - 1) + .35 * (2 * (p3 % 1) - 1);
                 if (i < 160) x += (r.nextDouble() - .5) * 1.5 * (1 - i / 160.0); // ataque da palheta
                 hp += (x - hp) * .02; x -= hp; // tira o grave embolado antes de distorcer
-                x = Math.tanh(x * 7 + .25) - Math.tanh(.25); // saturacao assimetrica (valvula)
-                c1 += (x - c1) * corte; c2 += (c1 - c2) * corte; c3 += (x - c3) * .05; // caixa de som + corpo de medio
-                double y = c2 * .8 + (c1 - c3) * .35;
+                if (suja) { x = x * 18 + (r.nextDouble() - .5) * .25; x = Math.max(-1, Math.min(1, x)) * .7 + Math.tanh(x * .4) * .3; } // corte duro + chiado
+                else x = Math.tanh(x * 7 + .25) - Math.tanh(.25); // saturacao assimetrica (valvula)
+                double cc = suja ? Math.min(.5, corte * 1.9) : corte;
+                c1 += (x - c1) * cc; c2 += (c1 - c2) * cc; c3 += (x - c3) * .05; // caixa de som + corpo de medio
+                double y = suja ? c2 * .95 - (c1 - c3) * .25 + (x - c1) * .18 : c2 * .8 + (c1 - c3) * .35; // suja: medio cavado e brilho rasgado
                 double e = i > n - sol ? (n - i) / (double) sol : 1; if (abafada) e *= Math.exp(-t * 9) * .7 + .3;
                 a[i0 + i] += y * e * g;
             }
