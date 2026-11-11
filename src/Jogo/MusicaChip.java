@@ -125,7 +125,7 @@ final class MusicaChip {
      * segundo, guitarras gemeas em tercas, parada com rufar, refrao de hino com acordes abertos e
      * volta ao galope. Mi menor, 152 bpm, guitarra com amplificador simulado.
      */
-    static float[] abertura() { return abertura(0); }
+    static float[] abertura() { return aberturaRock(); }
     /** Versoes da abertura para comparar: 0 galope classico, 1 cavalgada rapida (la menor), 2 hino de meio-tempo (re menor). */
     static float[] abertura(int versao) {
         Random r = new Random(1980 + versao);
@@ -172,6 +172,66 @@ final class MusicaChip {
             t += comp;
         }
         return m.fechar64((int) (Math.min(60, t) * TAXA), .16);
+    }
+
+
+    /**
+     * Abertura: rock de videogame dos anos 90, composto para o jogo. Riff sincopado no primeiro
+     * compasso, baixo correndo em colcheias, gancho que gruda com eco na guitarra solo, subida e
+     * refrao em tom maior, que repete um tom acima para fechar. 160 bpm.
+     */
+    static float[] aberturaRock() {
+        Random r = new Random(1994);
+        double b = 60 / 160.0, d = b / 4, comp = 4 * b;
+        Mix m = new Mix((int) (48 * TAXA), r), solo = new Mix((int) (48 * TAXA), r);
+        int[] r1 = {0, 0, -1, 0, -1, 0, 3, -1, 0, 0, -1, 0, 5, -1, 3, -1}, r2 = {0, 0, -1, 0, -1, 0, 3, -1, 0, 0, -1, 0, 7, 5, 3, 2};
+        int[][] gancho = {{71, -1, 76, -1, 78, 79, 78, 76}, {74, -1, 76, -1, 71, -2, -2, -2}, {71, -1, 76, -1, 78, 79, 81, 79}, {78, -2, -2, -2, 74, -2, -2, -2},
+                          {71, -1, 76, -1, 78, 79, 78, 76}, {74, 76, 78, 81, 83, -1, 81, -1}, {79, -1, 78, -1, 76, -1, 74, -1}, {76, -2, -2, -2, -2, -2, -2, -2}};
+        int[] coroRaiz = {43, 38, 40, 36, 43, 38, 40, 36};
+        double[][] coroMel = {{74, 1, 79, 1, 81, 1, 83, 1}, {81, 2, 78, 1, 74, 1}, {79, 1, 78, 1, 76, 1, 83, 1}, {81, 4},
+                              {74, 1, 79, 1, 81, 1, 83, 1}, {86, 2, 83, 1, 81, 1}, {79, 1, 81, 1, 83, 1, 88, 1}, {86, 4}};
+        double t = 0;
+        String forma = "IIAAAAAAAASSSSCCCCCCCCKKKKF"; int ia = 0, ic = 0, is = 0;
+        for (char x : forma.toCharArray()) {
+            if (x == 'I' || x == 'A') { // riff + baixo + bateria (no I a bateria entra no segundo compasso)
+                int[] rf = (ia % 2 == 0) ? r1 : r2; boolean intro = x == 'I';
+                for (int k = 0; k < 16; k++) { int v = rf[k]; if (v < 0) continue; double tk = t + k * d;
+                    m.guitarra(40 + v, tk, d * .9, .1, true, 0); m.guitarra(47 + v, tk, d * .9, .07, true, 0); }
+                if (!intro || ia == 1) for (int k = 0; k < 8; k++) { double tk = t + k * 2 * d; int v = rf[k * 2] < 0 ? rf[Math.max(0, k * 2 - 1)] : rf[k * 2]; if (v < 0) v = 0;
+                    m.nota("sq", 28 + v, tk, 2 * d * .7, .5, .12, 0); m.chimbal64(tk, .045, false); if (k % 2 == 0) m.bumbo64(tk, .38); else m.caixa64(tk, .28); }
+                if (intro && ia == 1) for (int k = 12; k < 16; k++) m.tom(t + k * d, 50 - (k - 12) * 3, .22);
+                if (x == 'A') { int[] h = gancho[(ia - 2) % 8];
+                    for (int k = 0; k < 8; k++) { int n = h[k]; if (n < 0) continue; int fim = k + 1; while (fim < 8 && h[fim] == -2) fim++; double dur = (fim - k) * 2 * d * .95;
+                        solo.nota64("solo", n, t + k * 2 * d, dur, .13, 2.5); solo.nota("sq", n + 12, t + k * 2 * d, dur, .25, .025, 2.5); } }
+                if (ia == 2 || ia == 6) m.prato(t, .17, 1.6);
+                ia++;
+            } else if (x == 'S') { // subida: acordes longos, caixa acelerando, arpejo subindo
+                int raiz = is % 2 == 0 ? 36 : 38;
+                for (int n : new int[]{raiz + 12, raiz + 19, raiz + 24}) m.guitarra(n, t, comp * .97, .07, false, 0);
+                for (int k = 0; k < 8; k++) m.nota("sq", raiz - 12 + 12, t + k * 2 * d, 2 * d * .7, .5, .12, 0);
+                int passos = is < 2 ? 8 : 16; for (int k = 0; k < passos; k++) m.caixa64(t + k * comp / passos, .1 + .2 * (is * passos + k) / (4.0 * passos));
+                m.bumbo64(t, .38); m.bumbo64(t + 2 * b, .38);
+                int[] arp = {raiz + 36, raiz + 40, raiz + 43, raiz + 48};
+                for (int k = 0; k < 8; k++) solo.nota64("solo", arp[k % 4] + (k >= 4 ? 12 : 0) - 12, t + k * 2 * d, 2 * d * .9, .09, 1);
+                is++;
+            } else if (x == 'C' || x == 'K') { // refrao (K = um tom acima)
+                int tr = x == 'K' ? 2 : 0, i = x == 'K' ? ic % 4 : ic % 8; int raiz = coroRaiz[i] + tr; double[] mel = coroMel[i];
+                for (int n : new int[]{raiz, raiz + 7, raiz + 12}) m.guitarra(n, t, comp * .97, .075, false, 0);
+                for (int k = 0; k < 8; k++) { double tk = t + k * 2 * d; m.nota("sq", raiz - 12, tk, 2 * d * .7, .5, .12, 0); m.chimbal64(tk, .05, k % 2 == 1); if (k % 2 == 0) m.bumbo64(tk, .4); else m.caixa64(tk, .3); }
+                if (i % 2 == 0) m.prato(t, .16, 1.6);
+                double tm = t; for (int k = 0; k < mel.length; k += 2) { int n = (int) mel[k] + tr; double dur = mel[k + 1] * b * .96;
+                    solo.nota64("solo", n, tm, dur, .14, 3); solo.nota64("solo", n - 12, tm, dur, .06, 3); tm += mel[k + 1] * b; }
+                ic++;
+            } else { // fecho: acorde maior aberto, prato e eco soando
+                for (int n : new int[]{45, 52, 57, 61, 64}) m.guitarra(n, t, 2.8, .07, false, 1); m.nota("sq", 33, t, 2.8, .5, .12, 0); m.bumbo64(t, .5); m.prato(t, .25, 1.2);
+                solo.nota64("solo", 81, t, 2.6, .12, 3); t += 3; break;
+            }
+            t += comp;
+        }
+        // eco do solo (o delay classico dos consoles de 16 bits), somado ao resto
+        int n = (int) (Math.min(48, t) * TAXA), atraso = (int) (b * .75 * TAXA);
+        for (int i = 0; i < n; i++) { double e = solo.a[i] + (i >= atraso ? solo.a[i - atraso] * .38 : 0) + (i >= 2 * atraso ? solo.a[i - 2 * atraso] * .16 : 0); m.a[i] += e; }
+        return m.fechar64(n, .14);
     }
 
     private static final class Mix {
