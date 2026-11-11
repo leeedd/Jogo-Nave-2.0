@@ -4,10 +4,7 @@ import java.util.ArrayList;
 final class MotorAudio {
  private final ArrayList<Voz> vozes=new ArrayList<Voz>();
  private float[] musica;private int pos;private boolean pausa;private float vm,ve;private int duck;
- private int loopInicio;
- synchronized void musica(float[] a){musica(a,0);}
- /** Musica que toca a introducao uma vez e repete a partir de loopInicio. */
- synchronized void musica(float[] a,int loopInicio){musica=a;pos=0;this.loopInicio=a==null?0:Math.max(0,Math.min(a.length-1,loopInicio));}
+ synchronized void musica(float[] a){musica=a;pos=0;}
  synchronized void pausar(boolean p){pausa=p;if(p)limpar();}
  synchronized void limpar(){vozes.clear();}
  synchronized int vozes(){return vozes.size();}
@@ -20,7 +17,7 @@ final class MotorAudio {
  synchronized void renderizar(byte[] b,int frames,float musicaVol,float efeitosVol,boolean mute,float ambiente){
   for(int i=0;i<frames;i++){
    vm+=(musicaVol-vm)*.002f;ve+=(efeitosVol-ve)*.002f;float m=0;
-   if(musica!=null&&musica.length>0){m=musica[pos++]*vm*ambiente*(pausa?.2f:1)*(duck>0?.55f:1);if(pos==musica.length)pos=loopInicio;}
+   if(musica!=null&&musica.length>0){m=musica[pos++]*vm*ambiente*(pausa?.2f:1)*(duck>0?.55f:1);if(pos==musica.length)pos=0;}
    if(duck>0)duck--;float l=m,r=m;
    for(int j=vozes.size()-1;j>=0;j--){Voz v=vozes.get(j);float s=v.a[v.pos++]*ve;l+=s*v.l;r+=s*v.r;if(v.pos==v.a.length)vozes.remove(j);}
    short left=mute?0:(short)(Math.tanh(l)*30000),right=mute?0:(short)(Math.tanh(r)*30000);

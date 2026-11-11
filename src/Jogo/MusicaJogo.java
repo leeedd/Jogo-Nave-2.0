@@ -7,8 +7,6 @@ public final class MusicaJogo {
  public static double duracaoSegundos(String nome){return -1;}
  public static void iniciar(String nome){if(atual.isEmpty())trocarSeDisponivel(nome);}
  /** Troca a musica: toca musicas/arquivo.wav se o jogador tiver o arquivo; senao, a trilha do jogo. */
- /** Marca a musica atual sem carregar nada (quando ja foi entregue pronta). */
- public static void marcar(String nome){atual=nome;}
  public static void trocarSeDisponivel(String nome){if(nome==null||nome.equals(atual))return;atual=nome;SomJogo.iniciar();SomJogo.trocarMusica(arquivo(nome));}
  /** Nome do arquivo na pasta musicas: "MasterOfPuppets" vira "master_of_puppets". */
  static String arquivo(String nome){return nome.replaceAll("([a-z0-9])([A-Z])","$1_$2").toLowerCase();}

@@ -242,8 +242,7 @@ final class MusicaChip {
      * em riff, o solo desenvolve, o refrao canta o motivo em coro e guitarra, repete um tom acima e
      * fecha com tres pancadas no ritmo do nome. 132 bpm, mi menor.
      */
-    static float[] hino() { return hino(true); }
-    static float[] hino(boolean torcida) {
+    static float[] hino() {
         Random r = new Random(2026);
         double b = 60 / 132.0, d = b / 4, comp = 4 * b;
         Mix m = new Mix((int) (60 * TAXA), r), solo = new Mix((int) (60 * TAXA), r);
@@ -251,7 +250,7 @@ final class MusicaChip {
         double[] motivoA = {71, .5, 74, .5, 76, 3}, motivoB = {71, .5, 74, .5, 79, 1, 78, 1, 76, 5};
         int[] acordes = {40, 36, 43, 38}; // Em C G D
         double t = 0;
-        String forma = (torcida ? "TTTT" : "") + "RRRRVVVVVVVVCCCCCCCCKKKKF"; int it = 0, ir = 0, iv = 0, ic = 0;
+        String forma = "TTTTRRRRVVVVVVVVCCCCCCCCKKKKF"; int it = 0, ir = 0, iv = 0, ic = 0;
         for (char x : forma.toCharArray()) {
             int raiz = acordes[(x == 'T' ? 0 : (x == 'R' ? ir : x == 'V' ? iv : ic)) % 4] + (x == 'K' ? 2 : 0);
             if (x == 'T') { // a torcida: coro cantando o motivo, pisadas e palmas
@@ -294,91 +293,6 @@ final class MusicaChip {
     /** Bateria de hino: bumbo no 1 e no 3 (com extras), caixa no 2 e no 4, chimbal em colcheias. */
     private static void bateria(Mix m, double t, double b, boolean cheio) {
         for (int k = 0; k < 4; k++) { double tk = t + k * b; if (k % 2 == 0) m.bumbo64(tk, .4); else m.caixa64(tk, .32); if (cheio && k == 2) m.bumbo64(tk + b / 2, .3); m.chimbal64(tk, .045, false); m.chimbal64(tk + b / 2, .04, cheio); }
-    }
-
-
-    /** Riff moderno sincopado em si grave (4 compassos), com bumbo acompanhando a guitarra e caixa no 3. */
-    private static void riffSi(Mix m, double tr, double b) {
-        int[] riff = {0, -1, 0, 0, -1, 0, -1, 0, 0, 0, -1, 3, -1, 0, 1, -1}; double d = b / 4;
-        for (int c = 0; c < 4; c++) { double tc = tr + c * 4 * b;
-            for (int k = 0; k < 16; k++) { int v = riff[k]; if (c == 3 && k >= 12) v = 15 - k + (k == 15 ? 6 : 0); if (v < 0) continue; double tk = tc + k * d;
-                m.guitarra(35 + v, tk, d * .85, .12, true, 0, true); m.guitarra(42 + v, tk, d * .85, .07, true, 0, true); m.nota("tri", 23 + v, tk, d * .9, 0, .14, 0); m.bumbo64(tk, .3); }
-            m.caixa64(tc + 2 * b, .34); m.prato(tc, .14, 2); for (int k = 0; k < 8; k++) m.chimbal64(tc + k * 2 * d, .04, false);
-        }
-    }
-    /** Largada (quando o jogador aperta Iniciar): tempos em batidas de 140 bpm. */
-    static final double LARG_B = 60 / 140.0, LARG_3 = 4 * LARG_B, LARG_2 = 6 * LARG_B, LARG_1 = 8 * LARG_B, LARG_DROP = 10 * LARG_B, LARG_FIM = 11 * LARG_B;
-    static int loopLargada;
-    private static volatile float[] largadaPronta; private static Thread preparo;
-    /** Gera a largada em segundo plano enquanto o jogador esta no menu. */
-    static synchronized void prepararLargada() { if (preparo == null) { preparo = new Thread(() -> largadaPronta = largada(), "MetalSpace-Largada"); preparo.setDaemon(true); preparo.start(); } }
-    static float[] largadaPronta() { prepararLargada(); try { preparo.join(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } return largadaPronta; }
-    /**
-     * Largada: escuro com zumbido e coracao (PILOTO, PREPARE-SE), contagem 3-2-1 com pancadas de
-     * guitarra grave, caixa acelerando e coro subindo, e as tres pancadas ME-TAL SPA-CE no clarao;
-     * o combate comeca no ultimo golpe, ja com o riff pesado e depois o hino (o loop fica no hino).
-     */
-    static float[] largada() {
-        Random r = new Random(31); double b = LARG_B;
-        float[] hino = hino(false);
-        double fimRiff = LARG_FIM + b + 16 * b; int nIntro = (int) (fimRiff * TAXA);
-        Mix m = new Mix(nIntro + TAXA, r);
-        m.nota("saw", 23, 0, LARG_DROP, 0, .1, 0); m.orquestra("coro", 35, 0, LARG_DROP, .1); m.bumbo64(0, .5); m.prato(0, .12, 1.5);
-        for (int k = 1; k < 4; k++) { m.bumbo64(k * b, .3); m.bumbo64(k * b + .15, .2); } // coracao
-        double[] conta = {LARG_3, LARG_2, LARG_1}; int[] nota = {35, 37, 38};
-        for (int k = 0; k < 3; k++) { double tc = conta[k];
-            for (int n : new int[]{nota[k], nota[k] + 7}) m.guitarra(n, tc, b * 1.6, .11, false, 0, true);
-            m.nota("tri", nota[k] - 12, tc, b * 1.8, 0, .14, 0); m.bumbo64(tc, .5); m.prato(tc, .14, 4); m.tom(tc + b, 45 - k * 3, .2);
-            m.orquestra("coro", 59 + k * 2, tc, 2 * b + .1, .09 + k * .03); }
-        for (double t = LARG_1, p = b / 2; t < LARG_DROP - .03; t += p, p = Math.max(.05, p * .8)) m.caixa64(t, .12 + .2 * (t - LARG_1) / (LARG_DROP - LARG_1));
-        m.subida(LARG_DROP, 2, .35);
-        double[] golpe = {0, b / 2, b};
-        for (int k = 0; k < 3; k++) { double tg = LARG_DROP + golpe[k], dur = k == 2 ? b * 1.5 : b * .4;
-            for (int n : new int[]{35, 42, 47}) m.guitarra(n, tg, dur, .12, false, 0, true); m.nota("tri", 23, tg, dur, 0, .16, 0); m.bumbo64(tg, .6); m.prato(tg, .2, k == 2 ? 1.5 : 6);
-            m.orquestra("coro", k == 0 ? 59 : k == 1 ? 62 : 64, tg, dur, .16); }
-        riffSi(m, LARG_FIM + b, b);
-        float[] intro = m.fechar64(nIntro, .1);
-        float[] tudo = new float[intro.length + hino.length];
-        System.arraycopy(intro, 0, tudo, 0, intro.length); System.arraycopy(hino, 0, tudo, intro.length, hino.length);
-        loopLargada = intro.length; return tudo;
-    }
-    /** Inicio do loop da entrada (em amostras): a introducao toca uma vez so. */
-    static int loopEntrada;
-    /**
-     * Entrada do jogo, sincronizada com a AberturaJogo: zumbido grave e coracao enquanto a placa
-     * pisca (pancada quando ela aparece), coro e chiado subindo enquanto o logo acende, e no clarao
-     * (5,76 s) as tres pancadas ME-TAL SPA-CE em afinacao baixa; depois riff moderno sincopado e o
-     * hino. O loop volta para o hino, sem repetir a introducao.
-     */
-    static float[] entrada() {
-        Random r = new Random(666);
-        double clarao = AberturaJogo.PLACA + AberturaJogo.LOGO * .72, b = 60 / 140.0, d = b / 4;
-        float[] hino = hino(false);
-        double riffFim = clarao + 3 * b / 2 + b / 2 + 4 * 4 * b;
-        int nIntro = (int) (riffFim * TAXA);
-        Mix m = new Mix(nIntro + TAXA, r);
-        // 1) placa: zumbido grave crescendo, coracao acelerando, pancada quando a placa aparece
-        m.nota("saw", 23, 0, clarao, 0, .1, 0); m.nota("saw", 30, 0, clarao, 0, .05, 0); m.orquestra("coro", 35, 0, clarao, .1);
-        m.guitarra(35, .25, 1.4, .12, false, 0, true); m.guitarra(42, .25, 1.4, .08, false, 0, true); m.bumbo64(.25, .55); m.prato(.25, .2, 1.8);
-        for (double t = 1.2, p = .9; t < AberturaJogo.PLACA; t += p, p = Math.max(.42, p * .86)) { m.bumbo64(t, .32); m.bumbo64(t + .16, .22); }
-        // 2) logo acendendo: coro sobe, caixa acelerando, chiado ate o clarao
-        double t0 = AberturaJogo.PLACA;
-        int[] sobe = {47, 50, 52, 54}; for (int k = 0; k < 4; k++) m.orquestra("coro", sobe[k] + 12, t0 + k * (clarao - t0) / 4, (clarao - t0) / 4 + .2, .08 + k * .03);
-        for (double t = t0 + .6, p = .3; t < clarao - .03; t += p, p = Math.max(.05, p * .85)) m.caixa64(t, .08 + .25 * (t - t0) / (clarao - t0));
-        m.subida(clarao, 2.2, .35);
-        // 3) o clarao: ME-TAL SPA-CE em si grave, sujo
-        double[] golpe = {0, b / 2, b};
-        for (int k = 0; k < 3; k++) { double tg = clarao + golpe[k], dur = k == 2 ? b * 1.5 : b * .4;
-            for (int n : new int[]{35, 42, 47}) m.guitarra(n, tg, dur, .12, false, 0, true); m.nota("tri", 23, tg, dur, 0, .16, 0); m.bumbo64(tg, .6); m.prato(tg, .2, k == 2 ? 1.5 : 6);
-            m.orquestra("coro", k == 0 ? 59 : k == 1 ? 62 : 64, tg, dur, .16); }
-        // 4) riff moderno sincopado (si grave), bumbo acompanhando a guitarra, caixa no 3
-        riffSi(m, clarao + 2 * b, b);
-        float[] intro = m.fechar64(nIntro, .1);
-        float[] tudo = new float[intro.length + hino.length];
-        System.arraycopy(intro, 0, tudo, 0, intro.length); System.arraycopy(hino, 0, tudo, intro.length, hino.length);
-        int x = Math.min(2000, intro.length); for (int i = 0; i < x; i++) { float k = i / (float) x; tudo[intro.length - x + i] = intro[intro.length - x + i] * (1 - k) + hino[i] * k; } // emenda suave
-        loopEntrada = intro.length;
-        return tudo;
     }
 
     private static final class Mix {

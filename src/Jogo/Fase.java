@@ -129,10 +129,6 @@ implements ActionListener {
                 {Alien.Classe.ORGANICO,Alien.Classe.TANQUE,Alien.Classe.KAMIKAZE}};
     private final FabricasIndustriais fabricas = new FabricasIndustriais();
     private int planetaAtual;
-    /** Largada da partida (contagem com a musica); -1 = desligada. */
-    private double largada = -1;
-    void iniciarLargada() { largada = 0; }
-
     /** Bandas cujo contrato dourado falhou nesta jornada: a base nao oferece outro dela. */
     private int douradoPerdido;
     /** Hangar clandestino: aparece uma vez, na parada seguinte a um contrato dourado cumprido (e so para VETERANO). */
@@ -1111,26 +1107,8 @@ implements ActionListener {
         graphics2D.setFont(new Font("Monospaced", Font.BOLD, 12));
         if(!naBase)graphics2D.drawString(partidaTeste ? "TESTE / SEM PLACAR — F8: PAINEL" : "F8: TESTAR SETORES", 420, 591);
         if (painelTeste) desenharPainelTeste(graphics2D);
-        if (largada >= 0) desenharLargada(graphics2D);
         PainelSom.desenhar(graphics2D);
         graphics2D.dispose();
-    }
-    /** Contagem da largada, no ritmo da musica: PILOTO, PREPARE-SE / 3 / 2 / 1 / METAL SPACE! */
-    private void desenharLargada(Graphics2D g) {
-        double t = largada; int W = Config.LARGURA, H = Config.ALTURA;
-        float escuro = (float) Math.max(0, Math.min(.65, .65 - Math.max(0, t - MusicaChip.LARG_DROP) * 2));
-        g.setColor(new Color(0, 0, 0, (int) (255 * escuro))); g.fillRect(0, Config.HUD, W, H - Config.HUD);
-        String txt; double ini;
-        if (t < MusicaChip.LARG_3) { txt = "PILOTO, PREPARE-SE"; ini = 0; }
-        else if (t < MusicaChip.LARG_2) { txt = "3"; ini = MusicaChip.LARG_3; } else if (t < MusicaChip.LARG_1) { txt = "2"; ini = MusicaChip.LARG_2; }
-        else if (t < MusicaChip.LARG_DROP) { txt = "1"; ini = MusicaChip.LARG_1; } else { txt = "METAL SPACE!"; ini = MusicaChip.LARG_DROP; }
-        double p = t - ini; boolean grande = txt.length() <= 1 || txt.startsWith("METAL");
-        int tam = grande ? (int) ((txt.length() == 1 ? 120 : 64) * (1 + .35 * Math.exp(-p * 9))) : 30;
-        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, tam)); int w = g.getFontMetrics().stringWidth(txt);
-        int x = (W - w) / 2, y = H / 2 + tam / 3;
-        g.setColor(new Color(0, 0, 0, 200)); g.drawString(txt, x + 4, y + 4);
-        g.setColor(txt.startsWith("METAL") ? new Color(255, 196, 70) : grande ? new Color(255, 70, 50) : new Color(220, 230, 255)); g.drawString(txt, x, y);
-        if (t >= MusicaChip.LARG_DROP) { int a = (int) (230 * Math.max(0, 1 - (t - MusicaChip.LARG_DROP) * 3)); if (a > 0) { g.setColor(new Color(255, 255, 255, a)); g.fillRect(0, 0, W, H); } } // clarao
     }
 
     private void desenharPainelTeste(Graphics2D g) {
@@ -1361,7 +1339,6 @@ implements ActionListener {
             return;
         }
         if (escolhendoSetor) { mapaEstelar.atualizar(d); this.repaint(); return; }
-        if (largada >= 0 && !pausado) { largada += d; fundoEspacial.atualizar(d); if (largada >= MusicaChip.LARG_FIM) { largada = -1; nave.tornarIntangivel(1.0); } this.repaint(); return; } // contagem: nada se move ainda
         if (naBase && !pausado) { this.repaint(); return; }
         if (viajando() && !pausado) {
             if (viagemIda >= 0 && (viagemIda += d) >= ViagemBase.DURACAO) atracar();

@@ -214,10 +214,7 @@ extends JPanel {
         this.janela.pack();
         this.janela.setLocationRelativeTo(null);
         SwingUtilities.invokeLater(fase::requestFocusInWindow);
-        // largada no ritmo da musica (Hellsinger): contagem, METAL SPACE! e o combate solta no ultimo golpe
-        float[] largada = new java.io.File("musicas", "largada.wav").isFile() ? null : MusicaChip.largadaPronta();
-        if (largada != null) { fase.iniciarLargada(); SomJogo.tocarPronta("largada", largada, MusicaChip.loopLargada); MusicaJogo.marcar(Recompensas.trilhaDoPlaneta(0, 0)); }
-        else MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(0));
+        MusicaJogo.trocarSeDisponivel(Recompensas.trilhaDoSetor(0));
     }
 
     private void desenharHangar(Graphics2D graphics2D) {
@@ -421,19 +418,13 @@ extends JPanel {
             jFrame.revalidate(); jFrame.repaint();
             telaInicial.requestFocusInWindow();
         }));
-        // entrada sincronizada com a animacao: gerada antes de mostrar a janela para comecar no mesmo instante
-        float[] entrada = new java.io.File("musicas", "abertura.wav").isFile() ? null : MusicaChip.entrada();
-        MusicaChip.prepararLargada(); // ja deixa a largada pronta enquanto o jogador esta no menu
+        MusicaJogo.trocarSeDisponivel("abertura"); // musicas/abertura.wav se o jogador tiver; senao a trilha epica original
         jFrame.setContentPane(abertura);
         jFrame.pack();
         jFrame.setResizable(false);
         jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
-        SwingUtilities.invokeLater(() -> {
-            if (entrada != null) { SomJogo.iniciar(); SomJogo.tocarPronta("abertura", entrada, MusicaChip.loopEntrada); MusicaJogo.marcar("abertura"); }
-            else MusicaJogo.trocarSeDisponivel("abertura");
-            abertura.comecar();
-        });
+        SwingUtilities.invokeLater(abertura::comecar);
     }
 
     private static enum Pagina {
